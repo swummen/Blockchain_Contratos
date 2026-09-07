@@ -142,3 +142,8 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
+# Python virtual environments (vendor/ tools installed via pip)
+.venv/
+__pycache__/
+*.pyc
+

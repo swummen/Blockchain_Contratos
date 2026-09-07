@@ -1,0 +1,78 @@
+INCONSISTENCIAS ENTRE docs/roles mock up.pdf Y claude_docs/SPEC.md
+Fecha de la revision: 2026-09-07
+
+Fuente del mockup: docs/roles mock up.pdf (4 paginas, producto rotulado "DocSign Verify",
+roles: Empleado/Firmante, Administrador, Verificador).
+Fuente de verdad comparada: claude_docs/SPEC.md.
+
+1. El mockup expone la huella SHA-256 completa al rol Empleado -- viola RF-27 / RNF-08
+----------------------------------------------------------------------------------------
+En la pantalla "Cargar documento contractual" (rol Empleado), tras subir el PDF se
+muestra:
+    "Documento cargado y hash generado -- SHA-256: e7f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2..."
+
+RF-27 es explicito: "La huella completa es visible solo para Verificador y
+Administrador" (y RNF-08 limita la exposicion de huellas por rol). El mockup se lo
+muestra directamente al Empleado que acaba de cargar el documento.
+
+Decidir: o se oculta/trunca el hash en esa confirmacion, o se actualiza RF-27 en el
+SPEC si el equipo decide que el propio autor del documento si puede ver su huella
+completa (cambio de alcance que requiere nota explicita en SPEC.md).
+
+2. Las tablas de trazabilidad no muestran txID -- viola RF-22, RF-40, RF-51, RNF-27
+----------------------------------------------------------------------------------------
+El modelo de dominio (SPEC.md, seccion 4) define el evento de trazabilidad como
+{documentId, action, user, txID, timestamp, result?}, y RF-22/40/51 exigen que las
+vistas de trazabilidad (Empleado, Verificador, Administrador) muestren el txID -- es
+la prueba de que el evento vive en el ledger de Fabric.
+
+- Tabla "Historial de trazabilidad" del Administrador: columnas
+  DOCUMENTO | ACCION | USUARIO | FECHA | HASH -- no hay columna txID, y usa "HASH"
+  donde deberia ir el identificador de transaccion (y en una fila mete el texto
+  "No coincide" dentro de esa misma columna, mezclando hash con resultado).
+- Tabla "Trazabilidad global" del Verificador: columnas
+  DOCUMENTO | ACCION | USUARIO | FECHA | RESULTADO -- tampoco hay txID.
+
+Ninguna de las dos pantallas cumple RNF-27/RF-40/RF-51 tal como estan redactados.
+
+3. HU-020 CA-02 se rompe entre ambas tablas de trazabilidad
+----------------------------------------------------------------------------------------
+El criterio de aceptacion dice explicitamente: "el Administrador ve un nivel de
+detalle igual o mayor" que el Verificador (RF-040 vs panel de Administrador). En el
+mockup es al reves en un aspecto: la tabla del Verificador tiene columna Resultado
+(OK/Alterado) y la del Administrador no la tiene (solo Hash). Si ademas ninguna trae
+txID (punto 2), conviene unificar ambas tablas con las mismas columnas: Documento,
+Accion, Usuario, txID, Fecha, Resultado.
+
+4. Nombre del producto "DocSign Verify" sugiere firma electronica, fuera de alcance
+----------------------------------------------------------------------------------------
+SPEC.md, seccion 1.2, dice: "Firma electronica / digital avanzada con PKI de validez
+juridica plena... El sistema complementa, no reemplaza, la firma." Un nombre con
+"Sign" puede confundir a evaluadores/stakeholders sobre que hace realmente el MVP
+(integridad + trazabilidad, no firma). Vale la pena decidir el nombre de producto de
+forma consciente y, si se mantiene, dejarlo anotado en el SPEC (o en el trabajo de
+grado) aclarando que no implica firma electronica.
+
+5. Puntos menores / brechas de cobertura (no contradicen, pero faltan)
+----------------------------------------------------------------------------------------
+- No hay pantalla de cambio de contrasena (RF-52/53, HU-004) en las 4 paginas
+  capturadas.
+- No hay pantalla visible de cierre de sesion explicito.
+- El selector de rol esta integrado como campo del formulario de login en vez de un
+  paso previo separado -- RF-01 dice "seleccionar el rol... antes de autenticarse"; es
+  ambiguo si un dropdown en la misma pantalla cumple eso o si se esperaba una pantalla
+  de seleccion de rol independiente. Confirmar con el equipo antes de construir.
+- El mockup fija un OTP de 6 digitos; el SPEC lo deja como pregunta abierta (seccion
+  18, punto 2). Si se adopta, cerrar la pregunta en el SPEC en vez de dejarla
+  "pendiente de definir".
+- Nomenclatura de roles/estados en minuscula (empleado, verificado) vs. el enum
+  canonico capitalizado del dominio (Empleado, Verificado) -- es solo presentacion, no
+  bloqueante.
+
+Recomendacion
+----------------------------------------------------------------------------------------
+Antes de construir identity/documents/verification/administration sobre este mockup,
+resolver primero los puntos 1-3 (chocan directo con RF/RNF ya "Must"), y dejar nota de
+cambio en claude_docs/SPEC.md si el equipo decide que el mockup manda en algun punto
+(p. ej. si de verdad quieren que el Empleado vea su propio hash completo, hay que
+reescribir RF-27 explicitamente, no dejarlo implicito en el diseno visual).

@@ -4,7 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-This repository is a **scaffold only**. Every directory currently contains just a placeholder `README.md`; there is no source code, no `package.json`, no `go.mod`, and no build/test tooling yet. When adding code, you are establishing the conventions — there is no existing pattern to match.
+Early scaffold. Only `frontend/` has real tooling; it's still the Vite starter UI
+(`src/App.tsx` is the template counter page — replace it, don't build on it).
+`backend/`, `chaincode/` and `docker/` are still placeholder `README.md` only — no
+`package.json`, no `go.mod`, no compose files. When adding code there you're
+establishing the conventions.
+
+Source of truth for scope/design/planning is **`claude_docs/SPEC.md`** — it
+consolidates every `docs/md/*` doc (53 RF, 30 RNF, 21 HU, 42 Gherkin scenarios,
+the capability map of 5 modules, the SDLC/DoD/KPI section). Read it before writing
+any plan; each plan and PR traces to a module id and to RF/RNF/HU there.
 
 ## Intended architecture
 
@@ -14,9 +23,23 @@ The project is a blockchain-backed contract management system ("Contratos") buil
 - **`backend/`** — Node.js service. Expected to be the gateway between the frontend and the Fabric network (via the Fabric SDK), exposing a REST/API layer and handling identity/wallet management.
 - **`frontend/`** — React single-page app. User-facing UI for creating and tracking contracts; talks only to `backend/`, never directly to the chain.
 - **`docker/`** — Docker Compose files and infrastructure config to stand up the local Fabric network (orderer, peers, CAs) plus backend/frontend containers.
-- **`docs/`** — Project documentation in Spanish: SRS, meeting minutes (actas), Hyperledger guide, functional requirements (RF), non-functional requirements (RNF), annexes.
+- **`docs/`** — Project documentation in Spanish: SRS, requirement/user-story
+  matrices, thesis, Hyperledger-Docker guide. Sources are `.docx`/`.xlsx`/`.pdf`;
+  read the pre-converted `docs/md/<same name>.md` instead (see NORMAS).
+- **`claude_docs/`** — Local mirror of the Hyperledger Fabric docs (ops guides +
+  the three "build the network / deploy chaincode" tutorials), converted to
+  markdown. Reference material for `chaincode/` and `docker/` work — Grep it
+  instead of fetching fabric.readthedocs.io.
 
 Data/control flow when built: `frontend (React)` → `backend (Node + Fabric SDK)` → `Fabric network` → `chaincode (Go)`.
+
+### frontend/
+
+Vite + React 19 + TypeScript, Tailwind CSS v4 (`@tailwindcss/vite`, no config
+file), shadcn/ui (`style: radix-nova`, base color neutral) with Radix + lucide
+icons. Linter is **oxlint**, not ESLint. Path alias `@/` → `src/`. UI primitives
+live in `src/components/ui/`; `cn()` helper in `src/lib/utils.ts`. No test runner
+configured.
 
 ## Conventions
 
@@ -25,7 +48,18 @@ Data/control flow when built: `frontend (React)` → `backend (Node + Fabric SDK
 
 ## Commands
 
-None defined yet. When scaffolding a component, add its build/lint/test commands to this section (e.g. `backend/` and `frontend/` npm scripts, `chaincode/` `go test ./...`, `docker/` compose up).
+`frontend/` (run from that directory):
+
+| | |
+|---|---|
+| `npm run dev` | Vite dev server |
+| `npm run build` | `tsc -b` typecheck + `vite build` |
+| `npm run lint` | oxlint |
+| `npm run preview` | serve the production build |
+
+`backend/`, `chaincode/`, `docker/`: nothing yet. When scaffolding, add the
+build/lint/test commands here (`chaincode/` → `go test ./...`, `docker/` →
+compose up, incl. how to run a single test).
 
 ## NORMAS QUE LE PUSE 
 
@@ -36,20 +70,24 @@ comunicación con el usuario en español.
 
 **Leer un documento fuente:** usar la conversión ya hecha en `docs/md/<mismo nombre>.md` —
 se lee con Read y se busca con Grep, que es lo que hace viable citar un RF sin releer el
-documento entero. Regenerarla solo si el `.docx` cambió:
+documento entero. Aplica igual a `.xlsx` y `.pdf`. Regenerarla solo si el fuente cambió:
 
 ```bash
 PYTHONIOENCODING=utf-8 markitdown "docs/<archivo>.docx" > "docs/md/<archivo>.md"
 ```
 
-**Nunca** abrir un `.docx` con Read ni descomprimiendo el zip. markitdown ya está en el `PATH`;
+**Nunca** abrir un `.docx`/`.xlsx`/`.pdf` con Read ni descomprimiendo el zip. markitdown ya está en el `PATH`;
 sin `PYTHONIOENCODING=utf-8` los acentos salen como mojibake. El shell por defecto de este
 proyecto es PowerShell, donde ese prefijo no es sintaxis válida: correrlo con la herramienta
 Bash, o `$env:PYTHONIOENCODING='utf-8'` antes de invocar markitdown.
 
-`SPEC.md` es la fuente de verdad para cualquier duda de alcance o diseño; este archivo no la
-repite. Si algo del código contradice a `SPEC.md`, gana `SPEC.md` o se corrige el documento
-explícitamente.
+`claude_docs/SPEC.md` es la fuente de verdad para cualquier duda de alcance o diseño; este
+archivo no la repite. Si algo del código contradice a `claude_docs/SPEC.md`, gana
+`claude_docs/SPEC.md` o se corrige el documento explícitamente (con nota de cambio).
+
+**Planes de desarrollo:** viven en `claude_docs/tasks/` (`plan.md` + `todo.md`), no en la
+raíz. `/plan` los escribe ahí; a `/build` (y cualquier herramienta que asuma `tasks/todo.md`
+por defecto) hay que pasarle la ruta `claude_docs/tasks/todo.md`.
 
 
 **Mensajes de commit** No hacer commit automaticamente, unicamente dejar el mensaje

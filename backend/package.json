@@ -1,0 +1,33 @@
+{
+  "name": "contratos-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gateway Node.js + Express hacia Hyperledger Fabric y MongoDB (ver claude_docs/SPEC.md)",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "jest",
+    "lint": "oxlint src tests"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongodb": "^6.11.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.2",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
+    "oxlint": "^0.15.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

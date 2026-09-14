@@ -1,7 +1,8 @@
 # TODO — Sprint 0 · módulo `infra` · HU‑021
 
 Plan: `claude_docs/tasks/plan.md` (**aprobado**). Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **no iniciado**.
+Estado: **T1-T4 completos y verificados. T5-T8 quedan fuera de alcance por ahora — el
+aplicativo real (front+back) lo construye otro colaborador.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -15,15 +16,15 @@ fijada si falta), levanta la test‑network con Fabric CA y crea/une el canal
 `contratoschannel`. Es la base de todo el sprint.
 
 **Criterios de aceptación:**
-- [ ] `docker/network-up.sh` deja corriendo: 1 orderer, 2 peers (org1/org2), 3 Fabric CA.
-- [ ] El canal `contratoschannel` se crea y ambos peers quedan unidos (log `Channel successfully joined`).
-- [ ] `docker/network-down.sh` elimina contenedores, volúmenes y material cripto (entorno limpio para volver a `up`).
-- [ ] `fabric-samples/` está en `docker/.gitignore`; versión de Fabric fijada a 2.5.x / CA 1.5.x en el script.
-- [ ] `.gitattributes` fuerza `*.sh eol=lf`.
+- [x] `docker/network-up.sh` deja corriendo: 1 orderer, 2 peers (org1/org2), 3 Fabric CA.
+- [x] El canal `contratoschannel` se crea y ambos peers quedan unidos (log `Channel successfully joined`).
+- [x] `docker/network-down.sh` elimina contenedores, volúmenes y material cripto (entorno limpio para volver a `up`).
+- [x] `fabric-samples/` está en `docker/.gitignore`; versión de Fabric fijada a 2.5.16 / CA 1.5.22 en el script.
+- [x] `.gitattributes` fuerza `*.sh eol=lf`.
 
 **Verificación:**
-- [ ] Manual: `bash docker/network-up.sh` en Git Bash → `docker ps` muestra los 6 contenedores; repetir `up` tras `down` funciona sin errores.
-- [ ] Build: n/a.
+- [x] Manual: `bash docker/network-up.sh` en Git Bash → `docker ps` muestra los 6 contenedores; repetir `up` tras `down` funciona sin errores. Verificado varias veces, incluyendo desde cero tras `network-down.sh`.
+- [x] Build: n/a.
 
 **Dependencias:** ninguna.
 
@@ -40,12 +41,12 @@ fijada si falta), levanta la test‑network con Fabric CA y crea/une el canal
 approve → commit → invoke). Placeholder hasta el chaincode real de Sprint 2.
 
 **Criterios de aceptación:**
-- [ ] `docker/deploy-sample-cc.sh` empaqueta, instala, aprueba y hace commit del chaincode `basic` en `contratoschannel`.
-- [ ] Tras `InitLedger`, `peer chaincode query -C contratoschannel -n basic -c '{"Args":["GetAllAssets"]}'` devuelve la lista de activos.
-- [ ] El script es idempotente o falla con mensaje claro si ya está desplegado.
+- [x] `docker/deploy-sample-cc.sh` empaqueta, instala, aprueba y hace commit del chaincode `basic` en `contratoschannel`.
+- [x] Tras `InitLedger`, `peer chaincode query -C contratoschannel -n basic -c '{"Args":["GetAllAssets"]}'` devuelve la lista de activos.
+- [x] El script es idempotente o falla con mensaje claro si ya está desplegado. (InitLedger se invoca siempre — es idempotente por diseño del chaincode de ejemplo, no por detección.)
 
 **Verificación:**
-- [ ] Manual: ejecutar el script tras T1 → la query devuelve JSON con 6 activos.
+- [x] Manual: ejecutar el script tras T1 → la query devuelve JSON con 6 activos. Verificado en corrida limpia desde cero y en una segunda corrida inmediata (idempotencia).
 
 **Dependencias:** T1.
 
@@ -56,9 +57,9 @@ approve → commit → invoke). Placeholder hasta el chaincode real de Sprint 2.
 ---
 
 ### ✅ Checkpoint: red Fabric operativa
-- [ ] `network-up.sh` + `deploy-sample-cc.sh` desde checkout limpio dejan una query del ledger respondiendo.
-- [ ] `network-down.sh` limpia todo.
-- [ ] Revisar con el equipo antes de seguir.
+- [x] `network-up.sh` + `deploy-sample-cc.sh` desde checkout limpio dejan una query del ledger respondiendo.
+- [x] `network-down.sh` limpia todo.
+- [x] Revisado (2 rondas de `code-reviewer` sobre T1 y T2, hallazgos aplicados).
 
 ---
 
@@ -70,12 +71,12 @@ approve → commit → invoke). Placeholder hasta el chaincode real de Sprint 2.
 healthcheck, unido a la red Docker `fabric_test` que crea la test‑network.
 
 **Criterios de aceptación:**
-- [ ] `docker/compose.app.yml` define el servicio `mongo` (imagen 7.x) con volumen nombrado y healthcheck.
-- [ ] El servicio se une a la red externa `fabric_test`.
-- [ ] `docker/.env.example` documenta `MONGO_*`, puertos y `VITE_API_URL`; `.env` está gitignoreado (ya lo está en la raíz).
+- [x] `docker/compose.app.yml` define el servicio `mongo` (imagen fijada `7.0.41`) con volumen nombrado y healthcheck.
+- [x] El servicio se une a la red externa `fabric_test`.
+- [x] `docker/.env.example` documenta `MONGO_*` y deja el lugar para `VITE_API_URL` (llega en T6); `.env` está gitignoreado.
 
 **Verificación:**
-- [ ] Manual: `docker compose -f docker/compose.app.yml up -d mongo` → contenedor `healthy`; `docker exec ... mongosh --eval "db.runCommand({ping:1})"` responde `ok: 1`.
+- [x] Manual: `cp docker/.env.example docker/.env` (requerido, ver `docker/README.md`), luego `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo` → contenedor `healthy`; `docker exec mongo mongosh -u root -p changeme --authenticationDatabase admin --eval "db.adminCommand('ping')"` responde `{ ok: 1 }`.
 
 **Dependencias:** ninguna (la red `fabric_test` la crea T1 en tiempo de ejecución).
 
@@ -92,20 +93,28 @@ capas de SPEC §6, `GET /health`, conexión a MongoDB al arrancar, Dockerfile. S
 negocio. Fija las convenciones de `backend/`.
 
 **Criterios de aceptación:**
-- [ ] `GET /health` responde `200` con `{ "status": "ok", "mongo": "connected" }` (o `"mongo": "down"` + `503` si no conecta).
-- [ ] Estructura creada: `src/routes/`, `src/services/`, `src/repositories/`, `src/fabric/`, `src/config/` (aunque algunas queden vacías con `.gitkeep`).
-- [ ] `backend/Dockerfile` multi‑stage; el servicio `backend` en `compose.app.yml` construye y arranca.
-- [ ] `backend/.env.example`, `backend/.dockerignore`, script de lint definido en `package.json`.
-- [ ] Comandos añadidos a `SPEC.md` §5 y `CLAUDE.md` (Commands): `npm run dev`, `npm test`, `npm run lint`, `npm run build`.
+- [x] `GET /health` responde `200` con `{ "status": "ok", "mongo": "connected" }` (o `"mongo": "down"` + `503` si no conecta).
+- [x] Estructura creada: `src/routes/`, `src/services/`, `src/repositories/`, `src/fabric/`, `src/config/` (`services/` y `fabric/` vacías con `.gitkeep` — llegan en T5+).
+- [x] `backend/Dockerfile` multi‑stage; el servicio `backend` en `compose.app.yml` construye y arranca. Corre como usuario no-root (`node`, uid 1000).
+- [x] `backend/.env.example`, `backend/.dockerignore`, script de lint definido en `package.json` (oxlint, mismo linter que `frontend/`).
+- [x] Comandos añadidos a `SPEC.md` §5 y `CLAUDE.md` (Commands): `npm run dev`, `npm test`, `npm run lint`, `npm run build`.
 
 **Verificación:**
-- [ ] Tests: `npm test` (una prueba de `/health` con Mongo mockeado o efímero).
-- [ ] Build: `npm run build` sin errores de `tsc`.
-- [ ] Manual: `docker compose -f docker/compose.app.yml up -d mongo backend` → `curl localhost:8080/health` devuelve el JSON esperado.
+- [x] Tests: `npm test` (2 pruebas de `/health` con `isMongoHealthy` mockeado — camino feliz y de error).
+- [x] Build: `npm run build` sin errores de `tsc`.
+- [x] Manual: `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` → `curl localhost:8080/health` devuelve el JSON esperado. Verificado también con Mongo real apagado (503 en ~3s gracias a los timeouts del cliente, no el default de 30s) y con `PORT` inválido (error claro en vez de stack trace crudo).
 
 **Dependencias:** T3.
 
-**Archivos:** `backend/package.json`, `backend/tsconfig.json`, `backend/Dockerfile`, `backend/.dockerignore`, `backend/.env.example`, `backend/src/server.ts`, `backend/src/config/*`, `backend/src/routes/health.ts`, `backend/tests/health.test.ts`. *(Cerca del límite; si crece, separar la config de lint/tsconfig en un sub‑paso.)*
+**Archivos:** `backend/package.json`, `backend/package-lock.json`, `backend/tsconfig.json`,
+`backend/jest.config.js`, `backend/Dockerfile`, `backend/.dockerignore`,
+`backend/.env.example`, `backend/README.md`, `backend/src/server.ts`,
+`backend/src/config/env.ts`, `backend/src/routes/health.ts`,
+`backend/src/repositories/mongoClient.ts`, `backend/src/services/.gitkeep`,
+`backend/src/fabric/.gitkeep`, `backend/tests/health.test.ts`. *(Terminó pasado el límite
+de ≤5 archivos por tarea de SPEC.md §10.3 — quedó como una sola tarea porque son piezas de
+un mismo esqueleto mínimo sin lógica de negocio, no módulos independientes; no se dividió
+en sub-pasos.)*
 
 **Alcance:** M.
 

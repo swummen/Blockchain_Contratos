@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-Early scaffold. Only `frontend/` has real tooling; it's still the Vite starter UI
-(`src/App.tsx` is the template counter page — replace it, don't build on it).
-`backend/`, `chaincode/` and `docker/` are still placeholder `README.md` only — no
-`package.json`, no `go.mod`, no compose files. When adding code there you're
-establishing the conventions.
+`frontend/` still has real tooling but is the Vite starter UI (`src/App.tsx` is the
+template counter page — replace it, don't build on it). `docker/` and `backend/` have
+real tooling too (Sprint 0 `infra` module, T1-T4: Fabric network, Mongo, backend walking
+skeleton — see `claude_docs/tasks/todo.md` for status). `chaincode/` is still placeholder
+`README.md` only — no `go.mod`. When adding code there you're establishing the
+conventions.
 
 Source of truth for scope/design/planning is **`claude_docs/SPEC.md`** — it
 consolidates every `docs/md/*` doc (53 RF, 30 RNF, 21 HU, 42 Gherkin scenarios,
@@ -57,9 +58,28 @@ configured.
 | `npm run lint` | oxlint |
 | `npm run preview` | serve the production build |
 
-`backend/`, `chaincode/`, `docker/`: nothing yet. When scaffolding, add the
-build/lint/test commands here (`chaincode/` → `go test ./...`, `docker/` →
-compose up, incl. how to run a single test).
+`backend/` (run from that directory):
+
+| | |
+|---|---|
+| `npm run dev` | dev server (`tsx watch`) |
+| `npm run build` | `tsc -p tsconfig.json` |
+| `npm start` | run the build (`dist/server.js`) |
+| `npm test` | Jest (`npx jest <file>` for a single test) |
+| `npm run lint` | oxlint (same linter as `frontend/`, not ESLint) |
+
+`docker/` (run from repo root) — see `docker/README.md` for the full list, ports, and
+env-file gotcha:
+
+| | |
+|---|---|
+| `bash docker/network-up.sh` | Fabric network + `contratoschannel` channel |
+| `bash docker/network-down.sh` | tear down the Fabric network |
+| `bash docker/deploy-sample-cc.sh` | sample chaincode, pipeline smoke test |
+| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` | Mongo + backend |
+
+`chaincode/`: nothing yet (Sprint 2, `ledger` module) — will be `go build ./...`,
+`go test ./...`, `go vet ./...`.
 
 ## NORMAS QUE LE PUSE 
 

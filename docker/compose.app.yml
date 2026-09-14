@@ -1,0 +1,36 @@
+# Servicios de aplicación (mongo, y luego backend/frontend en T4/T6), separados
+# del compose de la red Fabric para poder reiniciar la app sin bajar la red
+# (decisión D7 en claude_docs/tasks/plan.md). Se unen a la red externa
+# `fabric_test` que crea docker/network-up.sh.
+name: contratos
+
+services:
+  mongo:
+    image: mongo:7.0.41
+    container_name: mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
+    ports:
+      # Solo localhost: el backend (T4) lo alcanza por DNS interno de
+      # fabric_test como mongo:27017; publicar en 0.0.0.0 expondría las
+      # credenciales por defecto de .env.example a toda la red del host.
+      - "127.0.0.1:${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - fabric_test
+
+networks:
+  fabric_test:
+    external: true
+
+volumes:
+  mongo_data:

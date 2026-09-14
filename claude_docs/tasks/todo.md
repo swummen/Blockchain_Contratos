@@ -1,7 +1,7 @@
 # TODO — Sprint 0 · módulo `infra` · HU‑021
 
 Plan: `claude_docs/tasks/plan.md` (**aprobado**). Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **no iniciado**.
+Estado: **T1-T3 completos y verificados (commits `5407b2f`, `4a6d0dd` + fixes posteriores). T4 en definición.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -15,15 +15,15 @@ fijada si falta), levanta la test‑network con Fabric CA y crea/une el canal
 `contratoschannel`. Es la base de todo el sprint.
 
 **Criterios de aceptación:**
-- [ ] `docker/network-up.sh` deja corriendo: 1 orderer, 2 peers (org1/org2), 3 Fabric CA.
-- [ ] El canal `contratoschannel` se crea y ambos peers quedan unidos (log `Channel successfully joined`).
-- [ ] `docker/network-down.sh` elimina contenedores, volúmenes y material cripto (entorno limpio para volver a `up`).
-- [ ] `fabric-samples/` está en `docker/.gitignore`; versión de Fabric fijada a 2.5.x / CA 1.5.x en el script.
-- [ ] `.gitattributes` fuerza `*.sh eol=lf`.
+- [x] `docker/network-up.sh` deja corriendo: 1 orderer, 2 peers (org1/org2), 3 Fabric CA.
+- [x] El canal `contratoschannel` se crea y ambos peers quedan unidos (log `Channel successfully joined`).
+- [x] `docker/network-down.sh` elimina contenedores, volúmenes y material cripto (entorno limpio para volver a `up`).
+- [x] `fabric-samples/` está en `docker/.gitignore`; versión de Fabric fijada a 2.5.16 / CA 1.5.22 en el script.
+- [x] `.gitattributes` fuerza `*.sh eol=lf`.
 
 **Verificación:**
-- [ ] Manual: `bash docker/network-up.sh` en Git Bash → `docker ps` muestra los 6 contenedores; repetir `up` tras `down` funciona sin errores.
-- [ ] Build: n/a.
+- [x] Manual: `bash docker/network-up.sh` en Git Bash → `docker ps` muestra los 6 contenedores; repetir `up` tras `down` funciona sin errores. Verificado varias veces, incluyendo desde cero tras `network-down.sh`.
+- [x] Build: n/a.
 
 **Dependencias:** ninguna.
 
@@ -40,12 +40,12 @@ fijada si falta), levanta la test‑network con Fabric CA y crea/une el canal
 approve → commit → invoke). Placeholder hasta el chaincode real de Sprint 2.
 
 **Criterios de aceptación:**
-- [ ] `docker/deploy-sample-cc.sh` empaqueta, instala, aprueba y hace commit del chaincode `basic` en `contratoschannel`.
-- [ ] Tras `InitLedger`, `peer chaincode query -C contratoschannel -n basic -c '{"Args":["GetAllAssets"]}'` devuelve la lista de activos.
-- [ ] El script es idempotente o falla con mensaje claro si ya está desplegado.
+- [x] `docker/deploy-sample-cc.sh` empaqueta, instala, aprueba y hace commit del chaincode `basic` en `contratoschannel`.
+- [x] Tras `InitLedger`, `peer chaincode query -C contratoschannel -n basic -c '{"Args":["GetAllAssets"]}'` devuelve la lista de activos.
+- [x] El script es idempotente o falla con mensaje claro si ya está desplegado. (InitLedger se invoca siempre — es idempotente por diseño del chaincode de ejemplo, no por detección.)
 
 **Verificación:**
-- [ ] Manual: ejecutar el script tras T1 → la query devuelve JSON con 6 activos.
+- [x] Manual: ejecutar el script tras T1 → la query devuelve JSON con 6 activos. Verificado en corrida limpia desde cero y en una segunda corrida inmediata (idempotencia).
 
 **Dependencias:** T1.
 
@@ -56,9 +56,9 @@ approve → commit → invoke). Placeholder hasta el chaincode real de Sprint 2.
 ---
 
 ### ✅ Checkpoint: red Fabric operativa
-- [ ] `network-up.sh` + `deploy-sample-cc.sh` desde checkout limpio dejan una query del ledger respondiendo.
-- [ ] `network-down.sh` limpia todo.
-- [ ] Revisar con el equipo antes de seguir.
+- [x] `network-up.sh` + `deploy-sample-cc.sh` desde checkout limpio dejan una query del ledger respondiendo.
+- [x] `network-down.sh` limpia todo.
+- [x] Revisado (2 rondas de `code-reviewer` sobre T1 y T2, hallazgos aplicados).
 
 ---
 
@@ -70,12 +70,12 @@ approve → commit → invoke). Placeholder hasta el chaincode real de Sprint 2.
 healthcheck, unido a la red Docker `fabric_test` que crea la test‑network.
 
 **Criterios de aceptación:**
-- [ ] `docker/compose.app.yml` define el servicio `mongo` (imagen 7.x) con volumen nombrado y healthcheck.
-- [ ] El servicio se une a la red externa `fabric_test`.
-- [ ] `docker/.env.example` documenta `MONGO_*`, puertos y `VITE_API_URL`; `.env` está gitignoreado (ya lo está en la raíz).
+- [x] `docker/compose.app.yml` define el servicio `mongo` (imagen fijada `7.0.41`) con volumen nombrado y healthcheck.
+- [x] El servicio se une a la red externa `fabric_test`.
+- [x] `docker/.env.example` documenta `MONGO_*` y deja el lugar para `VITE_API_URL` (llega en T6); `.env` está gitignoreado.
 
 **Verificación:**
-- [ ] Manual: `docker compose -f docker/compose.app.yml up -d mongo` → contenedor `healthy`; `docker exec ... mongosh --eval "db.runCommand({ping:1})"` responde `ok: 1`.
+- [x] Manual: `cp docker/.env.example docker/.env` (requerido, ver `docker/README.md`), luego `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo` → contenedor `healthy`; `docker exec mongo mongosh -u root -p changeme --authenticationDatabase admin --eval "db.adminCommand('ping')"` responde `{ ok: 1 }`.
 
 **Dependencias:** ninguna (la red `fabric_test` la crea T1 en tiempo de ejecución).
 

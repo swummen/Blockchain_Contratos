@@ -1,0 +1,61 @@
+@startuml 06-secuencia-rol-verificador
+actor Verificador
+participant "Frontend" as FE
+participant "Backend\nVerification Controller" as BE
+participant "Hash Service\n(SHA-256)" as Hash
+participant "Fabric Gateway\n(SDK)" as SDK
+participant "Chaincode (Go)" as CC
+database "MongoDB" as DB
+
+Verificador -> FE : Accede al modulo de verificacion (RF-23)
+Verificador -> FE : Selecciona documento registrado (RF-24)
+FE -> BE : GET /documentos/{id}
+BE -> SDK : query ConsultarHuella(docId) (RF-25)
+SDK -> CC : Consulta huella registrada
+CC --> SDK : huellaRegistrada
+SDK --> BE : huellaRegistrada
+BE --> FE : 200 OK (huella visible solo a rol autorizado) (RF-26, RF-27)
+
+Verificador -> FE : Carga documento a comparar (RF-28)
+FE -> FE : Valida formato/tamano (RF-29)
+FE -> BE : POST /verificaciones {docId, archivoComparar}
+BE -> Hash : Generar huella del archivo cargado (RF-30)
+Hash --> BE : huellaComparada
+BE -> BE : Comparar huellaRegistrada vs huellaComparada (RF-31)
+
+alt huellas coinciden
+    BE -> BE : resultado = Verificado (RF-32)
+else huellas difieren
+    BE -> BE : resultado = Alterado (RF-32)
+end
+
+BE --> FE : huellaRegistrada, huellaComparada, resultado (RF-33)
+BE -> SDK : invoke ActualizarEstado(docId, resultado)
+SDK -> CC : Transaccion ActualizarEstado
+CC --> SDK : txID
+SDK --> BE : txID
+BE -> DB : Actualizar estado del documento (RF-34)
+BE -> SDK : invoke RegistrarEvento(docId, "Verificacion", usuario, resultado)
+SDK -> CC : Transaccion RegistrarEvento
+CC --> SDK : txID
+SDK --> BE : confirmacion (RF-35)
+BE --> FE : 200 OK
+FE --> Verificador : Muestra resultado; opcion "Nueva verificacion" (RF-36)
+
+== Consulta de documentos y trazabilidad general ==
+Verificador -> FE : Consultar documentos registrados (RF-37)
+FE -> BE : GET /documentos
+BE -> DB : Buscar todos los documentos
+DB --> BE : Lista completa (RF-38)
+BE --> FE : 200 OK
+FE --> Verificador : Tabla de documentos
+
+Verificador -> FE : Consultar trazabilidad general (RF-39)
+FE -> BE : GET /trazabilidad
+BE -> SDK : query ConsultarTrazabilidad()
+SDK -> CC : Consulta del historico completo
+CC --> SDK : Eventos [Documento, Accion, Usuario, txID, Fecha, Resultado]
+SDK --> BE : Eventos
+BE --> FE : 200 OK (RF-40)
+FE --> Verificador : Historial completo
+@enduml

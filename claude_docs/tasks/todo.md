@@ -106,7 +106,15 @@ negocio. Fija las convenciones de `backend/`.
 
 **Dependencias:** T3.
 
-**Archivos:** `backend/package.json`, `backend/tsconfig.json`, `backend/Dockerfile`, `backend/.dockerignore`, `backend/.env.example`, `backend/src/server.ts`, `backend/src/config/*`, `backend/src/routes/health.ts`, `backend/tests/health.test.ts`. *(Cerca del límite; si crece, separar la config de lint/tsconfig en un sub‑paso.)*
+**Archivos:** `backend/package.json`, `backend/package-lock.json`, `backend/tsconfig.json`,
+`backend/jest.config.js`, `backend/Dockerfile`, `backend/.dockerignore`,
+`backend/.env.example`, `backend/README.md`, `backend/src/server.ts`,
+`backend/src/config/env.ts`, `backend/src/routes/health.ts`,
+`backend/src/repositories/mongoClient.ts`, `backend/src/services/.gitkeep`,
+`backend/src/fabric/.gitkeep`, `backend/tests/health.test.ts`. *(Terminó pasado el límite
+de ≤5 archivos por tarea de SPEC.md §10.3 — quedó como una sola tarea porque son piezas de
+un mismo esqueleto mínimo sin lógica de negocio, no módulos independientes; no se dividió
+en sub-pasos.)*
 
 **Alcance:** M.
 

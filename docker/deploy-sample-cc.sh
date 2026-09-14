@@ -34,15 +34,49 @@ export CORE_PEER_MSPCONFIGPATH="${PWD}/organizations/peerOrganizations/org1.exam
 export CORE_PEER_ADDRESS=localhost:7051
 
 if peer lifecycle chaincode querycommitted -C "${CHANNEL_NAME}" -n "${CC_NAME}" >/dev/null 2>&1; then
-  echo "El chaincode '${CC_NAME}' ya está desplegado en '${CHANNEL_NAME}'; no se vuelve a inicializar el ledger."
+  echo "El chaincode '${CC_NAME}' ya está desplegado en '${CHANNEL_NAME}'."
 else
   echo "==> Empaquetando, instalando, aprobando y confirmando '${CC_NAME}' en '${CHANNEL_NAME}'..."
   ./network.sh deployCC -c "${CHANNEL_NAME}" -ccn "${CC_NAME}" -ccp "${CC_SRC_PATH}" -ccl "${CC_SRC_LANGUAGE}"
-
-  echo "==> Inicializando el ledger (InitLedger)..."
-  ./network.sh cc invoke -c "${CHANNEL_NAME}" -ccn "${CC_NAME}" -ccic '{"Args":["InitLedger"]}'
 fi
+
+# InitLedger de asset-transfer-basic solo hace PutState por cada uno de los 6
+# activos de ejemplo, sin comprobar si ya existen (verificado en
+# fabric-samples/asset-transfer-basic/chaincode-go/chaincode/smartcontract.go
+# y confirmado en la práctica: invocarlo dos veces no falla, solo reescribe
+# los mismos valores). Por eso se llama siempre, sin intentar detectar si el
+# ledger ya estaba inicializado: esa detección terminó siendo la parte
+# frágil (sujeta al mismo desfase de sincronización de la query de abajo),
+# mientras que llamar dos veces es inofensivo.
+echo "==> Inicializando el ledger (InitLedger)..."
+./network.sh cc invoke -c "${CHANNEL_NAME}" -ccn "${CC_NAME}" -ccic '{"Args":["InitLedger"]}'
 
 echo
 echo "==> Consultando GetAllAssets:"
-./network.sh cc query -c "${CHANNEL_NAME}" -ccn "${CC_NAME}" -cciq '{"Args":["GetAllAssets"]}'
+
+# peer chaincode invoke reporta éxito (status 200) apenas el peer endosante
+# confirma la transacción, pero el world state puede tardar un instante más
+# en reflejar el bloque. Una query inmediata después de InitLedger puede
+# llegar antes de ese commit y devolver una lista vacía aunque todo haya ido
+# bien (comprobado: la misma query, corrida unos segundos después, sí trae
+# los 6 activos). Se reintenta en vez de asumir que ya está listo.
+attempt=1
+max_attempts=5
+while true; do
+  # La asignación va dentro del "if" (no como línea suelta) para que un
+  # fallo real de network.sh cc query (red caída, TLS, etc.) no aborte el
+  # script por set -e antes de llegar al mensaje de error de abajo.
+  if query_output="$(./network.sh cc query -c "${CHANNEL_NAME}" -ccn "${CC_NAME}" -ccqc '{"Args":["GetAllAssets"]}' 2>&1)" \
+     && echo "${query_output}" | grep -q '"ID"'; then
+    break
+  fi
+  if [ "${attempt}" -ge "${max_attempts}" ]; then
+    echo "${query_output}"
+    echo "GetAllAssets no devolvió activos tras ${max_attempts} intentos." >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 2
+done
+
+echo "${query_output}"

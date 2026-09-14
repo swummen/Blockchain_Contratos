@@ -117,6 +117,31 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Paneles laterales con color fijo por rol (independiente de claro/oscuro):
+   Empleado/Administrador = navy, Verificador = verde. Solo sobreescriben los
+   tokens --sidebar* que ya define el sistema shadcn, no se inventan colores nuevos. */
+.theme-navy {
+    --sidebar: oklch(0.24 0.05 258);
+    --sidebar-foreground: oklch(0.96 0.01 258);
+    --sidebar-primary: oklch(0.6 0.17 258);
+    --sidebar-primary-foreground: oklch(0.98 0 0);
+    --sidebar-accent: oklch(0.3 0.05 258);
+    --sidebar-accent-foreground: oklch(0.98 0 0);
+    --sidebar-border: oklch(0.33 0.05 258);
+    --sidebar-ring: oklch(0.6 0.17 258);
+}
+
+.theme-verde {
+    --sidebar: oklch(0.24 0.045 165);
+    --sidebar-foreground: oklch(0.96 0.01 165);
+    --sidebar-primary: oklch(0.6 0.14 165);
+    --sidebar-primary-foreground: oklch(0.98 0 0);
+    --sidebar-accent: oklch(0.3 0.045 165);
+    --sidebar-accent-foreground: oklch(0.98 0 0);
+    --sidebar-border: oklch(0.33 0.045 165);
+    --sidebar-ring: oklch(0.6 0.14 165);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

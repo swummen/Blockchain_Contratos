@@ -1,7 +1,8 @@
 # TODO — Sprint 0 · módulo `infra` · HU‑021
 
 Plan: `claude_docs/tasks/plan.md` (**aprobado**). Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T3 completos y verificados (commits `5407b2f`, `4a6d0dd` + fixes posteriores). T4 en definición.**
+Estado: **T1-T4 completos y verificados. T5-T8 quedan fuera de alcance por ahora — el
+aplicativo real (front+back) lo construye otro colaborador.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -92,16 +93,16 @@ capas de SPEC §6, `GET /health`, conexión a MongoDB al arrancar, Dockerfile. S
 negocio. Fija las convenciones de `backend/`.
 
 **Criterios de aceptación:**
-- [ ] `GET /health` responde `200` con `{ "status": "ok", "mongo": "connected" }` (o `"mongo": "down"` + `503` si no conecta).
-- [ ] Estructura creada: `src/routes/`, `src/services/`, `src/repositories/`, `src/fabric/`, `src/config/` (aunque algunas queden vacías con `.gitkeep`).
-- [ ] `backend/Dockerfile` multi‑stage; el servicio `backend` en `compose.app.yml` construye y arranca.
-- [ ] `backend/.env.example`, `backend/.dockerignore`, script de lint definido en `package.json`.
-- [ ] Comandos añadidos a `SPEC.md` §5 y `CLAUDE.md` (Commands): `npm run dev`, `npm test`, `npm run lint`, `npm run build`.
+- [x] `GET /health` responde `200` con `{ "status": "ok", "mongo": "connected" }` (o `"mongo": "down"` + `503` si no conecta).
+- [x] Estructura creada: `src/routes/`, `src/services/`, `src/repositories/`, `src/fabric/`, `src/config/` (`services/` y `fabric/` vacías con `.gitkeep` — llegan en T5+).
+- [x] `backend/Dockerfile` multi‑stage; el servicio `backend` en `compose.app.yml` construye y arranca. Corre como usuario no-root (`node`, uid 1000).
+- [x] `backend/.env.example`, `backend/.dockerignore`, script de lint definido en `package.json` (oxlint, mismo linter que `frontend/`).
+- [x] Comandos añadidos a `SPEC.md` §5 y `CLAUDE.md` (Commands): `npm run dev`, `npm test`, `npm run lint`, `npm run build`.
 
 **Verificación:**
-- [ ] Tests: `npm test` (una prueba de `/health` con Mongo mockeado o efímero).
-- [ ] Build: `npm run build` sin errores de `tsc`.
-- [ ] Manual: `docker compose -f docker/compose.app.yml up -d mongo backend` → `curl localhost:8080/health` devuelve el JSON esperado.
+- [x] Tests: `npm test` (2 pruebas de `/health` con `isMongoHealthy` mockeado — camino feliz y de error).
+- [x] Build: `npm run build` sin errores de `tsc`.
+- [x] Manual: `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` → `curl localhost:8080/health` devuelve el JSON esperado. Verificado también con Mongo real apagado (503 en ~3s gracias a los timeouts del cliente, no el default de 30s) y con `PORT` inválido (error claro en vez de stack trace crudo).
 
 **Dependencias:** T3.
 

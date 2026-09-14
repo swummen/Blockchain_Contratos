@@ -190,14 +190,34 @@ borrado físico, nunca afecta trazabilidad histórica (RF‑47).
 | `npm run lint` | oxlint |
 | `npm run preview` | sirve el build de producción |
 
-### backend/, chaincode/, docker/
+### backend/ (ejecutar dentro de `backend/`)
 
-Aún sin definir. Al andamiar cada componente, **agregar aquí** sus comandos y también en
-`CLAUDE.md` → sección *Commands*:
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | servidor de desarrollo (`tsx watch`) |
+| `npm run build` | `tsc -p tsconfig.json` |
+| `npm start` | corre el build (`dist/server.js`) |
+| `npm test` | Jest (`npx jest <archivo>` para un test único) |
+| `npm run lint` | oxlint (mismo linter que `frontend/`, no ESLint) |
 
-- `backend/`: `npm run dev`, `npm test`, `npm run lint`, `npm run test -- <archivo>` (test único).
-- `chaincode/`: `go build ./...`, `go test ./...`, `go test -run <TestName> ./...` (test único), `go vet ./...`.
-- `docker/`: `docker compose up -d`, `docker compose down -v`, script de bootstrap de la red (canal, deploy del chaincode).
+### docker/ (ejecutar desde la raíz del repo)
+
+| Comando | Qué hace |
+|---|---|
+| `bash docker/network-up.sh` | red Fabric + canal `contratoschannel` (T1) |
+| `bash docker/network-down.sh` | baja la red Fabric |
+| `bash docker/deploy-sample-cc.sh` | chaincode de ejemplo, prueba de pipeline (T2) |
+| `cp docker/.env.example docker/.env` | prerrequisito único antes de los comandos de Mongo/backend (T3) |
+| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` | Mongo + backend (T3/T4), unidos a la red `fabric_test` |
+| `docker compose -f docker/compose.app.yml down` | baja Mongo/backend (agregar `-v` para borrar también el volumen de Mongo) |
+
+Detalle de cada comando de `docker/`, puertos y los dos bugs de Windows/Git Bash ya
+corregidos: `docker/README.md`.
+
+### chaincode/
+
+Aún sin andamiar (Sprint 2, módulo `ledger`): `go build ./...`, `go test ./...`,
+`go test -run <TestName> ./...` (test único), `go vet ./...`.
 
 ---
 

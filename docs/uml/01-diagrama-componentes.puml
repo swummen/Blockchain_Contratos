@@ -1,0 +1,61 @@
+@startuml 01-diagrama-componentes
+skinparam componentStyle rectangle
+
+package "Frontend (React SPA)" {
+  [Modulo de Autenticacion] as UI_Auth
+  [Modulo Empleado] as UI_Empleado
+  [Modulo Verificador] as UI_Verificador
+  [Modulo Administrador] as UI_Admin
+}
+
+package "Backend (Node.js + Express)" {
+  [Auth Controller] as C_Auth
+  [Document Controller] as C_Doc
+  [Verification Controller] as C_Verif
+  [Admin Controller] as C_Admin
+  [Hash Service (SHA-256)] as S_Hash
+  [Fabric Gateway Service] as S_Fabric
+  [User / Document Repository] as S_Repo
+}
+
+database "MongoDB\n(usuarios, metadatos,\ncache de trazabilidad)" as DB
+
+package "Red Hyperledger Fabric" {
+  [Fabric SDK] as SDK
+  [Chaincode (Go)\nRegistrarHuella / ConsultarHuella\nRegistrarEvento / ConsultarTrazabilidad] as CC
+  database "Ledger (blockchain)" as Ledger
+}
+
+UI_Auth --> C_Auth : REST/HTTPS
+UI_Empleado --> C_Doc : REST/HTTPS
+UI_Verificador --> C_Verif : REST/HTTPS
+UI_Admin --> C_Admin : REST/HTTPS
+
+C_Auth --> S_Repo
+C_Doc --> S_Hash
+C_Doc --> S_Fabric
+C_Doc --> S_Repo
+C_Verif --> S_Hash
+C_Verif --> S_Fabric
+C_Verif --> S_Repo
+C_Admin --> S_Repo
+C_Admin --> S_Fabric
+
+S_Repo --> DB
+S_Fabric --> SDK
+SDK --> CC
+CC --> Ledger
+
+note right of S_Fabric
+  RNF-20: el frontend nunca
+  se comunica directamente
+  con la red blockchain,
+  siempre a traves del backend.
+end note
+
+note right of Ledger
+  RNF-04: solo se almacenan
+  huellas criptograficas y
+  eventos, nunca el PDF.
+end note
+@enduml

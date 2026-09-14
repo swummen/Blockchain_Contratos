@@ -1,0 +1,59 @@
+@startuml 00-diagrama-casos-de-uso
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Usuario Autenticado" as UsuarioBase
+actor Empleado
+actor Verificador
+actor Administrador
+
+Empleado --|> UsuarioBase
+Verificador --|> UsuarioBase
+Administrador --|> UsuarioBase
+
+rectangle "Sistema Web de Verificacion de Integridad Documental (Blockchain)" {
+  usecase "Iniciar sesion\n(rol + credenciales + 2FA)" as UC_Login
+  usecase "Cerrar sesion" as UC_Logout
+  usecase "Cambiar contrasena" as UC_ChangePwd
+
+  usecase "Cargar documento contractual" as UC_Upload
+  usecase "Consultar mis documentos" as UC_MyDocs
+  usecase "Consultar trazabilidad\nde mis documentos" as UC_MyTrace
+
+  usecase "Verificar integridad documental" as UC_Verify
+  usecase "Consultar documentos registrados" as UC_DocsVerifier
+  usecase "Consultar trazabilidad general" as UC_TraceGeneral
+
+  usecase "Ver panel general de documentos" as UC_Dashboard
+  usecase "Gestionar usuarios\n(crear / editar / desactivar)" as UC_ManageUsers
+  usecase "Consultar documentos\n(vista administrativa)" as UC_DocsAdmin
+  usecase "Consultar trazabilidad administrativa" as UC_TraceAdmin
+}
+
+UsuarioBase --> UC_Login
+UsuarioBase --> UC_Logout
+UsuarioBase --> UC_ChangePwd
+
+Empleado --> UC_Upload
+Empleado --> UC_MyDocs
+Empleado --> UC_MyTrace
+
+Verificador --> UC_Verify
+Verificador --> UC_DocsVerifier
+Verificador --> UC_TraceGeneral
+
+Administrador --> UC_Dashboard
+Administrador --> UC_ManageUsers
+Administrador --> UC_DocsAdmin
+Administrador --> UC_TraceAdmin
+
+UC_Upload .> UC_Login : <<include>>
+UC_Verify .> UC_Login : <<include>>
+UC_Dashboard .> UC_Login : <<include>>
+
+note bottom of UC_Login
+  RF-01 a RF-07: seleccion de rol,
+  credenciales + segundo factor
+  enviado al correo corporativo.
+end note
+@enduml

@@ -1,0 +1,49 @@
+@startuml 03-diagrama-mer
+skinparam linetype ortho
+
+entity "Usuario" as Usuario {
+  * id : ObjectId <<PK>>
+  --
+  nombre : string
+  correo : string <<unique>>
+  passwordHash : string
+  rol : enum {Empleado, Verificador, Administrador}
+  estado : enum {Activo, Inactivo}
+}
+
+entity "Documento" as Documento {
+  * id : ObjectId <<PK>>
+  --
+  nombre : string
+  usuarioResponsableId : ObjectId <<FK>>
+  fechaRegistro : datetime
+  huellaCriptografica : string (SHA-256)
+  estado : enum {Pendiente, Verificado, Alterado}
+}
+
+entity "EventoTrazabilidad" as Evento {
+  * id : ObjectId <<PK>>
+  --
+  documentoId : ObjectId <<FK>>
+  usuarioId : ObjectId <<FK>>
+  accion : enum {Registro, Verificacion, Consulta, GestionUsuario}
+  txId : string
+  fechaHora : datetime
+  resultado : string
+}
+
+Usuario ||--o{ Documento : "registra >"
+Usuario ||--o{ Evento : "ejecuta >"
+Documento ||--o{ Evento : "genera >"
+
+note bottom of Evento
+  RNF-04 / RNF-05: unicamente la
+  huellaCriptografica y los eventos
+  de trazabilidad (con su txId) se
+  anclan de forma inmutable en la
+  blockchain (Hyperledger Fabric).
+  El contenido del PDF y los datos
+  de Usuario/Documento residen en
+  MongoDB (RNF-13).
+end note
+@enduml

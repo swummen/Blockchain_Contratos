@@ -1,0 +1,60 @@
+@startuml 07-secuencia-rol-administrador
+actor Administrador
+participant "Frontend" as FE
+participant "Backend\nAdmin Controller" as BE
+participant "Fabric Gateway\n(SDK)" as SDK
+participant "Chaincode (Go)" as CC
+database "MongoDB" as DB
+
+== Panel general ==
+Administrador -> FE : Accede al panel general (RF-41)
+FE -> BE : GET /admin/dashboard
+BE -> DB : Agregar conteos por estado
+DB --> BE : Total, verificados, pendientes, alterados (RF-42)
+BE --> FE : 200 OK
+FE --> Administrador : Muestra panel consolidado
+
+== Gestion de usuarios ==
+Administrador -> FE : Consultar usuarios (RF-43)
+FE -> BE : GET /admin/usuarios
+BE -> DB : Buscar usuarios
+DB --> BE : Lista [id, nombre, rol, correo, estado] (RF-44)
+BE --> FE : 200 OK
+FE --> Administrador : Tabla de usuarios
+
+Administrador -> FE : Crear usuario (RF-45)
+FE -> BE : POST /admin/usuarios {datos}
+BE -> DB : Insertar usuario (password con hash + salt)
+DB --> BE : Usuario creado
+BE --> FE : 201 Created
+
+Administrador -> FE : Editar usuario (RF-46)
+FE -> BE : PUT /admin/usuarios/{id}
+BE -> DB : Actualizar nombre / correo / rol
+DB --> BE : OK
+BE --> FE : 200 OK
+
+Administrador -> FE : Desactivar usuario (RF-47)
+FE -> BE : PATCH /admin/usuarios/{id}/desactivar
+BE -> DB : Marcar estado = Inactivo (baja logica, sin eliminar)
+DB --> BE : OK
+BE --> FE : 200 OK
+FE --> Administrador : Usuario desactivado (historico preservado)
+
+== Consulta administrativa de documentos y trazabilidad ==
+Administrador -> FE : Consultar documentos (RF-48)
+FE -> BE : GET /admin/documentos
+BE -> DB : Buscar documentos
+DB --> BE : Lista [nombre, id, usuario, fecha, estado, huella] (RF-49)
+BE --> FE : 200 OK
+FE --> Administrador : Vista administrativa de documentos
+
+Administrador -> FE : Consultar trazabilidad administrativa (RF-50)
+FE -> BE : GET /admin/trazabilidad
+BE -> SDK : query ConsultarTrazabilidad()
+SDK -> CC : Consulta del historico completo
+CC --> SDK : Eventos [docId, accion, usuario, txID, fecha, resultado]
+SDK --> BE : Eventos
+BE --> FE : 200 OK (RF-51)
+FE --> Administrador : Tabla de trazabilidad administrativa
+@enduml

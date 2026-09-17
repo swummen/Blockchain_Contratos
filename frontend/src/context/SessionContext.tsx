@@ -17,7 +17,7 @@ interface ActionResult {
 }
 
 interface SessionContextValue extends SessionState {
-  login: (email: string, password: string, role: Role) => ActionResult
+  login: (email: string, password: string) => ActionResult
   verifyOtp: (code: string) => ActionResult
   logout: () => void
   changePassword: (current: string, next: string) => ActionResult
@@ -41,15 +41,25 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<SessionState>(initialState)
 
   const login = React.useCallback(
-    (email: string, password: string, role: Role): ActionResult => {
+    (email: string, password: string): ActionResult => {
       if (!email.trim() || !password.trim()) {
         return { ok: false, error: "Ingresa tu correo y tu contraseña." }
+      }
+      const trimmedEmail = email.trim()
+      const existing = seedUsers.find(
+        (u) => u.email.toLowerCase() === trimmedEmail.toLowerCase()
+      )
+      if (!existing) {
+        return {
+          ok: false,
+          error: "No existe una cuenta registrada con ese correo.",
+        }
       }
       setState({
         stage: "pending-otp",
         user: null,
-        pendingRole: role,
-        pendingEmail: email.trim(),
+        pendingRole: existing.role,
+        pendingEmail: trimmedEmail,
       })
       return { ok: true }
     },
@@ -63,46 +73,32 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       }
 
       const email = state.pendingEmail
-      const role = state.pendingRole
-      if (!email || !role) {
+      if (!email) {
         return { ok: false, error: "Vuelve a iniciar sesión." }
       }
 
       const existing = seedUsers.find(
         (u) => u.email.toLowerCase() === email.toLowerCase()
       )
-
-      if (existing && existing.status === "Inactivo") {
+      if (!existing) {
+        return { ok: false, error: "Vuelve a iniciar sesión." }
+      }
+      if (existing.status === "Inactivo") {
         return {
           ok: false,
           error: "Este usuario está desactivado. Contacta a un administrador.",
         }
       }
-      if (existing && existing.role !== role) {
-        return {
-          ok: false,
-          error:
-            "El rol seleccionado no coincide con el rol asignado a este usuario.",
-        }
-      }
-
-      const user: User = existing ?? {
-        userId: `U-${crypto.randomUUID().slice(0, 6)}`,
-        name: email.split("@")[0],
-        email,
-        role,
-        status: "Activo",
-      }
 
       setState({
         stage: "authenticated",
-        user,
+        user: existing,
         pendingRole: null,
         pendingEmail: null,
       })
       return { ok: true }
     },
-    [state.pendingEmail, state.pendingRole]
+    [state.pendingEmail]
   )
 
   const logout = React.useCallback(() => {

@@ -10,6 +10,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { LogOut, KeyRound } from "lucide-react"
 import { ChangePasswordDialog } from "./ChangePasswordDialog"
 
@@ -17,6 +27,7 @@ export function UserMenu() {
   const { user, logout } = useSession()
   const navigate = useNavigate()
   const [changePasswordOpen, setChangePasswordOpen] = React.useState(false)
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = React.useState(false)
 
   if (!user) return null
 
@@ -51,12 +62,7 @@ export function UserMenu() {
           <DropdownMenuItem onSelect={() => setChangePasswordOpen(true)}>
             <KeyRound /> Cambiar contraseña
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              logout()
-              navigate("/")
-            }}
-          >
+          <DropdownMenuItem onSelect={() => setLogoutConfirmOpen(true)}>
             <LogOut /> Cerrar sesión
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -65,6 +71,28 @@ export function UserMenu() {
         open={changePasswordOpen}
         onOpenChange={setChangePasswordOpen}
       />
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cerrar sesión?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se cerrará tu sesión actual y volverás a la página de inicio de
+              sesión.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                logout()
+                navigate("/")
+              }}
+            >
+              Cerrar sesión
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

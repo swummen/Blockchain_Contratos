@@ -1,8 +1,10 @@
 # TODO — Sprint 0 · módulo `infra` · HU‑021
 
 Plan: `claude_docs/tasks/plan.md` (**aprobado**). Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T4 completos y verificados. T5-T8 quedan fuera de alcance por ahora — el
-aplicativo real (front+back) lo construye otro colaborador.**
+Estado: **T1-T5 completos y verificados. T6-T8 quedan fuera de alcance por ahora — el
+aplicativo real (front+back) lo construye otro colaborador; su UI ya existe (rama
+`Feat/Front`, mergeada a `main`) pero corre con datos de mentira, sin conectar a este
+backend todavía.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -128,14 +130,14 @@ y exponer `GET /fabric/ping` que hace una query al chaincode de ejemplo. **Slice
 riesgo del sprint** — retira la incógnita SDK↔Fabric antes de Sprint 2.
 
 **Criterios de aceptación:**
-- [ ] `GET /fabric/ping` responde `200` con el resultado de `GetAllAssets` del chaincode `basic` en `contratoschannel`.
-- [ ] La conexión usa `grpcs://` con TLS y `peer0.org1.example.com` / `orderer.example.com` como hosts (no `localhost`).
-- [ ] La identidad se lee en el arranque desde una ruta montada del `fabric-samples/organizations/...`; si falta, `/fabric/ping` devuelve `503` con mensaje claro.
-- [ ] `src/fabric/gateway.ts` encapsula la conexión; las rutas no tocan el SDK directamente.
+- [x] `GET /fabric/ping` responde `200` con el resultado de `GetAllAssets` del chaincode `basic` en `contratoschannel`.
+- [x] La conexión usa `grpcs://` con TLS y `peer0.org1.example.com` como host (no `localhost`). Nota de diseño: la Fabric Gateway API (a diferencia del SDK viejo `fabric-network`) solo dialoga con un peer — ese peer resuelve el endorsement y reenvía al orderer por su cuenta en `submitTransaction`, así que el backend nunca necesita una conexión gRPC aparte a `orderer.example.com`. `GetAllAssets` además es una `evaluateTransaction` (query de solo lectura), que ni siquiera pasa por el orderer.
+- [x] La identidad se lee en el arranque desde una ruta montada del `fabric-samples/organizations/...`; si falta, `/fabric/ping` devuelve `503` con mensaje claro (verificado apuntando `FABRIC_CRYPTO_PATH` a una ruta inexistente).
+- [x] `src/fabric/gateway.ts` encapsula la conexión; las rutas no tocan el SDK directamente.
 
 **Verificación:**
-- [ ] Manual: con red + chaincode + `backend` arriba → `curl localhost:8080/fabric/ping` devuelve los activos del ledger.
-- [ ] Build: `npm run build` ok.
+- [x] Manual: con red + chaincode + `backend` arriba → `curl localhost:8080/fabric/ping` devuelve los activos del ledger. Verificado local (contra `localhost:7051`) y dockerizado (contra `peer0.org1.example.com:7051` real, vía el volumen `/crypto` montado de solo lectura) en una reconstrucción completa desde cero.
+- [x] Build: `npm run build` ok. `npm test` también (4/4 — se agregó `tests/fabric.test.ts` con el mismo patrón de mocks que `health.test.ts`).
 
 **Dependencias:** T1, T2, T4.
 
@@ -170,9 +172,13 @@ sistema" que muestra el resultado de `GET /health`. Demuestra RNF‑20 / HU‑02
 ---
 
 ### ✅ Checkpoint: esqueleto de app conectado a Fabric + Mongo
-- [ ] `backend` `/health` verde y `/fabric/ping` devuelve datos del ledger.
-- [ ] `frontend` muestra el estado y no referencia infraestructura.
-- [ ] Todos los tests y builds (`backend`, `frontend`) pasan.
+- [x] `backend` `/health` verde y `/fabric/ping` devuelve datos del ledger.
+- [ ] `frontend` muestra el estado y no referencia infraestructura. **No aplica todavía**:
+  el frontend real (rama `Feat/Front`, ya en `main`) es un prototipo visual con datos
+  hardcodeados en `src/data/*.ts` — no llama a `VITE_API_URL` ni a ningún backend. T6
+  (dockerizar el frontend + página de estado) sigue sin hacerse.
+- [ ] Todos los tests y builds (`backend`, `frontend`) pasan. Backend sí (`npm test`,
+  `npm run build`); frontend no se tocó en este checkpoint.
 - [ ] Revisar con el equipo antes de seguir.
 
 ---

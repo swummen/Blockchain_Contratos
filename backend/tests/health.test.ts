@@ -6,6 +6,16 @@ jest.mock("../src/repositories/mongoClient", () => ({
   isMongoHealthy: jest.fn(),
 }));
 
+// server.ts también importa ./fabric/gateway, que a su vez importa
+// @hyperledger/fabric-gateway; una de sus dependencias (@noble/curves) se
+// distribuye en ESM puro y Jest no la transforma dentro de node_modules por
+// defecto. Mockear el módulo evita cargar esa cadena de imports del todo —
+// este archivo no necesita probar Fabric, eso lo cubre tests/fabric.test.ts.
+jest.mock("../src/fabric/gateway", () => ({
+  connectFabric: jest.fn(),
+  queryChaincode: jest.fn(),
+}));
+
 import { isMongoHealthy } from "../src/repositories/mongoClient";
 
 describe("GET /health", () => {

@@ -4,18 +4,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select"
 import { useSession } from "@/context/SessionContext"
-import type { Role } from "@/types/domain"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
-
-const ROLES: Role[] = ["Empleado", "Verificador", "Administrador"]
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -23,13 +13,12 @@ export default function LoginPage() {
 
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
-  const [role, setRole] = React.useState<Role>("Empleado")
   const [showPassword, setShowPassword] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const result = login(email, password, role)
+    const result = login(email, password)
     if (!result.ok) {
       setError(result.error ?? "No se pudo iniciar sesión.")
       return
@@ -80,22 +69,6 @@ export default function LoginPage() {
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="role">Rol de usuario</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-              <SelectTrigger id="role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r === "Empleado" ? "Empleado / Firmante" : r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {error && (

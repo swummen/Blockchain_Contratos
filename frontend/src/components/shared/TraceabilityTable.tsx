@@ -1,0 +1,63 @@
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { formatDateTime } from "@/lib/format"
+import type { TraceEvent } from "@/types/domain"
+import { CheckCircle2, XCircle } from "lucide-react"
+
+const ACTION_LABEL: Record<TraceEvent["action"], string> = {
+  registro: "Carga de documento",
+  verificacion: "Verificación de integridad",
+}
+
+/** RF-22/RF-40/RF-51: Documento, Acción, Usuario, TX ID, Fecha y Resultado. */
+export function TraceabilityTable({ events }: { events: TraceEvent[] }) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Documento</TableHead>
+          <TableHead>Acción</TableHead>
+          <TableHead>Usuario</TableHead>
+          <TableHead>TX ID</TableHead>
+          <TableHead>Fecha</TableHead>
+          <TableHead>Resultado</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {events.map((event) => (
+          <TableRow key={event.eventId}>
+            <TableCell className="font-medium">{event.documentId}</TableCell>
+            <TableCell>{ACTION_LABEL[event.action]}</TableCell>
+            <TableCell>{event.user}</TableCell>
+            <TableCell className="font-mono text-xs text-muted-foreground">
+              {event.txId}
+            </TableCell>
+            <TableCell className="text-muted-foreground">
+              {formatDateTime(event.timestamp)}
+            </TableCell>
+            <TableCell>
+              {event.result === "confirmada" && (
+                <Badge variant="success">
+                  <CheckCircle2 className="size-3" /> OK
+                </Badge>
+              )}
+              {event.result === "comprometida" && (
+                <Badge variant="destructive">
+                  <XCircle className="size-3" /> Alterado
+                </Badge>
+              )}
+              {!event.result && <span className="text-xs text-muted-foreground">—</span>}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}

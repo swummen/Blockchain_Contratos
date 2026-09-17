@@ -38,8 +38,19 @@ services:
       # Dockerfile); BACKEND_PORT solo controla el puerto publicado en el
       # host, para no tener que mantener las dos cosas sincronizadas.
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-root}:${MONGO_ROOT_PASSWORD:-changeme}@mongo:27017/?authSource=admin
+      # FABRIC_* no se pasan: los defaults de backend/src/config/fabric.ts ya
+      # apuntan a este mismo contexto (peer0.org1.example.com:7051, /crypto/...).
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    volumes:
+      # Identidad + certificados TLS que genera network-up.sh (T1). Se
+      # regenera en cada ciclo down/up — ver docker/README.md. Solo lectura:
+      # el backend nunca debe modificar el material criptográfico. Se monta
+      # solo la carpeta de Org1 (mínimo privilegio): gateway.ts hoy no usa
+      # nada de Org2 ni del orderer, así que el backend no tiene por qué
+      # poder leer esas llaves privadas — la ruta de destino coincide con el
+      # default de FABRIC_CRYPTO_PATH en backend/src/config/fabric.ts.
+      - ./fabric-samples/test-network/organizations/peerOrganizations/org1.example.com:/crypto/peerOrganizations/org1.example.com:ro
     depends_on:
       mongo:
         condition: service_healthy

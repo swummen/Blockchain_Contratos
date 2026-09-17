@@ -38,7 +38,7 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
 | `bash docker/network-up.sh` | 1ª vez: descarga `fabric-samples` + binarios + imágenes Docker fijadas en Fabric 2.5.16 / CA 1.5.22. Luego levanta la test-network con Fabric CA (`-ca`) y crea/une el canal `contratoschannel` con LevelDB como state DB (decisión D3). |
 | `bash docker/network-down.sh` | Baja la red: elimina contenedores, volúmenes y material criptográfico. Deja el entorno limpio para volver a `network-up.sh`. |
 | `bash docker/deploy-sample-cc.sh` | Despliega el chaincode de ejemplo `asset-transfer-basic` en `contratoschannel` (prueba de pipeline; requiere la red arriba). Idempotente. |
-| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` | Levanta Mongo (imagen fijada `7.0.41`, con auth activada) y el `backend` (esqueleto Express+TS de T4, espera a que Mongo esté `healthy` antes de arrancar), ambos unidos a la red `fabric_test` que crea `network-up.sh`. Se puede omitir `backend` para levantar solo Mongo. |
+| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` | Levanta Mongo (imagen fijada `7.0.41`, con auth activada) y el `backend` (Express+TS, T4/T5: `/health` + `/fabric/ping` reales, espera a que Mongo esté `healthy` antes de arrancar), ambos unidos a la red `fabric_test` que crea `network-up.sh`. `backend` monta `fabric-samples/test-network/organizations` en `/crypto` (solo lectura) para leer la identidad de Fabric — requiere que `network-up.sh` haya corrido antes, si no `/fabric/ping` responde `503`. Se puede omitir `backend` para levantar solo Mongo. |
 | `docker compose -f docker/compose.app.yml down` | Baja **ambos** servicios (`mongo` y `backend`, comparten este compose file). El volumen de Mongo (`contratos_mongo_data`) sobrevive; agregar `-v` para borrarlo también. |
 
 ## Notas
@@ -68,3 +68,9 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
   el comando de arriba) — y ese flag **falla duro** (`couldn't find env file`) si
   `docker/.env` no existe todavía. Por eso `cp docker/.env.example docker/.env` es un
   prerrequisito, no un paso opcional.
+- **Bug de Windows/Git Bash #3 (mismo problema, otro comando):** `docker exec`/`docker run`
+  con una ruta absoluta tipo `/crypto/...` como argumento también la sufre — MSYS la
+  reescribe a una ruta de Windows antes de que Docker la vea. Ejemplo real:
+  `docker exec backend touch /crypto/x` falló con
+  `No such file or directory: C:/Program Files/Git/crypto/x`, no por permisos. El escape
+  es duplicar la barra inicial: `docker exec backend touch //crypto/x`.

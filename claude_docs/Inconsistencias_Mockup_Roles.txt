@@ -1,0 +1,82 @@
+INCONSISTENCIAS ENTRE EL MOCKUP DE ROLES Y claude_docs/SPEC.md
+Revision inicial: 2026-09-07 (docs/roles mock up.pdf)
+Seguimiento:      2026-09-14 (docs/Rol administrador.pdf -- version corregida)
+
+Fuente del mockup: docs/Rol administrador.pdf (4 paginas, roles: Empleado/Firmante,
+Administrador, Verificador). Reemplaza a docs/roles mock up.pdf, que era la version
+sin corregir de este mismo prototipo (Figma Make: "MVP wireframing for user roles").
+Fuente de verdad comparada: claude_docs/SPEC.md.
+
+============================================================================
+CORREGIDO EN docs/Rol administrador.pdf (2026-09-14)
+============================================================================
+
+1. [CORREGIDO] Huella SHA-256 completa expuesta al rol Empleado -- RF-27 / RNF-08
+----------------------------------------------------------------------------------------
+Antes: la confirmacion de carga le mostraba al Empleado el SHA-256 completo.
+Ahora: se muestra enmascarado -- "SHA-256 (parcial): e7f2a3b4•••••••••••c9d0e1f2" --
+con la nota explicita "La huella completa es gestionada por el Verificador y el
+Administrador (RF-27)". La pantalla "Mis documentos" tambien enmascara el hash.
+Verificar que el backend/API respete lo mismo (no enviar el hash completo al rol
+Empleado en la respuesta), no solo ocultarlo visualmente en el frontend.
+
+2. [CORREGIDO] Tablas de trazabilidad sin txID -- RF-22, RF-40, RF-51, RNF-27
+----------------------------------------------------------------------------------------
+Las tres vistas de trazabilidad (Empleado "Mi trazabilidad", Administrador "Historial
+de trazabilidad", Verificador "Trazabilidad global") ahora muestran una columna
+TX ID (tx_...) por evento. La tabla del Administrador incluso agrega como subtitulo
+la referencia "RF-22 / RF-40 / RF-51", dejando la trazabilidad al SRS explicita en
+el propio diseno.
+
+3. [CORREGIDO] HU-020 CA-02 -- nivel de detalle Administrador vs. Verificador
+----------------------------------------------------------------------------------------
+Las tablas de trazabilidad de Administrador y Verificador ahora tienen exactamente
+las mismas columnas (Documento, Accion, Usuario, TX ID, Fecha, Resultado), por lo que
+el Administrador ya no ve menos detalle que el Verificador en ningun campo.
+
+============================================================================
+NUEVO HALLAZGO (2026-09-14)
+============================================================================
+
+4. [NUEVO] Rebranding a medio aplicar: "TrazaDoc" convive con "DocSign Verify"
+----------------------------------------------------------------------------------------
+El producto se renombro de "DocSign Verify" a "TrazaDoc", pero el cambio no se aplico
+a todas las pantallas:
+
+- Con el nombre nuevo "TrazaDoc": login, "Mis documentos" (Empleado),
+  "Mi trazabilidad" (Empleado), "Trazabilidad global" (Verificador).
+- Todavia con el nombre viejo "DocSign Verify": "Cargar documento" (Empleado),
+  "Gestion de usuarios" y "Documentos registrados" (Administrador),
+  "Verificar integridad" (Verificador).
+
+Dentro del mismo flujo del rol Empleado el sidebar cambia de nombre entre pantallas
+(Cargar documento = DocSign Verify, Mis documentos = TrazaDoc). Unificar a un solo
+nombre en todas las pantallas y, una vez decidido, anotarlo en claude_docs/SPEC.md
+(hoy el SPEC no nombra el producto).
+
+============================================================================
+SIN CAMBIOS -- puntos menores / brechas de cobertura (no contradicen, pero faltan)
+============================================================================
+
+- No hay pantalla de cambio de contrasena (RF-52/53, HU-004).
+- No hay pantalla visible de cierre de sesion explicito.
+- El selector de rol sigue integrado como campo del formulario de login en vez de un
+  paso previo separado -- RF-01 dice "seleccionar el rol... antes de autenticarse"; sigue
+  sin confirmarse si un dropdown en la misma pantalla cumple eso o se esperaba una
+  pantalla de seleccion de rol independiente.
+- El mockup sigue fijando un OTP de 6 digitos; el SPEC lo deja como pregunta abierta
+  (seccion 18, punto 2). Si se adopta, cerrar la pregunta en el SPEC en vez de dejarla
+  "pendiente de definir".
+- Nomenclatura de roles/estados en minuscula (empleado, verificado) vs. el enum
+  canonico capitalizado del dominio (Empleado, Verificado) -- solo presentacion, no
+  bloqueante.
+
+Recomendacion
+----------------------------------------------------------------------------------------
+Antes de construir identity/documents/verification/administration sobre este mockup:
+1. Unificar el nombre del producto en todas las pantallas y dejarlo anotado en
+   claude_docs/SPEC.md.
+2. Confirmar que el enmascarado del hash para el rol Empleado tambien se aplique en el
+   backend/API, no solo en el frontend.
+3. Decidir el flujo de seleccion de rol (mismo formulario vs. pantalla separada) antes
+   de construir el modulo identity.

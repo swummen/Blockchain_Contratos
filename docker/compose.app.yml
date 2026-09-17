@@ -57,6 +57,22 @@ services:
     networks:
       - fabric_test
 
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        # Vite bakea esto en el bundle en tiempo de build (no de arranque del
+        # contenedor): el navegador corre en el host, así que necesita
+        # localhost:8080 (el puerto publicado de backend), no backend:8080
+        # (solo resoluble dentro de la red fabric_test).
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:80"
+    networks:
+      - fabric_test
+
 networks:
   fabric_test:
     external: true

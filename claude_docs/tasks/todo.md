@@ -1,10 +1,11 @@
 # TODO — Sprint 0 · módulo `infra` · HU‑021
 
 Plan: `claude_docs/tasks/plan.md` (**aprobado**). Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T5 completos y verificados. T6-T8 quedan fuera de alcance por ahora — el
-aplicativo real (front+back) lo construye otro colaborador; su UI ya existe (rama
-`Feat/Front`, mergeada a `main`) pero corre con datos de mentira, sin conectar a este
-backend todavía.**
+Estado: **T1-T6 completos (T6 pendiente de una verificación visual en navegador real, ver
+nota en T6). T7-T8 quedan fuera de alcance por ahora. El frontend real (rama `Feat/Front`,
+ya en `main`) sigue corriendo con datos de mentira en sus pantallas de negocio — T6 solo
+prueba la conectividad de infraestructura vía una ruta de diagnóstico aparte
+(`/system-status`), no conecta el login/documentos/etc. reales al backend.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -150,22 +151,38 @@ riesgo del sprint** — retira la incógnita SDK↔Fabric antes de Sprint 2.
 ### T6: `frontend` en contenedor + página de estado del sistema
 
 **Descripción:** Dockerfile del `frontend` (build Vite → `nginx:alpine`), cliente API mínimo
-que lee `VITE_API_URL`, y reemplazo del `App.tsx` de plantilla por una página "Estado del
-sistema" que muestra el resultado de `GET /health`. Demuestra RNF‑20 / HU‑021 CA‑02.
+que lee `VITE_API_URL`, y una página "Estado del sistema" que muestra el resultado de
+`GET /health`. Demuestra RNF‑20 / HU‑021 CA‑02.
+
+**Nota de cambio (post-replanificación):** para cuando se hizo esta tarea, `frontend/`
+ya no era la plantilla de Vite — la rama `Feat/Front` (otro colaborador) ya había
+construido la app real (login, OTP, páginas de los 3 roles) y se había mergeado a `main`.
+"Reemplazar `App.tsx` por la página de estado" habría destruido ese trabajo, así que la
+página de estado se agregó como ruta independiente (`/system-status`, fuera del layout de
+autenticación y de `ProtectedRoute`) en vez de reemplazar `App.tsx`. Además, al ser el
+frontend y el backend orígenes distintos para el navegador (puertos distintos), hizo falta
+agregar CORS (`Access-Control-Allow-Origin: *`) en `backend/src/server.ts` — sin eso el
+`fetch` se bloquea aunque el backend responda bien; no estaba contemplado en el AC original.
 
 **Criterios de aceptación:**
-- [ ] `frontend/Dockerfile` construye la SPA y la sirve como estático; el servicio `frontend` en `compose.app.yml` la publica.
-- [ ] La página inicial llama a `${VITE_API_URL}/health` y muestra estado de `backend` y `mongo`.
-- [ ] `grep -rE "7051|9051|7050|27017|:5984|fabric|mongodb://" frontend/src` no encuentra endpoints de infraestructura (solo `VITE_API_URL`).
-- [ ] `npm run build` y `npm run lint` (oxlint) pasan.
+- [x] `frontend/Dockerfile` construye la SPA y la sirve como estático; el servicio `frontend` en `compose.app.yml` la publica.
+- [x] La página de estado (`/system-status`) llama a `${VITE_API_URL}/health` y muestra estado de `backend` y `mongo`.
+- [x] `grep -rE "7051|9051|7050|27017|:5984|fabric|mongodb://" frontend/src` no encuentra endpoints de infraestructura (solo `VITE_API_URL`).
+- [x] `npm run build` y `npm run lint` (oxlint) pasan.
 
 **Verificación:**
-- [ ] Manual: `docker compose -f docker/compose.app.yml up -d` → abrir `http://localhost:5173` (o el puerto configurado) muestra el estado del backend en verde.
-- [ ] Manual: revisión de código confirma que el frontend solo habla con `VITE_API_URL`.
+- [x] Manual: `docker compose --env-file docker/.env -f docker/compose.app.yml up -d` → `http://localhost:5173/` y `http://localhost:5173/system-status` responden `200` (fallback SPA de nginx incluido). Verificado en reconstrucción completa desde cero.
+- [x] Manual: revisión de código confirma que el frontend solo habla con `VITE_API_URL` (`frontend/src/lib/api.ts`).
+- [x] Backend: `npm test` 7/7 (se agregó `tests/cors.test.ts` tras el review — prueba que el header CORS está en `/health` y `/fabric/ping`, y que **no** aparece fuera de esas dos rutas, confirmando que el middleware quedó acotado a propósito y no global).
+- [ ] **Pendiente, no verificado por mí:** render real en un navegador (no tengo uno disponible en este entorno) — verifiqué que el bundle sirve, el fallback de rutas funciona, `VITE_API_URL` queda bien horneado en el JS, y que `/health` responde con el header CORS correcto, pero no vi la página pintada de verdad. Antes de dar T6 por cerrada del todo, abrir `http://localhost:5173/system-status` en un navegador y confirmar que se ve el estado en verde.
 
 **Dependencias:** T4.
 
-**Archivos:** `frontend/Dockerfile`, `frontend/.dockerignore`, `frontend/nginx.conf`, `frontend/src/lib/api.ts`, `frontend/src/App.tsx`, `frontend/.env.example`.
+**Archivos:** `frontend/Dockerfile`, `frontend/.dockerignore`, `frontend/nginx.conf`,
+`frontend/src/lib/api.ts`, `frontend/src/pages/SystemStatusPage.tsx`,
+`frontend/src/routes/AppRoutes.tsx` (ruta nueva, sin tocar las existentes),
+`frontend/.env.example`, `backend/src/server.ts` (CORS acotado a `/health` y `/fabric`,
+no contemplado en el AC original), `backend/tests/cors.test.ts`.
 
 **Alcance:** M.
 

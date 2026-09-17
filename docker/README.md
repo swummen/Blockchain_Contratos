@@ -30,6 +30,7 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
 | 9054 | ca_orderer |
 | 27017 | mongo |
 | 8080 | backend (`BACKEND_PORT` en `docker/.env`) |
+| 5173 | frontend (`FRONTEND_PORT` en `docker/.env`) |
 
 ## Comandos
 
@@ -38,8 +39,8 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
 | `bash docker/network-up.sh` | 1ª vez: descarga `fabric-samples` + binarios + imágenes Docker fijadas en Fabric 2.5.16 / CA 1.5.22. Luego levanta la test-network con Fabric CA (`-ca`) y crea/une el canal `contratoschannel` con LevelDB como state DB (decisión D3). |
 | `bash docker/network-down.sh` | Baja la red: elimina contenedores, volúmenes y material criptográfico. Deja el entorno limpio para volver a `network-up.sh`. |
 | `bash docker/deploy-sample-cc.sh` | Despliega el chaincode de ejemplo `asset-transfer-basic` en `contratoschannel` (prueba de pipeline; requiere la red arriba). Idempotente. |
-| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` | Levanta Mongo (imagen fijada `7.0.41`, con auth activada) y el `backend` (Express+TS, T4/T5: `/health` + `/fabric/ping` reales, espera a que Mongo esté `healthy` antes de arrancar), ambos unidos a la red `fabric_test` que crea `network-up.sh`. `backend` monta `fabric-samples/test-network/organizations` en `/crypto` (solo lectura) para leer la identidad de Fabric — requiere que `network-up.sh` haya corrido antes, si no `/fabric/ping` responde `503`. Se puede omitir `backend` para levantar solo Mongo. |
-| `docker compose -f docker/compose.app.yml down` | Baja **ambos** servicios (`mongo` y `backend`, comparten este compose file). El volumen de Mongo (`contratos_mongo_data`) sobrevive; agregar `-v` para borrarlo también. |
+| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend frontend` | Levanta Mongo (imagen fijada `7.0.41`, con auth activada), el `backend` (Express+TS, T4/T5: `/health` + `/fabric/ping` reales, espera a que Mongo esté `healthy`) y el `frontend` (T6: build de Vite servido por `nginx:alpine`, `VITE_API_URL` horneado en el bundle en tiempo de build — un cambio ahí requiere `docker compose build frontend`, no alcanza con reiniciar el contenedor), todos unidos a la red `fabric_test` que crea `network-up.sh`. `backend` monta `fabric-samples/test-network/organizations` en `/crypto` (solo lectura) para leer la identidad de Fabric — requiere que `network-up.sh` haya corrido antes, si no `/fabric/ping` responde `503`. Se puede omitir cualquier servicio de la lista para levantar solo los otros. |
+| `docker compose -f docker/compose.app.yml down` | Baja **todos** los servicios que comparten este compose file (`mongo`, `backend`, `frontend`). El volumen de Mongo (`contratos_mongo_data`) sobrevive; agregar `-v` para borrarlo también. |
 
 ## Notas
 
@@ -74,3 +75,18 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
   `docker exec backend touch /crypto/x` falló con
   `No such file or directory: C:/Program Files/Git/crypto/x`, no por permisos. El escape
   es duplicar la barra inicial: `docker exec backend touch //crypto/x`.
+- **CORS (T6):** el frontend (`localhost:5173`) y el backend (`localhost:8080`) son
+  orígenes distintos para el navegador. `backend/src/server.ts` manda
+  `Access-Control-Allow-Origin: *` en todas las respuestas — sin eso, `fetch` desde
+  `SystemStatusPage` (o cualquier otra página que llame al backend) se bloquea aunque el
+  backend responda `200`. Es aceptable con `*` porque hoy son endpoints de diagnóstico sin
+  datos sensibles; revisar cuando existan endpoints de negocio.
+- **Si `curl localhost:8080/...` devuelve una respuesta vieja o de otra corrida:**
+  probablemente un proceso nativo de Windows (un `npm run dev` / `tsx watch` que no murió
+  bien) sigue escuchando en `127.0.0.1:8080`, más específico que el `0.0.0.0:8080` real de
+  Docker — el SO le manda el tráfico a ese proceso viejo, no al contenedor. Antes de matar
+  cualquier PID en el puerto 8080, identificalo con
+  `Get-CimInstance Win32_Process -Filter "ProcessId = <pid>"` (PowerShell): si el nombre es
+  `com.docker.backend.exe`, **no lo mates** (es Docker Desktop; matarlo tumba el motor
+  entero). Si es `node.exe` con una ruta del proyecto en el `CommandLine`, es seguro
+  matarlo.

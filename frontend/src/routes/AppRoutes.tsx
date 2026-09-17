@@ -18,6 +18,7 @@ import DashboardPage from "@/pages/administrador/DashboardPage"
 import UsuariosPage from "@/pages/administrador/UsuariosPage"
 import DocumentosAdminPage from "@/pages/administrador/DocumentosPage"
 import TrazabilidadAdminPage from "@/pages/administrador/TrazabilidadPage"
+import SystemStatusPage from "@/pages/SystemStatusPage"
 
 export function AppRoutes() {
   return (
@@ -26,6 +27,10 @@ export function AppRoutes() {
         <Route path="/" element={<LoginPage />} />
         <Route path="/verificacion" element={<OtpPage />} />
       </Route>
+
+      {/* Diagnóstico de infraestructura (T6, HU-021 CA-02), no forma parte
+          del flujo de negocio: sin layout ni sesión. */}
+      <Route path="/system-status" element={<SystemStatusPage />} />
 
       <Route element={<ProtectedRoute allowedRole="Empleado" />}>
         <Route element={<RoleLayout />}>

@@ -7,6 +7,18 @@ import { healthRouter } from "./routes/health";
 
 export function createApp() {
   const app = express();
+  // El frontend (T6) corre en otro puerto/origen para el navegador (nginx en
+  // FRONTEND_PORT vs. este backend en BACKEND_PORT), así que sin esto el
+  // fetch a /health y /fabric/ping se bloquea por CORS aunque el backend
+  // responda bien. "*" es aceptable porque son endpoints de diagnóstico sin
+  // datos sensibles ni sesión — pero se acota a esas dos rutas a propósito
+  // (no app.use global) para que un endpoint de negocio agregado en
+  // Sprint 2+ NO herede el wildcard en silencio; ese sí va a necesitar
+  // restringir el origen a la URL real del frontend.
+  app.use(["/health", "/fabric"], (_req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    next();
+  });
   app.use(healthRouter);
   app.use(fabricRouter);
   return app;

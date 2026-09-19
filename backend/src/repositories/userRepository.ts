@@ -2,6 +2,7 @@ import { Collection } from "mongodb";
 import { getDb } from "./mongoClient";
 
 export type Role = "Empleado" | "Verificador" | "Administrador";
+export const VALID_ROLES: Role[] = ["Empleado", "Verificador", "Administrador"];
 export type UserStatus = "Activo" | "Inactivo";
 
 // _id es el mismo userId legible (p. ej. "U001") que ya usa el frontend
@@ -58,4 +59,25 @@ export async function updatePasswordHash(
   passwordHash: string,
 ): Promise<void> {
   await usersCollection().updateOne({ _id: userId }, { $set: { passwordHash } });
+}
+
+// Forma pública del usuario (sin passwordHash), con las mismas claves que ya
+// usa frontend/src/types/domain.ts — la respuesta de /auth/verify-otp (T3)
+// no necesita traducir nada para que el frontend la consuma en T6.
+export interface PublicUser {
+  userId: string;
+  name: string;
+  email: string;
+  role: Role;
+  status: UserStatus;
+}
+
+export function toPublicUser(user: UserDoc): PublicUser {
+  return {
+    userId: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+  };
 }

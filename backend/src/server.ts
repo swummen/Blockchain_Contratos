@@ -1,7 +1,11 @@
-import express from "express";
+import express, { ErrorRequestHandler } from "express";
+import { authConfig } from "./config/auth";
 import { env } from "./config/env";
 import { connectFabric } from "./fabric/gateway";
 import { connectMongo } from "./repositories/mongoClient";
+import { ensureIndexes as ensureOtpIndexes } from "./repositories/otpRepository";
+import { ensureIndexes as ensureSessionIndexes } from "./repositories/sessionRepository";
+import { authRouter } from "./routes/auth";
 import { fabricRouter } from "./routes/fabric";
 import { healthRouter } from "./routes/health";
 
@@ -13,20 +17,64 @@ export function createApp() {
   // responda bien. "*" es aceptable porque son endpoints de diagnóstico sin
   // datos sensibles ni sesión — pero se acota a esas dos rutas a propósito
   // (no app.use global) para que un endpoint de negocio agregado en
-  // Sprint 2+ NO herede el wildcard en silencio; ese sí va a necesitar
-  // restringir el origen a la URL real del frontend.
+  // Sprint 2+ NO herede el wildcard en silencio.
   app.use(["/health", "/fabric"], (_req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     next();
   });
+  // /auth (Sprint 1, identity) es el primer endpoint de negocio real
+  // (credenciales, sesión): el origen se restringe a FRONTEND_ORIGIN, no "*"
+  // (decisión D8 del plan). El navegador manda un preflight OPTIONS antes de
+  // un POST con body JSON — sin responderlo, el POST real nunca sale.
+  app.use("/auth", (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", authConfig.frontendOrigin);
+    // GET (T4: /auth/me) + Authorization (T4: rutas protegidas mandan el JWT
+    // ahí, no en el body) — sin esto, el navegador ni siquiera intenta el
+    // request real después del preflight.
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+  app.use(express.json());
+  // express.json() rechaza un body malformado con un SyntaxError; sin este
+  // handler, Express responde con su página de error HTML por defecto en
+  // vez de JSON, inconsistente con el resto de la API.
+  const handleJsonParseError: ErrorRequestHandler = (err, _req, res, next) => {
+    if (err instanceof SyntaxError && "type" in err && err.type === "entity.parse.failed") {
+      res.status(400).json({ message: "JSON inválido." });
+      return;
+    }
+    next(err);
+  };
+  app.use(handleJsonParseError);
   app.use(healthRouter);
   app.use(fabricRouter);
+  app.use(authRouter);
+  // Catch-all al final (T4: primera vez que una ruta protegida hace un
+  // await a Mongo en pleno camino de la request — findSessionByJti). Sin
+  // esto, una excepción ahí (Mongo caído a mitad de request) cae en la
+  // página de error HTML por defecto de Express en vez de JSON, igual que
+  // ya se evitó arriba para el JSON malformado.
+  const handleUnexpectedError: ErrorRequestHandler = (err, _req, res, _next) => {
+    console.error("Error no manejado en una request:", err);
+    res.status(500).json({ message: "Error interno del servidor." });
+  };
+  app.use(handleUnexpectedError);
   return app;
 }
 
 async function main() {
   try {
     await connectMongo();
+    // Índice TTL de otp_codes (D5 del plan): a diferencia del índice único de
+    // `users` (lo asegura seedUsers.ts, que es quien escribe ahí), el propio
+    // servidor escribe en otp_codes en cada login — le toca a él asegurarlo.
+    await ensureOtpIndexes();
+    await ensureSessionIndexes();
   } catch (err) {
     // No aborta el arranque: /health debe poder reportar "mongo: down" en
     // vez de que el proceso ni siquiera levante si Mongo tarda en estar listo.

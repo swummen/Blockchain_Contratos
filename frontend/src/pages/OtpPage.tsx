@@ -32,6 +32,7 @@ export default function OtpPage() {
 
   const [code, setCode] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   React.useEffect(() => {
     if (stage === "authenticated" && user) {
@@ -43,8 +44,10 @@ export default function OtpPage() {
 
   if (!pendingRole || !pendingEmail) return null
 
-  function handleVerify() {
-    const result = verifyOtp(code)
+  async function handleVerify() {
+    setIsSubmitting(true)
+    const result = await verifyOtp(code)
+    setIsSubmitting(false)
     if (!result.ok) {
       setError(result.error ?? "No se pudo verificar el código.")
       return
@@ -84,8 +87,12 @@ export default function OtpPage() {
             </p>
           )}
 
-          <Button className="w-full" disabled={code.length !== 6} onClick={handleVerify}>
-            Verificar código
+          <Button
+            className="w-full"
+            disabled={code.length !== 6 || isSubmitting}
+            onClick={handleVerify}
+          >
+            {isSubmitting ? "Verificando..." : "Verificar código"}
           </Button>
 
           <button

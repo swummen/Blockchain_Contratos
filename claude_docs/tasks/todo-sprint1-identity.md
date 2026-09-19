@@ -2,7 +2,10 @@
 
 Plan: `claude_docs/tasks/plan-sprint1-identity.md` (**aprobado 2026‑09‑19**, D1/D2 confirmados).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1 completo y verificado. Arrancando T2.**
+Estado: **T1-T5 completos y verificados (backend de `identity` completo). T6 (frontend:
+login/OTP reales + selector de rol) implementado y verificado mecánicamente (sin navegador
+en este entorno) — pendiente que Sofia confirme el click-through real en el navegador
+antes de pasar a T7.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -70,27 +73,59 @@ configurado — decisión D6 del plan; canal confirmado en D1, correo registrado
 necesariamente corporativo por ahora).
 
 **Criterios de aceptación:**
-- [ ] `POST /auth/login` con credenciales válidas responde `200` con un identificador de
-  intento (no el JWT todavía) y dispara el envío del OTP.
-- [ ] Credenciales inválidas (usuario no existe o contraseña incorrecta) responden con el
+- [x] `POST /auth/login` con credenciales válidas responde `200` (mensaje genérico, sin
+  JWT todavía — llega en T3) y dispara el envío del OTP. No se usó un identificador de
+  intento aparte: el registro en `otp_codes` queda keyed por `userId` (un OTP activo a la
+  vez), y T3/`OtpPage` ya conocen el email por el estado `pendingEmail` que el frontend
+  mock ya mantiene — no hace falta inventar un campo nuevo para eso.
+- [x] Credenciales inválidas (usuario no existe o contraseña incorrecta) responden con el
   mismo mensaje genérico sin indicar cuál dato falló (RF‑002 CA‑02, ya citado en
-  `claude_docs/SPEC.md:321`).
-- [ ] El código OTP se guarda **hasheado** (no en texto plano) en `otp_codes`, con índice
-  TTL sobre `expiresAt` (D5 del plan).
-- [ ] `backend/src/services/emailService.ts` envía el correo si `SMTP_*` está seteado;
-  si no, loguea el código a consola con una advertencia explícita de "fallback de
-  desarrollo" (nunca en silencio).
-- [ ] `backend/.env.example` documenta `SMTP_HOST/PORT/USER/PASSWORD/FROM` y `OTP_TTL_MINUTES`.
+  `claude_docs/SPEC.md:321`); además se compara contra un hash dummy cuando el usuario no
+  existe para que el tiempo de respuesta no delate si el email está registrado.
+- [x] El código OTP se guarda **hasheado** (bcrypt) en `otp_codes`, con índice TTL sobre
+  `expiresAt` (D5 del plan).
+- [x] `backend/src/services/emailService.ts` envía el correo si `SMTP_HOST` está seteado;
+  si no, loguea el código a consola con una advertencia explícita `[dev]` (nunca en
+  silencio).
+- [x] `backend/.env.example` documenta `SMTP_HOST/PORT/USER/PASSWORD/FROM`,
+  `OTP_TTL_MINUTES`, `OTP_MAX_ATTEMPTS` y `FRONTEND_ORIGIN`.
+- [x] **Nota de cambio (no estaba en el AC original):** `/auth` necesitó su propio CORS
+  (D8 del plan) acotado a `FRONTEND_ORIGIN`, distinto del wildcard `*` de `/health`/`/fabric`
+  — incluye manejo del preflight `OPTIONS` (el navegador lo manda antes de un POST con
+  body JSON). También se agregó `express.json()` + un handler de JSON malformado (ninguna
+  ruta anterior necesitaba parsear body).
 
 **Verificación:**
-- [ ] Manual: `curl -X POST localhost:8080/auth/login` con credenciales del seed → `200` +
-  código visible en el log (sin SMTP configurado en dev).
-- [ ] Manual: credenciales inválidas → mismo mensaje de error genérico en ambos casos
-  (usuario inexistente vs. contraseña incorrecta) — confirmar que no se puede distinguir
-  cuál falló por el texto de la respuesta.
-- [ ] Tests: Jest con `emailService` mockeado (mismo patrón que `fabric.test.ts` mockeando
-  el gateway) — casos: credenciales válidas, usuario inexistente, contraseña incorrecta.
-- [ ] Build: `npm run build`.
+- [x] Manual contra el stack real (`docker compose ... up -d --build backend`):
+  `curl -X POST localhost:8080/auth/login` con credenciales del seed → `200` + código
+  visible en el log del contenedor (`[dev] SMTP no configurado — código OTP para
+  m.lopez@empresa.com: 282901`, sin SMTP configurado). `docker exec mongo mongosh`
+  confirma el documento en `otp_codes` con `codeHash` en formato bcrypt (no el código en
+  texto plano) y el índice TTL (`expireAfterSeconds: 0`) creado.
+  Créditos inválidos (usuario inexistente vs. contraseña incorrecta) devolvieron **la
+  misma respuesta byte a byte** (mismo `Content-Length`/`ETag`) — confirma que no se puede
+  distinguir cuál dato falló. Role fuera del catálogo → `400`. Preflight `OPTIONS` → `204`
+  con el header `Access-Control-Allow-Origin` correcto. `/health` y `/fabric/ping`
+  siguieron respondiendo bien tras cablear el router nuevo (sin regresión).
+- [x] Tests: `backend/tests/auth.login.test.ts` (9 casos tras la ronda de review,
+  mockeando `userRepository`, `otpRepository` y `emailService` en su frontera, mismo
+  patrón que `fabric.test.ts` mockeando el gateway) — 23/23 tests del backend en verde.
+- [x] Build: `npm run build` sin errores. `npm run lint` (oxlint) en 0 warnings/errores.
+- [x] Ronda de `code-reviewer`: encontró dos huecos reales. (1) `DUMMY_HASH` (mitigación de
+  timing attack) estaba hasheado con un costo bcrypt literal (`10`) en vez de
+  `env.bcryptRounds` — si `BCRYPT_ROUNDS` cambiara del default, `bcrypt.compare` volvería a
+  tardar distinto según exista o no el usuario, reabriendo el canal de tiempo que esa línea
+  existe para cerrar. (2) `login()` nunca leía `user.status`: un usuario dado de baja
+  lógica (RF‑47) igual pasaba el login y recibía un OTP. Corregido: `DUMMY_HASH` ahora usa
+  `env.bcryptRounds`; se agregó `|| user.status === "Inactivo"` al mismo chequeo que ya
+  devuelve el 401 genérico (no un mensaje distinto — no hay que poder distinguir "usuario
+  desactivado" de "contraseña incorrecta" desde afuera). También se agregó un test para el
+  body JSON malformado (hallazgo Required de cobertura: la lógica nueva de `server.ts` no
+  tenía ningún test) y se alineó la validación de `SMTP_PORT` con el mismo `parsePositiveInt`
+  que ya usan `OTP_TTL_MINUTES`/`OTP_MAX_ATTEMPTS` (hallazgo opcional, barato). Re-verificado
+  en vivo: se puso `U001` en `Inactivo` directamente en Mongo, el login devolvió el mismo
+  401 byte a byte que los demás casos (mismo `Content-Length`/`ETag`) sin enviar OTP, se
+  restauró el estado, y un login normal siguió funcionando después.
 
 **Dependencias:** T1.
 
@@ -111,40 +146,76 @@ el logout (T4). **Slice de mayor riesgo del sprint** — primera vez que el back
 valida una sesión real. Expiración/reintentos ya confirmados en D2 (5 min / 5 intentos).
 
 **Criterios de aceptación:**
-- [ ] `POST /auth/verify-otp` con el código correcto y vigente responde `200` con un JWT
-  (payload: `sub`, `role`, `jti`, `exp`) y crea el documento de sesión en Mongo.
-- [ ] Código incorrecto incrementa el contador de intentos; al llegar al máximo (D2, a
-  confirmar) el intento de login completo se invalida y hay que volver a `POST /auth/login`.
-- [ ] Código vencido (TTL de Mongo ya lo limpió, o `expiresAt` ya pasó) responde con un
-  error claro, no un 500.
-- [ ] Rol seleccionado en el login (paso 1) que no coincide con el rol real del usuario:
-  se deniega el acceso con mensaje de error (HU‑002 CA‑02).
-- [ ] `JWT_SECRET`/`JWT_EXPIRES_IN` en `backend/.env.example`; sin `JWT_SECRET` seteado el
-  backend falla al arrancar con un mensaje claro (no un JWT firmado con un secreto vacío).
+- [x] `POST /auth/verify-otp` con el código correcto y vigente responde `200` con un JWT
+  (payload: `sub`, `role`, `jti`, `exp` — `sub`/`jti` vía las opciones `subject`/`jwtid` de
+  `jsonwebtoken`, no puestos a mano en el payload) y crea el documento de sesión en Mongo.
+  También devuelve el usuario público (`userId`, `name`, `email`, `role`, `status`, sin
+  `passwordHash`) para que T6 no tenga que hacer una llamada aparte.
+- [x] Código incorrecto incrementa el contador de intentos; al llegar al máximo (D2: 5) el
+  intento de login completo se invalida (se borra el OTP) y hay que volver a
+  `POST /auth/login`.
+- [x] Código vencido (TTL de Mongo ya lo limpió, o `expiresAt` ya pasó pero el TTL de Mongo
+  todavía no corrió su barrido en segundo plano) responde con un error claro (400), no 500.
+- [x] Rol seleccionado en el login (paso 1, guardado en el propio OTP) que no coincide con
+  el rol real del usuario: se deniega el acceso con `403` (HU‑002 CA‑02); el OTP se
+  consume igual (RN‑01: un código es de un solo uso, un rol equivocado no lo vuelve
+  reutilizable).
+- [x] `JWT_SECRET`/`JWT_EXPIRES_MINUTES` en `backend/.env.example`; sin `JWT_SECRET`
+  seteado el backend falla al arrancar con un mensaje claro (verificado). Un solo valor en
+  minutos (no un string tipo `"60m"`) alimenta tanto el `expiresIn` del JWT como el
+  `expiresAt` del documento de sesión, para que nunca queden desincronizados.
 
 **Verificación:**
-- [ ] Manual: flujo completo `login` → `verify-otp` con el código real del log → `200` con
-  JWT; decodificar el JWT (jwt.io o similar) y confirmar que el payload trae `role` y `jti`.
-- [ ] Manual: código incorrecto repetido hasta el máximo de intentos → el sistema exige
-  loguearse de nuevo.
-- [ ] Tests: Jest — código correcto, código incorrecto, código vencido, rol no coincide,
-  máximo de intentos agotado.
-- [ ] Build: `npm run build`.
+- [x] Manual contra el stack real (rebuild del backend): flujo completo `login` →
+  `verify-otp` con el código real del log (`621217`) → `200` con JWT; decodificado
+  (`jwt.decode`) confirma `sub: "U001"`, `role: "Empleado"`, `jti` (uuid), `exp` (número).
+  `docker exec mongo mongosh` confirmó que `otp_codes` quedó vacío (se consumió) y
+  `sessions` tiene el documento con el mismo `jti` y su índice TTL.
+- [x] Manual: 5 códigos incorrectos seguidos → `"Código incorrecto."` cada vez; el 6°
+  intento → `"Demasiados intentos. Vuelve a iniciar sesión..."` (bloqueo real, no solo
+  un mensaje — se confirmó que el OTP se había borrado).
+- [x] Manual: `node -e "require('./dist/config/auth')"` sin `JWT_SECRET` en el entorno →
+  falla con `Error: JWT_SECRET es obligatoria (sin default: es un secreto)...`.
+- [x] Tests: `backend/tests/auth.otp.test.ts` (9 casos tras la ronda de review: código
+  correcto, incorrecto, vencido, usuario inexistente, usuario desactivado, sin OTP
+  pendiente, máximo de intentos, rol no coincide, campos faltantes) — 32/32 tests del
+  backend en verde.
+- [x] Build: `npm run build` sin errores. `npm run lint` (oxlint) en 0 warnings/errores.
+- [x] Ronda de `code-reviewer`: encontró que `verifyOtp` no repetía el chequeo de
+  `user.status === "Inactivo"` que sí tiene `login()` — ventana real: un usuario pide OTP
+  estando activo, un administrador lo desactiva (RF‑47) antes de que complete el paso 2, y
+  igual se le emitía una sesión JWT válida. Corregido: mismo chequeo, mismo mensaje
+  genérico. También se agregó el test que faltaba para "usuario inexistente" en
+  `verify-otp` (rama de anti-enumeración sin cobertura directa). Re-verificado en vivo:
+  se desactivó `U001` justo después del login (antes de verificar el OTP real del log) →
+  `verify-otp` respondió el mismo 400 genérico y no se creó ninguna sesión nueva; se
+  restauró el estado y un login/verify normal siguió funcionando después.
 
 **Dependencias:** T2.
 
 **Archivos:** `backend/src/routes/auth.ts` (ruta nueva), `backend/src/services/authService.ts`
-(ampliado), `backend/src/repositories/sessionRepository.ts`, `backend/tests/auth.otp.test.ts`.
+(ampliado), `backend/src/repositories/sessionRepository.ts`, `backend/src/repositories/userRepository.ts`
+(`toPublicUser`/`PublicUser`, ampliado), `backend/src/config/auth.ts` (ampliado, JWT),
+`backend/src/server.ts` (asegura el índice de `sessions` al arrancar),
+`backend/tests/auth.otp.test.ts`, `backend/tests/jest.setup.ts` (nuevo — `JWT_SECRET` de
+test, ver Nota de cambio), `backend/jest.config.js` (`setupFiles`), `docker/compose.app.yml`
+y `docker/.env.example` (`JWT_SECRET`/`JWT_EXPIRES_MINUTES`, con el mismo criterio de
+default de desarrollo que `MONGO_ROOT_PASSWORD`).
+
+**Nota de cambio (no estaba en el AC original):** `JWT_SECRET` sin default rompe cualquier
+test que importe `src/server.ts` (toda la cadena de imports llega a `config/auth.ts`) antes
+de correr un solo test. Se agregó `backend/tests/jest.setup.ts` (vía `setupFiles` de Jest)
+que fija un `JWT_SECRET` de prueba, nunca usado fuera del proceso de test.
 
 **Alcance:** M.
 
 ---
 
 ### ✅ Checkpoint: login completo (backend)
-- [ ] `login` → `verify-otp` de punta a punta por `curl`, JWT válido.
-- [ ] Casos de error (credenciales, OTP, rol) cubiertos por tests.
-- [ ] Revisado por `code-reviewer` (foco: manejo de secretos, mensajes que no filtran
-  información, timing-safe compare del hash del OTP si aplica).
+- [x] `login` → `verify-otp` de punta a punta por `curl`, JWT válido.
+- [x] Casos de error (credenciales, OTP, rol) cubiertos por tests (32/32).
+- [x] Revisado por `code-reviewer` (T2 y T3, cada uno con su propia ronda de fixes
+  aplicados y reverificados en vivo).
 
 ---
 
@@ -158,26 +229,56 @@ ruta de prueba para demostrarlo. `POST /auth/logout` borra el documento de sesi�
 invalidación real, no solo "olvidar el token del lado del cliente".
 
 **Criterios de aceptación:**
-- [ ] `backend/src/middlewares/auth.ts` exporta un middleware que responde `401` sin JWT,
-  con JWT inválido/expirado, o con JWT válido pero sin sesión viva en Mongo (ya cerrada).
-- [ ] Variante con roles: el middleware acepta una lista de roles permitidos y responde
-  `403` si el rol del JWT no está en la lista (RF‑05, RNF‑03).
-- [ ] `POST /auth/logout` (requiere JWT válido) borra la sesión de Mongo; una llamada
+- [x] `backend/src/middlewares/auth.ts` exporta `requireAuth(...allowedRoles)` — responde
+  `401` sin JWT, con JWT inválido/expirado (verificación con `algorithms: ["HS256"]` fijo,
+  no confía en el `alg` del header del token), o con JWT válido pero sin sesión viva en
+  Mongo (ya cerrada). Un único middleware parametrizable (no dos separados) porque acá
+  autenticación y autorización siempre van juntas.
+- [x] Variante con roles: `requireAuth("Administrador", ...)` responde `403` si el rol del
+  JWT no está en la lista (RF‑05, RNF‑03); `requireAuth()` sin argumentos exige solo sesión
+  válida, cualquier rol.
+- [x] `POST /auth/logout` (requiere JWT válido) borra la sesión de Mongo; una llamada
   posterior a una ruta protegida con el mismo JWT ya usado responde `401` (HU‑003 CA‑02).
-- [ ] Se agrega una ruta de prueba protegida (o se reutiliza `/fabric/ping` acotándolo a un
-  rol) para demostrar el middleware en un caso real, no solo en un test aislado.
+- [x] Ruta de prueba protegida: **no** se reutilizó `/fabric/ping` (rompería el
+  `/system-status` público de Sprint 0, que lo llama sin JWT) — se agregó `GET /auth/me`
+  en su lugar, una ruta real y útil (no un descarte): T6 la puede usar para confirmar la
+  identidad de la sesión activa.
 
 **Verificación:**
-- [ ] Manual: `curl` a la ruta protegida sin JWT → `401`; con JWT → `200`; `logout`; mismo
-  JWT de nuevo → `401`.
-- [ ] Tests: Jest — sin JWT, JWT inválido, JWT expirado, rol no permitido, logout +
-  reutilización del mismo JWT.
-- [ ] Build: `npm run build`.
+- [x] Manual contra el stack real (rebuild del backend): `curl /auth/me` sin JWT → `401`;
+  login+verify-otp real → JWT; `/auth/me` con ese JWT → `200` con el usuario; `logout` →
+  `204`; `/auth/me` con el mismo JWT de nuevo → `401` ("Sesión inválida o vencida" — el
+  mensaje específico que solo aparece cuando la sesión ya no existe en Mongo, no un 401
+  genérico de "faltaba el header"). `/health` y `/fabric/ping` sin regresión.
+- [x] Tests: `backend/tests/auth.middleware.test.ts` (9 casos tras la ronda de review — 7
+  unitarios contra `requireAuth()` con req/res simulados, 2 de integración contra
+  `GET /auth/me` real) + `backend/tests/auth.logout.test.ts` (3 casos, incluyendo el ciclo
+  completo logout→reutilización del mismo JWT→401) — 45/45 tests del backend en verde.
+- [x] Build: `npm run build` sin errores. `npm run lint` (oxlint) en 0 warnings/errores.
+- [x] Ronda de `code-reviewer` (verdict: APPROVE con 2 Required menores): (1) el payload
+  del JWT validaba que `role` fuera un string pero no que estuviera en el catálogo
+  (`Empleado|Verificador|Administrador`) — se movió `VALID_ROLES` de `routes/auth.ts` a
+  `userRepository.ts` (junto a `Role`) y ahora `requireAuth` también valida contra ella; (2)
+  faltaba un test que ejercitara un JWT bien firmado pero con el payload incompleto o con
+  un rol fuera de catálogo — agregados. También se aplicó el hallazgo Optional de un
+  `ErrorRequestHandler` catch-all al final de `createApp()` (T4 es la primera vez que una
+  ruta protegida hace un `await` a Mongo en pleno camino de la request —
+  `findSessionByJti` — y sin un handler propio, una excepción ahí caía en la página HTML
+  de error por defecto de Express). Ese catch-all expuso de inmediato un bug real de
+  *test* (no de producción): `auth.login.test.ts` mockeaba `userRepository` reemplazando
+  el módulo entero sin `VALID_ROLES`, así que el `import` nuevo de `routes/auth.ts` recibía
+  `undefined` y tiraba — los tests pasaban a 500 en vez de sus códigos esperados. Corregido
+  alineando ese mock al mismo patrón `jest.requireActual` + override que ya usan
+  `auth.otp.test.ts`/`auth.middleware.test.ts`. Re-verificado todo en vivo tras el rebuild
+  del backend: `/auth/me` con JWT válido, login con rol inválido (sigue `400`, no `500`),
+  y el ciclo logout→reuso→`401`.
 
 **Dependencias:** T3.
 
-**Archivos:** `backend/src/middlewares/auth.ts`, `backend/src/routes/auth.ts` (ruta
-`logout`), `backend/tests/auth.middleware.test.ts`, `backend/tests/auth.logout.test.ts`.
+**Archivos:** `backend/src/middlewares/auth.ts` (nuevo), `backend/src/routes/auth.ts`
+(rutas `logout`/`me`), `backend/src/services/authService.ts` (`logout`,
+`getPublicUserById`), `backend/src/server.ts` (CORS de `/auth`: agrega `GET` y el header
+`Authorization`), `backend/tests/auth.middleware.test.ts`, `backend/tests/auth.logout.test.ts`.
 
 **Alcance:** M.
 
@@ -189,15 +290,37 @@ invalidación real, no solo "olvidar el token del lado del cliente".
 contraseña actual, hashea la nueva con `bcryptjs` y la guarda.
 
 **Criterios de aceptación:**
-- [ ] Requiere JWT válido (pasa por el middleware de T4); usa `req.user.sub` para saber
-  sobre qué usuario actuar (no se puede cambiar la contraseña de otro usuario pasando su id).
-- [ ] Contraseña actual incorrecta: `400`/`401` con mensaje claro, no cambia nada.
-- [ ] Contraseña actual correcta + nueva válida: actualiza el hash en Mongo.
+- [x] Requiere JWT válido (`requireAuth()` de T4); usa `req.user.sub` (del JWT ya validado,
+  nunca un id del body) para saber sobre qué usuario actuar.
+- [x] Contraseña actual incorrecta: `400` con mensaje claro, no cambia nada.
+- [x] Contraseña actual correcta + nueva válida: actualiza el hash en Mongo. Validaciones
+  adicionales no pedidas explícitamente por el AC pero razonables (RNF‑01, hashing seguro
+  no implica "cualquier valor sirve"): mínimo 8 caracteres, y debe ser distinta a la
+  actual (mismo criterio que ya tenía el mock del frontend en `SessionContext.tsx`).
 
 **Verificación:**
-- [ ] Manual: login con la contraseña vieja falla tras el cambio; funciona con la nueva.
-- [ ] Tests: Jest — contraseña actual correcta, incorrecta, sin sesión válida.
-- [ ] Build: `npm run build`.
+- [x] Manual contra el stack real (rebuild del backend): login con la contraseña vieja
+  tras el cambio → `"Credenciales inválidas."`; con la nueva → login normal. Se restauró
+  la contraseña de desarrollo documentada (`Contratos123!`) al final para no romper
+  pruebas manuales futuras de la sesión.
+- [x] Tests: `backend/tests/auth.changePassword.test.ts` (7 casos tras la ronda de review:
+  contraseña correcta+nueva válida —decodifica el hash guardado con `bcrypt.compare` para
+  confirmar que es exactamente la nueva contraseña, no solo que se llamó a la función—,
+  sesión válida pero usuario ya no existe, actual incorrecta, nueva igual a la actual,
+  nueva demasiado corta, sin sesión válida, campos faltantes) — 52/52 tests del backend en
+  verde.
+- [x] Build: `npm run build` sin errores. `npm run lint` (oxlint) en 0 warnings/errores.
+- [x] Ronda de `code-reviewer` (verdict: APPROVE): confirmó los tres puntos de seguridad
+  consultados (orden de validaciones correcto — se chequea `currentPassword` antes que las
+  reglas de `newPassword`; el hash dummy de `login()` no aplica acá porque `userId` viene
+  de un JWT ya firmado con sesión viva, no de un input público enumerable; `requireAuth()`
+  garantiza que `req.user` siempre está seteado antes de llegar al handler — revisado
+  línea por línea). Único hallazgo Required: faltaba el test de la rama "usuario ya no
+  existe" (`findUserById` → `null` → 401) en `authService.changePassword` — agregado.
+  Notas para el backlog (no bloqueantes, ninguna requiere acción en este sprint): no hay
+  límite de intentos sobre `currentPassword` (a diferencia del OTP), y cambiar la
+  contraseña no invalida las demás sesiones activas del usuario (decisión ya tomada y
+  documentada en T4 — requeriría un índice por `userId` en `sessions` que hoy no existe).
 
 **Dependencias:** T4.
 
@@ -209,9 +332,10 @@ contraseña actual, hashea la nueva con `bcryptjs` y la guarda.
 ---
 
 ### ✅ Checkpoint: backend de `identity` completo
-- [ ] `npm test` y `npm run build` pasan completos.
-- [ ] Revisado por `code-reviewer` (foco: RBAC, invalidación de sesión, hashing, CORS de
-  `/auth` acotado a `FRONTEND_ORIGIN` — no heredar el wildcard de `/health`/`/fabric`).
+- [x] `npm test` (52/52) y `npm run build` pasan completos.
+- [x] Revisado por `code-reviewer` (T2‑T5, una ronda por tarea, todos los hallazgos Required
+  aplicados y reverificados en vivo contra el stack Docker real — RBAC, invalidación de
+  sesión, hashing/timing, CORS de `/auth` acotado a `FRONTEND_ORIGIN`).
 
 ---
 
@@ -224,30 +348,66 @@ comparar contra el OTP fijo `"123456"`; llaman a `POST /auth/login` y `POST /aut
 del backend real, guardan el JWT en memoria (D7 del plan) y lo usan en las llamadas
 subsiguientes. `LoginPage`/`OtpPage` no cambian de UI, solo la fuente de datos.
 
+**Nota descubierta en T2, resuelta con Sofia antes de arrancar T6:** `POST /auth/login`
+requiere un campo `role` (RF‑01: seleccionar el rol *antes* de autenticarse; RF‑05/HU‑002‑
+CA‑02: se valida contra el rol real del usuario en la verificación del OTP). El
+`LoginPage`/`SessionContext.login(email, password)` de `Feat/Front` no tenían ningún
+selector de rol. Decisión (2026‑09‑19): el selector de rol **se agrega** a `LoginPage`
+(fiel a RF‑01/HU‑001‑CA‑01) — quién puede *ser* cada rol lo define exclusivamente el
+Administrador al crear/editar usuarios (RF‑45/46, HU‑018, Sprint 4); el selector del login
+solo declara qué rol está intentando usar el que se loguea, y el backend lo valida contra
+el rol real de la cuenta (HU‑002‑CA‑02, ya implementado en T3). Se agrega con `Tabs` de
+`components/ui/` (ya instalado, sin dependencia nueva), 3 pestañas Empleado/Verificador/
+Administrador, arriba del formulario de credenciales existente — no una pantalla/ruta
+aparte.
+
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `login(email, password)` y `verifyOtp(attemptId, code)`
-  (o el contrato que defina T2/T3), con manejo de error mapeado a los mensajes que ya
-  muestra `LoginPage`/`OtpPage`.
+- [ ] `frontend/src/lib/api.ts` gana `login(email, password, role)` y `verifyOtp(email, code)`
+  — mismo contrato que ya expone el backend real (T2/T3: sin `attemptId`, `verify-otp` solo
+  necesita `email`+`code` porque el backend guarda el OTP y el rol elegido keyed por
+  usuario), con manejo de error mapeado a los mensajes que ya muestra `LoginPage`/`OtpPage`.
+- [ ] `LoginPage` gana un selector de rol (`Tabs` de `components/ui/`, 3 pestañas) arriba
+  del formulario de credenciales existente; `SessionContext.login` pasa a recibir
+  `(email, password, role)`.
 - [ ] `SessionContext` guarda el JWT y el usuario real devuelto por el backend (ya no del
   array mock); `data/users.ts` deja de ser fuente de verdad para auth (puede seguir
   existiendo para otras pantallas mock ajenas a este sprint).
-- [ ] Credenciales inválidas / OTP inválido muestran el mismo tipo de error que ya
-  maneja la UI (no un cambio de diseño, solo de origen del dato).
-- [ ] `npm run build` y `npm run lint` (oxlint) pasan.
-- [ ] `grep -rE "7051|9051|7050|27017|:5984|fabric|mongodb://" frontend/src` sigue sin
+- [ ] Credenciales inválidas / OTP inválido / rol que no coincide muestran el mismo tipo de
+  error que ya maneja la UI (no un cambio de diseño, solo de origen del dato).
+- [x] `npm run build` y `npm run lint` (oxlint) pasan (los 4 warnings preexistentes de
+  "only-export-components" en archivos de contexto, incluido `SessionContext.tsx`, ya
+  estaban antes de este cambio — mismo patrón que `AppDataContext.tsx`, no es una
+  regresión de T6).
+- [x] `grep -rE "7051|9051|7050|27017|:5984|fabric|mongodb://" frontend/src` sigue sin
   encontrar nada (mismo chequeo de T6/T8 de Sprint 0 — el frontend sigue sin hablar
   directo con infraestructura).
 
 **Verificación:**
-- [ ] Manual en navegador: login con un usuario del seed → pide OTP → código real (del log
-  en dev, o del correo si hay SMTP) → entra al panel del rol correspondiente.
-- [ ] Manual: credenciales o rol equivocados muestran error sin colgar la UI.
+- [x] Mecánico (sin navegador disponible en este entorno, igual que en T6 de Sprint 0):
+  rebuild real del contenedor `frontend`; `curl` confirma que `/` y `/system-status` siguen
+  sirviendo `200` (sin romper el diagnóstico de Sprint 0); simulé el preflight `OPTIONS`
+  exacto que mandaría el navegador desde `http://localhost:5173` contra
+  `POST /auth/login` → `204` con los headers CORS correctos.
+- [ ] **Pendiente de Sofia** (igual que en Sprint 0 T6): confirmar en un navegador real
+  que el login completo funciona — selector de rol, credenciales del seed, OTP real,
+  entra al panel del rol correspondiente; y que credenciales/rol/OTP equivocados muestran
+  el error sin colgar la UI.
+- [x] Ronda de `code-reviewer`: encontró que una falla de red (backend caído, CORS
+  bloqueado, `VITE_API_URL` mal configurada) hacía que `fetch()` rechazara *antes* de que
+  `postAuthJson` armara su propio error — el mensaje que terminaba mostrando la UI era el
+  nativo del navegador, en inglés ("Failed to fetch"), violando la norma del proyecto de
+  comunicarse con el usuario en español. Corregido: `postAuthJson` ahora atrapa
+  específicamente el `fetch()` y lo normaliza a un mensaje en español. También se aplicó
+  el hallazgo Optional de una guarda barata en `verifyOtp` (`SessionContext.tsx`) contra
+  un `200` con body inesperado sin `token`/`user`, que habría dejado la UI en un estado
+  "autenticado" sin usuario y sin poder volver atrás. Re-verificado: `npm run build`/`lint`
+  limpios, rebuild del contenedor `frontend`, `/` y `/system-status` siguen en `200`.
 
 **Dependencias:** T3.
 
 **Archivos:** `frontend/src/lib/api.ts`, `frontend/src/context/SessionContext.tsx`,
-`frontend/src/pages/LoginPage.tsx`, `frontend/src/pages/OtpPage.tsx` (ajustes mínimos de
-wiring, no de UI).
+`frontend/src/pages/LoginPage.tsx` (selector de rol + submit async),
+`frontend/src/pages/OtpPage.tsx` (verify async + estado de envío).
 
 **Alcance:** M.
 

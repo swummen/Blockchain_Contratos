@@ -1,0 +1,40 @@
+import { Collection } from "mongodb";
+import { getDb } from "./mongoClient";
+import { Role } from "./userRepository";
+
+// _id es el jti del JWT: el middleware de T4 valida firma+expiración del
+// token Y que su jti siga existiendo acá — es lo que permite invalidar una
+// sesión de verdad en el logout (D4 del plan), algo que un JWT puramente
+// stateless no puede hacer.
+export interface SessionDoc {
+  _id: string;
+  userId: string;
+  // Informativo (auditoría/listado de sesiones). El claim `role` del JWT ya
+  // firmado es la fuente autoritativa para el middleware RBAC de T4 — no
+  // releer este campo para decidir acceso, un cambio de rol post-login lo
+  // dejaría desincronizado del token que el cliente sigue usando.
+  role: Role;
+  expiresAt: Date;
+}
+
+function sessionsCollection(): Collection<SessionDoc> {
+  return getDb().collection<SessionDoc>("sessions");
+}
+
+// TTL sobre expiresAt (mismo patrón que otp_codes, D5): una sesión vencida
+// desaparece sola, sin depender de que alguien llame a logout.
+export async function ensureIndexes(): Promise<void> {
+  await sessionsCollection().createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+}
+
+export async function createSession(session: SessionDoc): Promise<void> {
+  await sessionsCollection().insertOne(session);
+}
+
+export async function findSessionByJti(jti: string): Promise<SessionDoc | null> {
+  return sessionsCollection().findOne({ _id: jti });
+}
+
+export async function deleteSession(jti: string): Promise<void> {
+  await sessionsCollection().deleteOne({ _id: jti });
+}

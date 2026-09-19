@@ -40,6 +40,17 @@ services:
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-root}:${MONGO_ROOT_PASSWORD:-changeme}@mongo:27017/?authSource=admin
       # FABRIC_* no se pasan: los defaults de backend/src/config/fabric.ts ya
       # apuntan a este mismo contexto (peer0.org1.example.com:7051, /crypto/...).
+      # Derivado de FRONTEND_PORT (no un valor fijo aparte) para que el CORS
+      # de /auth (Sprint 1, T2) no se desincronice si se cambia el puerto del
+      # frontend: el navegador corre en el host, así que el origen real es
+      # localhost:FRONTEND_PORT, igual que VITE_API_URL de más abajo.
+      FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
+      # Sprint 1, T3: config/auth.ts no trae ningún default propio para esto
+      # (es un secreto) — el default de acá es exclusivamente para que
+      # docker/up.sh funcione sin pasos extra en desarrollo, mismo criterio
+      # que MONGO_ROOT_PASSWORD arriba.
+      JWT_SECRET: ${JWT_SECRET:-contratos-dev-secret-cambiar-en-produccion}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-60}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     volumes:

@@ -10,7 +10,8 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
 - Git Bash o WSL2 para correr los scripts `.sh` — **nunca PowerShell/cmd.exe** directamente.
   Windows con `core.autocrlf=true` reescribiría los `.sh` con CRLF si no fuera por
   `.gitattributes` (`*.sh eol=lf`) en la raíz del repo.
-- Go 1.22+ (para compilar/testear el chaincode, Sprint 2).
+- Go 1.22+ — ya lo necesita el chaincode de ejemplo (T2/T7, `go mod vendor` al empaquetarlo);
+  el módulo `ledger` real de Sprint 2 lo va a seguir usando.
 - `jq` (lo usan internamente los scripts de `fabric-samples`, a partir de T2).
 - Conexión a internet la primera vez: `network-up.sh` descarga binarios + imágenes Docker
   de Hyperledger Fabric (~2‑3 GB) si `docker/fabric-samples/` no existe todavía.
@@ -34,8 +35,16 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
 
 ## Comandos
 
+**Para levantar todo de una sola vez (T7):** `bash docker/up.sh` encadena
+`network-up.sh` + `deploy-sample-cc.sh` + el `compose up` de la última fila.
+`bash docker/down.sh` es la inversa: `compose down -v` + `network-down.sh` (no exactamente
+las mismas dos filas de "Comandos" — `down.sh` siempre borra el volumen de Mongo, la fila
+suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas sueltas.
+
 | Comando | Qué hace |
 |---|---|
+| `bash docker/up.sh` | Orquesta todo el stack: red Fabric → chaincode de ejemplo → Mongo/backend/frontend. Crea `docker/.env` desde `.env.example` si no existe. Verifica `go` y `jq` en el `PATH` antes de arrancar. A diferencia de la fila de `compose up` de abajo, usa `--build` siempre — reconstruye las imágenes de `backend`/`frontend` aunque ya existan, para no quedarse con una imagen vieja mientras el proyecto sigue en desarrollo activo. Seguro de correr desde un checkout limpio. |
+| `bash docker/down.sh` | Inversa de `up.sh`: baja Mongo/backend/frontend (con `-v`, borra también el volumen de Mongo) y la red Fabric. Deja el checkout listo para volver a `up.sh`. |
 | `bash docker/network-up.sh` | 1ª vez: descarga `fabric-samples` + binarios + imágenes Docker fijadas en Fabric 2.5.16 / CA 1.5.22. Luego levanta la test-network con Fabric CA (`-ca`) y crea/une el canal `contratoschannel` con LevelDB como state DB (decisión D3). |
 | `bash docker/network-down.sh` | Baja la red: elimina contenedores, volúmenes y material criptográfico. Deja el entorno limpio para volver a `network-up.sh`. |
 | `bash docker/deploy-sample-cc.sh` | Despliega el chaincode de ejemplo `asset-transfer-basic` en `contratoschannel` (prueba de pipeline; requiere la red arriba). Idempotente. |
@@ -77,10 +86,11 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
   es duplicar la barra inicial: `docker exec backend touch //crypto/x`.
 - **CORS (T6):** el frontend (`localhost:5173`) y el backend (`localhost:8080`) son
   orígenes distintos para el navegador. `backend/src/server.ts` manda
-  `Access-Control-Allow-Origin: *` en todas las respuestas — sin eso, `fetch` desde
-  `SystemStatusPage` (o cualquier otra página que llame al backend) se bloquea aunque el
-  backend responda `200`. Es aceptable con `*` porque hoy son endpoints de diagnóstico sin
-  datos sensibles; revisar cuando existan endpoints de negocio.
+  `Access-Control-Allow-Origin: *`, acotado a `/health` y `/fabric` (no global) — sin eso,
+  `fetch` desde `SystemStatusPage` se bloquea aunque el backend responda `200`. Es
+  aceptable con `*` porque son endpoints de diagnóstico sin datos sensibles; se acotó a
+  propósito para que un endpoint de negocio futuro (Sprint 2+) no herede el wildcard en
+  silencio.
 - **Si `curl localhost:8080/...` devuelve una respuesta vieja o de otra corrida:**
   probablemente un proceso nativo de Windows (un `npm run dev` / `tsx watch` que no murió
   bien) sigue escuchando en `127.0.0.1:8080`, más específico que el `0.0.0.0:8080` real de
@@ -90,3 +100,18 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
   `com.docker.backend.exe`, **no lo mates** (es Docker Desktop; matarlo tumba el motor
   entero). Si es `node.exe` con una ruta del proyecto en el `CommandLine`, es seguro
   matarlo.
+- **`docker ps -a` con contenedores de nombre random tipo `nifty_sammet` (`Created`,
+  nunca `Up`):** son intentos de build del chaincode (`deploy-sample-cc.sh`, T2) — el
+  builder externo de Fabric crea uno por cada paquete/instalación. No son parte de
+  ningún servicio de este proyecto y `docker/down.sh` no los toca a propósito (un
+  `docker container prune -f` los limpiaría, pero afecta contenedores detenidos de
+  **cualquier** proyecto en la máquina, no solo este — hacerlo a mano, bajo tu propio
+  criterio, nunca automatizado en un script del repo).
+- **`up.sh` no "resume" una corrida a medias.** Si `network-up.sh` quedó a medio camino
+  (por ejemplo, se interrumpió `up.sh` en el paso 1), el guard existente de
+  `network-up.sh` (detecta contenedores de una corrida anterior) hace que `up.sh` aborte
+  entero pidiendo correr `network-down.sh` primero — no intenta seguir desde donde quedó,
+  y tampoco te avisa si el paso de la app (mongo/backend/frontend) también necesita
+  atención. Es el único caso no-idempotente de todo el flujo de un solo comando: ante
+  cualquier duda sobre el estado, `bash docker/down.sh && bash docker/up.sh` siempre
+  funciona.

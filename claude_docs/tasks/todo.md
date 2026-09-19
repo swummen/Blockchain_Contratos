@@ -1,11 +1,11 @@
 # TODO — Sprint 0 · módulo `infra` · HU‑021
 
 Plan: `claude_docs/tasks/plan.md` (**aprobado**). Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T6 completos (T6 pendiente de una verificación visual en navegador real, ver
-nota en T6). T7-T8 quedan fuera de alcance por ahora. El frontend real (rama `Feat/Front`,
-ya en `main`) sigue corriendo con datos de mentira en sus pantallas de negocio — T6 solo
-prueba la conectividad de infraestructura vía una ruta de diagnóstico aparte
-(`/system-status`), no conecta el login/documentos/etc. reales al backend.**
+Estado: **T1-T6 completos y verificados (incluida la verificación visual en navegador real
+de T6). T7-T8 quedan fuera de alcance por ahora. El frontend real (rama `Feat/Front`, ya en
+`main`) sigue corriendo con datos de mentira en sus pantallas de negocio — T6 solo prueba
+la conectividad de infraestructura vía una ruta de diagnóstico aparte (`/system-status`),
+no conecta el login/documentos/etc. reales al backend.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -174,7 +174,7 @@ agregar CORS (`Access-Control-Allow-Origin: *`) en `backend/src/server.ts` — s
 - [x] Manual: `docker compose --env-file docker/.env -f docker/compose.app.yml up -d` → `http://localhost:5173/` y `http://localhost:5173/system-status` responden `200` (fallback SPA de nginx incluido). Verificado en reconstrucción completa desde cero.
 - [x] Manual: revisión de código confirma que el frontend solo habla con `VITE_API_URL` (`frontend/src/lib/api.ts`).
 - [x] Backend: `npm test` 7/7 (se agregó `tests/cors.test.ts` tras el review — prueba que el header CORS está en `/health` y `/fabric/ping`, y que **no** aparece fuera de esas dos rutas, confirmando que el middleware quedó acotado a propósito y no global).
-- [ ] **Pendiente, no verificado por mí:** render real en un navegador (no tengo uno disponible en este entorno) — verifiqué que el bundle sirve, el fallback de rutas funciona, `VITE_API_URL` queda bien horneado en el JS, y que `/health` responde con el header CORS correcto, pero no vi la página pintada de verdad. Antes de dar T6 por cerrada del todo, abrir `http://localhost:5173/system-status` en un navegador y confirmar que se ve el estado en verde.
+- [x] Render real en un navegador: confirmado por la usuaria en `http://localhost:5173/system-status` — se ve el estado en verde. (Claude no tiene navegador disponible en este entorno; todo lo demás sí se verificó mecánicamente antes de este último paso.)
 
 **Dependencias:** T4.
 

@@ -66,6 +66,23 @@ Comandos (correr dentro de `backend/`): `npm run dev`, `npm run build`, `npm tes
 - **El chaincode de ejemplo (`basic`) sigue siendo el único disponible.** Sirve para
   probar que la conexión funciona; no tiene nada que ver con el negocio.
 
+## Sprint 1 — `identity` (en progreso, ver `claude_docs/tasks/todo-sprint1-identity.md`)
+
+**T1 (modelo de usuarios + seed) hecho.** `src/repositories/userRepository.ts` maneja la
+colección `users` de Mongo (contraseña con hash `bcryptjs`, nunca en texto plano; `_id` es
+el mismo `userId` legible que ya usa el frontend, ej. `"U001"`). `npm run seed`
+(`src/scripts/seedUsers.ts`) siembra 1 usuario por rol si la colección está vacía —
+idempotente, se puede correr las veces que haga falta.
+
+**Contraseña de desarrollo de los usuarios sembrados: `Contratos123!`** (los tres,
+Empleado/Verificador/Administrador — ver el script para los emails). Es solo para probar
+en local/Docker; nunca configurar esto en un ambiente real. Reemplaza a
+`frontend/src/data/users.ts` como fuente real para el login; deja de ser necesario cuando
+HU‑018 (Sprint 4) le dé al Administrador el alta real de usuarios.
+
+Falta T2 en adelante: login con OTP por correo, sesión JWT, RBAC, logout, cambio de
+contraseña — ver el plan y el todo de Sprint 1 para el detalle y las decisiones (D1‑D9).
+
 ## Qué sigue (el negocio real: chaincode + escrituras al ledger)
 
 Lo que viene ahora es más grande que T5: el chaincode real del proyecto (Sprint 2, módulo
@@ -101,4 +118,6 @@ Lo que ya está resuelto para cuando llegue ese momento:
   first/Never), es la fuente de verdad para cualquier duda de diseño.
 - `claude_docs/tasks/todo.md` — plan de tareas del sprint de infraestructura (T1-T8) y su
   estado actual.
+- `claude_docs/tasks/plan-sprint1-identity.md` / `todo-sprint1-identity.md` — plan y tareas
+  del sprint de `identity` (login, OTP, sesión, RBAC) en curso.
 - `docker/README.md` — cómo levantar la red Fabric y Mongo, puertos, prerrequisitos.

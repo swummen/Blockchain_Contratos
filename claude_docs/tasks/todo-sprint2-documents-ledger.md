@@ -2,9 +2,11 @@
 
 Plan: `claude_docs/tasks/plan-sprint2-documents-ledger.md` (**aprobado 2026‑09‑20**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T3 completos y verificados. `docker/up.sh` queda temporalmente roto
-(todavía llama a `deploy-sample-cc.sh`, ya eliminado) hasta que T5 lo actualice — no usarlo
-hasta entonces, usar `network-up.sh` + `deploy-cc.sh` directo. Arrancando T4.**
+Estado: **T1-T4 completos, verificados y revisados. Pausado acá a pedido de Sofia — T5
+arrancado pero sin terminar: `docker/up.sh` ya apunta a `deploy-cc.sh` (arreglado, ya no
+está roto), pero falta actualizar `docker/README.md` y volver a verificar con un ciclo
+`down.sh`+`up.sh` completo desde cero (el stack quedó abajo, `down.sh` fue lo último que se
+corrió). Retomar T5 desde ahí.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -207,16 +209,12 @@ proceso de endoso + orden real (a diferencia de `evaluateTransaction`, de solo l
   (`{"Action":"registro",...,"TxID":"8388211d..."}`). Un segundo intento con el mismo
   `documentID` confirmó que el rechazo del chaincode también se propaga correctamente
   como error del lado del SDK (`EndorseError`, código gRPC `ABORTED`).
-- [ ] ~~Tests: Jest — mockeando el SDK de Fabric, igual que ya hace `fabric.test.ts`.~~
-  **Corrección respecto al AC original**: releyendo `tests/fabric.test.ts`, en realidad
-  mockea `gateway.ts` **entero** (`jest.mock("../src/fabric/gateway", ...)`), no el SDK de
-  Fabric — `gateway.ts` mismo nunca tuvo tests unitarios directos, ni `queryChaincode` los
-  tenía antes de esta tarea. Mockear de verdad el SDK (`connect()`, el `Gateway`/`Network`/
-  `Contract` que devuelve) para probar `getContract()`/`submitChaincodeTransaction`
-  directamente sería una complejidad nueva para un wrapper delgado cuya corrección ya se
-  probó contra la red real arriba — se mantiene la misma cobertura que ya tenía
-  `queryChaincode` (ninguna unitaria propia, verificación real end-to-end), no se inventa
-  un patrón de mocking nuevo sin necesidad clara.
+- [x] Tests: `backend/tests/gateway.test.ts` (nuevo — ver Ronda de `code-reviewer` abajo,
+  terminó siendo Required, no algo que se pudiera saltar del todo como en un principio
+  pensé). Mockea el SDK de verdad (`@hyperledger/fabric-gateway`, `@grpc/grpc-js`,
+  `node:fs`, `node:crypto`) para poder controlar `contract.submitTransaction` — 2 casos:
+  éxito (decodifica el resultado), y que un error del SDK se propaga **tal cual**
+  (`.details` sobrevive, no se envuelve ni se descarta).
 - [x] Build: `npm run build`, `npm run lint` (0 warnings), `npm test` (52/52, sin
   regresión — el mock existente de `fabric.test.ts` solo mockea `queryChaincode`, no se
   rompe con la función nueva).
@@ -233,11 +231,28 @@ tiene una nota propia advirtiendo esto exact: *"Antes de copiar este patrón [ex
 como `/health`."* — T4 tiene que extraer `details[].message` explícitamente si quiere
 mostrar el motivo real del rechazo, no confiar en `.message`.
 
+- [x] Ronda de `code-reviewer` (verdict: APPROVE, con 1 Required): confirmó que el
+  naming (`submitChaincodeTransaction`), la separación de capas (el formateo del error le
+  toca a la ruta, no a `gateway.ts`), y los deadlines nuevos son razonables. Encontró que
+  la verificación manual (real, pero con un script `tsx` descartable ya borrado) no deja
+  ninguna protección permanente en el repo de que `submitChaincodeTransaction` siga
+  propagando el error del SDK *tal cual* — si alguien más adelante envuelve
+  `submitTransaction` en un try/catch "para loguear", rompería en silencio justo lo que
+  T4 necesita (`GatewayError.details`) sin que ningún test lo note. Agregado
+  `gateway.test.ts` con exactamente esos 2 casos (no un mocking exhaustivo del SDK
+  entero). También se aplicó el hallazgo Optional: comentario junto a
+  `ENDORSE_TIMEOUT_MS`/`SUBMIT_TIMEOUT_MS` (5s) advirtiendo el riesgo de cold-start justo
+  después de un `network-up.sh` (el peer todavía levantando el contenedor del chaincode) —
+  no se agregó retry especulativo, solo la nota para no diagnosticar mal un timeout futuro
+  como bug del chaincode. Re-verificado: `npm run build`/`lint` (0 warnings)/`test`
+  (54/54, incluye los 2 nuevos).
+
 **Dependencias:** T2.
 
 **Archivos:** `backend/src/fabric/gateway.ts` (ampliado: `getContract()` compartido,
-`submitChaincodeTransaction`, deadlines de endorse/submit/commit), `backend/src/config/fabric.ts`
-(`chaincodeName` default).
+`submitChaincodeTransaction`, deadlines de endorse/submit/commit + nota de cold-start),
+`backend/src/config/fabric.ts` (`chaincodeName` default), `backend/tests/gateway.test.ts`
+(nuevo).
 
 **Alcance:** M.
 
@@ -253,34 +268,63 @@ real de negocio al ledger, primera vez que un fallo de blockchain no debe verse 
 éxito (D13, HU‑007‑CA‑02).
 
 **Criterios de aceptación:**
-- [ ] `POST /documents`, protegido con `requireAuth("Empleado")` (D12 — primer uso real de
+- [x] `POST /documents`, protegido con `requireAuth("Empleado")` (D12 — primer uso real de
   la variante con roles del middleware de Sprint 1).
-- [ ] `multer.memoryStorage()` (D9), un solo campo de archivo (RF‑10), límite `20MB`
-  (RF‑11/RNF‑24); rechaza con `400` claro si se excede.
-- [ ] Valida la firma de archivo (`%PDF-` al inicio del buffer, D10) antes de aceptar —
+- [x] `multer.memoryStorage()` (D9), un solo campo de archivo (`document`, RF‑10), límite
+  `20MB` (RF‑11/RNF‑24); rechaza con `400` claro si se excede.
+- [x] Valida la firma de archivo (`%PDF-` al inicio del buffer, D10) antes de aceptar —
   rechaza con `400` un archivo que no sea PDF de verdad, sin confiar solo en el
   `Content-Type` del request.
-- [ ] Calcula la huella con `crypto.createHash("sha256")` sobre el buffer completo
+- [x] Calcula la huella con `crypto.createHash("sha256")` sobre el buffer completo
   (RF‑14/RNF‑11) — determinista: el mismo contenido siempre da el mismo hash (HU‑006‑CA‑02).
-- [ ] Genera `documentId` (`crypto.randomUUID()`, D11), llama a
-  `submitTransaction("RegisterDocument", documentId, hash, userId)`. Si falla: **no**
-  guarda nada en Mongo, responde un error claro (nunca un `200`/mensaje de éxito —
-  D13/HU‑007‑CA‑02).
-- [ ] Si el registro en el ledger tiene éxito: guarda en Mongo `documents`
+- [x] Genera `documentId` (`crypto.randomUUID()`, D11), llama a
+  `submitChaincodeTransaction("RegisterDocument", documentId, hash, userId)` (T3). Si
+  falla: **no** guarda nada en Mongo, responde `502` (nunca un `200`/mensaje de éxito —
+  D13/HU‑007‑CA‑02). El motivo real del error se loguea server-side (usando
+  `.details[0].message` del hallazgo de T3), nunca se expone crudo al cliente — a
+  diferencia de `/fabric/ping`, este es un endpoint de negocio real.
+- [x] Si el registro en el ledger tiene éxito: guarda en Mongo `documents`
   (`{_id: documentId, name, responsibleUser: userId, registeredAt, hash, status:
   "Pendiente"}` — RF‑13, RF‑19, RF‑20) y responde `201` con el `documentId` (RF‑17).
+- [x] **Caso no listado en el AC original, agregado por consistencia (RNF‑13):** si el
+  registro en el ledger tuvo éxito pero el guardado en Mongo falla después (documento ya
+  inmutable en la blockchain — RNF‑05, no hay forma de revertir), se loguea como una
+  inconsistencia real (no un error silencioso) y se responde `500` — nunca un `200` falso.
+  No se construyó un mecanismo de compensación/saga automático (sobre-ingeniería para un
+  caso límite de un MVP de tesis); queda documentado como reconciliación manual.
 
 **Verificación:**
-- [ ] Manual contra el stack real: subir un PDF real de prueba (< 20MB) → `201` con
-  `documentId`; verificar en Mongo que el documento quedó guardado y en la red (`peer
-  chaincode query`, o una invocación de prueba) que el hash coincide. Subir el mismo PDF
-  de nuevo (mismo contenido, `documentId` nuevo) → mismo hash exactamente (HU‑006‑CA‑02).
-  Subir un archivo no-PDF renombrado a `.pdf` → `400`. Subir un PDF > 20MB → `400`. Subir
-  dos archivos en el mismo request → rechazado (un solo campo).
-- [ ] Tests: Jest — éxito, PDF inválido (firma), tamaño excedido, falla de
-  `submitTransaction` (confirma que Mongo no se tocó y la respuesta no es de éxito), rol
-  no autorizado (`403`/`401` vía `requireAuth`).
-- [ ] Build: `npm run build`. `npm run lint`.
+- [x] Manual contra el stack real (rebuild del backend, red con el chaincode real de T2
+  arriba): login real como Empleado → `POST /documents` con un PDF real (`%PDF-1.4...`) →
+  `201` con `documentId` real. Confirmado en Mongo (`docker exec mongo mongosh`): el
+  documento quedó con `hash`/`name`/`responsibleUser`/`status:"Pendiente"` correctos.
+  Confirmado en el ledger real: un `peer chaincode invoke RegisterDocument` manual con ese
+  mismo `documentId`+hash fue rechazado por `"already registered"` — prueba que el hash
+  realmente quedó anclado on-chain, no solo en Mongo (RNF‑13). Archivo no-PDF renombrado a
+  `.pdf` → `400` ("El archivo no es un PDF válido."). Request sin archivo → `400`. Login
+  como Verificador e intentar subir → `403` ("No tenés permiso para esta acción."). Sin
+  regresión: `/health`, `/fabric/ping`, `/` y `/system-status` del frontend siguen en `200`.
+- [x] Tests: `backend/tests/documents.test.ts` (9 casos: éxito con verificación de que
+  `submitChaincodeTransaction`/`insertDocument` reciben los datos correctos, mismo hash
+  para el mismo contenido en dos subidas distintas, sin JWT, rol distinto de Empleado,
+  sin archivo, PDF con firma inválida, archivo más grande que el límite, falla del
+  registro en el ledger —confirma que `insertDocument` **no** se llama—, y Mongo fallando
+  después de un registro exitoso en el ledger) — 63/63 tests del backend en verde.
+- [x] Build: `npm run build` sin errores. `npm run lint` (oxlint) en 0 warnings/errores.
+- [x] Ronda de `code-reviewer` (verdict: REQUEST CHANGES → aplicado): confirmó que D13
+  se cumple de verdad en todos los caminos (rastreado línea por línea: Mongo nunca se
+  toca antes de confirmar el chain-write, y Express 5 reenvía cualquier excepción no
+  prevista al `handleUnexpectedError` existente, no hace falta un try/catch manual
+  alrededor de toda la ruta). Encontró un hueco real: el manejador de errores de `multer`
+  no logueaba nada — un error real (no del usuario) habría desaparecido sin rastro,
+  mostrando siempre "archivo inválido" sin nada que mirar en el servidor. Agregado el log.
+  También se aplicó el hallazgo Optional de recortar `file.originalname` a 255
+  caracteres antes de guardarlo en Mongo (dato del cliente sin sanitizar más allá de
+  eso). Confirmó además, revisando el chaincode, que la clave de deduplicación es el
+  `documentID` (no el hash) — con `crypto.randomUUID()` la colisión es prácticamente
+  imposible, así que no exponer `.details[0].message` al cliente no le cuesta nada a un
+  usuario real hoy. Re-verificado: build/lint/test (63/63) limpios, rebuild del backend en
+  Docker, un PDF real subido de nuevo con éxito.
 
 **Dependencias:** T3.
 
@@ -295,10 +339,11 @@ real de negocio al ledger, primera vez que un fallo de blockchain no debe verse 
 ---
 
 ### ✅ Checkpoint: backend↔ledger real
-- [ ] `POST /documents` de punta a punta contra la red real, con y sin fallas forzadas.
-- [ ] Revisado por `code-reviewer` (foco: D13 — ninguna escritura parcial silenciosa;
-  validación de archivo no confiada solo al `Content-Type`; el PDF nunca llega a un log
-  ni a un `console.error` con su contenido).
+- [x] `POST /documents` de punta a punta contra la red real, con y sin fallas forzadas
+  (PDF inválido, sin archivo, rol no autorizado — todas verificadas en vivo).
+- [x] Revisado por `code-reviewer` (foco: D13 — confirmado que ninguna escritura parcial
+  es silenciosa; validación de archivo por firma real, no por `Content-Type`; el PDF en sí
+  nunca se loguea, solo su hash/metadata).
 
 ---
 

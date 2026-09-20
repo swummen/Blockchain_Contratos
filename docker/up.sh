@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Orquesta todo el stack en una sola orden (T7): red Fabric -> chaincode de
-# ejemplo -> Mongo/backend/frontend. Pensado para correr desde un checkout
-# limpio. Cada paso ya es idempotente/con guardas propias (network-up.sh,
-# deploy-sample-cc.sh); acá solo se encadenan en el orden correcto.
+# Orquesta todo el stack en una sola orden (T7 de Sprint 0): red Fabric ->
+# chaincode real del proyecto (contracts, Sprint 2) -> Mongo/backend/frontend.
+# Pensado para correr desde un checkout limpio. Cada paso ya es idempotente/
+# con guardas propias (network-up.sh, deploy-cc.sh); acá solo se encadenan en
+# el orden correcto.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,8 +27,8 @@ echo "==> [1/3] Red Fabric + canal contratoschannel..."
 bash network-up.sh
 
 echo
-echo "==> [2/3] Chaincode de ejemplo (prueba de pipeline)..."
-bash deploy-sample-cc.sh
+echo "==> [2/3] Chaincode real del proyecto (contracts)..."
+bash deploy-cc.sh
 
 echo
 echo "==> [3/3] Mongo + backend + frontend..."

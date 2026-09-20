@@ -1,5 +1,5 @@
 import * as React from "react"
-import { users as seedUsers } from "@/data/users"
+import * as api from "@/lib/api"
 import type { Role, User } from "@/types/domain"
 
 type AuthStage = "anonymous" | "pending-otp" | "authenticated"
@@ -7,6 +7,10 @@ type AuthStage = "anonymous" | "pending-otp" | "authenticated"
 interface SessionState {
   stage: AuthStage
   user: User | null
+  // D7 del plan de Sprint 1: el JWT vive solo en memoria (no localStorage),
+  // se pierde al recargar la página — aceptable, no hay RF que pida
+  // "recordarme".
+  token: string | null
   pendingRole: Role | null
   pendingEmail: string | null
 }
@@ -17,48 +21,47 @@ interface ActionResult {
 }
 
 interface SessionContextValue extends SessionState {
-  login: (email: string, password: string) => ActionResult
-  verifyOtp: (code: string) => ActionResult
-  logout: () => void
-  changePassword: (current: string, next: string) => ActionResult
+  login: (email: string, password: string, role: Role) => Promise<ActionResult>
+  verifyOtp: (code: string) => Promise<ActionResult>
+  logout: () => Promise<void>
+  changePassword: (current: string, next: string) => Promise<ActionResult>
 }
 
 const SessionContext = React.createContext<SessionContextValue | undefined>(
   undefined
 )
 
-/** Código fijo de demostración: no hay backend que envíe un correo real (RF-03/04). */
-const DEMO_OTP_CODE = "123456"
-
 const initialState: SessionState = {
   stage: "anonymous",
   user: null,
+  token: null,
   pendingRole: null,
   pendingEmail: null,
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback
 }
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<SessionState>(initialState)
 
   const login = React.useCallback(
-    (email: string, password: string): ActionResult => {
+    async (email: string, password: string, role: Role): Promise<ActionResult> => {
       if (!email.trim() || !password.trim()) {
         return { ok: false, error: "Ingresa tu correo y tu contraseña." }
       }
       const trimmedEmail = email.trim()
-      const existing = seedUsers.find(
-        (u) => u.email.toLowerCase() === trimmedEmail.toLowerCase()
-      )
-      if (!existing) {
-        return {
-          ok: false,
-          error: "No existe una cuenta registrada con ese correo.",
-        }
+      try {
+        await api.login(trimmedEmail, password, role)
+      } catch (err) {
+        return { ok: false, error: errorMessage(err, "No se pudo iniciar sesión.") }
       }
       setState({
         stage: "pending-otp",
         user: null,
-        pendingRole: existing.role,
+        token: null,
+        pendingRole: role,
         pendingEmail: trimmedEmail,
       })
       return { ok: true }
@@ -67,32 +70,30 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   )
 
   const verifyOtp = React.useCallback(
-    (code: string): ActionResult => {
-      if (code !== DEMO_OTP_CODE) {
-        return { ok: false, error: "El código ingresado no es válido." }
-      }
-
+    async (code: string): Promise<ActionResult> => {
       const email = state.pendingEmail
       if (!email) {
         return { ok: false, error: "Vuelve a iniciar sesión." }
       }
 
-      const existing = seedUsers.find(
-        (u) => u.email.toLowerCase() === email.toLowerCase()
-      )
-      if (!existing) {
-        return { ok: false, error: "Vuelve a iniciar sesión." }
+      let result: { token: string; user: User }
+      try {
+        result = await api.verifyOtp(email, code)
+      } catch (err) {
+        return { ok: false, error: errorMessage(err, "No se pudo verificar el código.") }
       }
-      if (existing.status === "Inactivo") {
-        return {
-          ok: false,
-          error: "Este usuario está desactivado. Contacta a un administrador.",
-        }
+
+      // Guarda contra un 200 con body inesperado (ej. no-JSON silencioso en
+      // postAuthJson): sin esto, un resultado incompleto dejaría la UI en un
+      // estado "authenticated" sin usuario, sin poder volver atrás.
+      if (!result.token || !result.user) {
+        return { ok: false, error: "No se pudo verificar el código." }
       }
 
       setState({
         stage: "authenticated",
-        user: existing,
+        user: result.user,
+        token: result.token,
         pendingRole: null,
         pendingEmail: null,
       })
@@ -101,12 +102,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [state.pendingEmail]
   )
 
-  const logout = React.useCallback(() => {
+  const logout = React.useCallback(async () => {
+    const token = state.token
+    if (token) {
+      try {
+        await api.logout(token)
+      } catch {
+        // Best-effort (AC de T7): si el backend no responde o la sesión ya
+        // estaba vencida, igual se limpia el estado local — no dejar al
+        // usuario atrapado esperando una llamada que puede fallar.
+      }
+    }
     setState(initialState)
-  }, [])
+  }, [state.token])
 
   const changePassword = React.useCallback(
-    (current: string, next: string): ActionResult => {
+    async (current: string, next: string): Promise<ActionResult> => {
       if (!current.trim()) {
         return { ok: false, error: "Ingresa tu contraseña actual." }
       }
@@ -116,9 +127,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           error: "La nueva contraseña debe ser diferente a la actual.",
         }
       }
+      const token = state.token
+      if (!token) {
+        return { ok: false, error: "Vuelve a iniciar sesión." }
+      }
+      try {
+        await api.changePassword(token, current, next)
+      } catch (err) {
+        return { ok: false, error: errorMessage(err, "No se pudo cambiar la contraseña.") }
+      }
       return { ok: true }
     },
-    []
+    [state.token]
   )
 
   const value = React.useMemo<SessionContextValue>(

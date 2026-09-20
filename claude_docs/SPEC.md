@@ -204,14 +204,16 @@ borrado físico, nunca afecta trazabilidad histórica (RF‑47).
 
 | Comando | Qué hace |
 |---|---|
-| `bash docker/network-up.sh` | red Fabric + canal `contratoschannel` (T1) |
-| `bash docker/network-down.sh` | baja la red Fabric |
+| `bash docker/up.sh` | todo el stack en un solo comando (T7): red Fabric → chaincode de ejemplo → Mongo/backend/frontend. Crea `docker/.env` si falta. |
+| `bash docker/down.sh` | inversa de `up.sh`: baja todo, volúmenes incluidos |
+| `bash docker/network-up.sh` | solo la red Fabric + canal `contratoschannel` (T1) |
+| `bash docker/network-down.sh` | solo baja la red Fabric |
 | `bash docker/deploy-sample-cc.sh` | chaincode de ejemplo, prueba de pipeline (T2) |
-| `cp docker/.env.example docker/.env` | prerrequisito único antes de los comandos de Mongo/backend (T3) |
-| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` | Mongo + backend (T3/T4), unidos a la red `fabric_test` |
-| `docker compose -f docker/compose.app.yml down` | baja Mongo/backend (agregar `-v` para borrar también el volumen de Mongo) |
+| `cp docker/.env.example docker/.env` | prerrequisito único antes de los comandos sueltos de Mongo/backend/frontend (T3) — `up.sh` ya lo hace solo |
+| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend frontend` | Mongo + backend + frontend (T3/T4/T6), unidos a la red `fabric_test` |
+| `docker compose -f docker/compose.app.yml down` | baja Mongo/backend/frontend (agregar `-v` para borrar también el volumen de Mongo) |
 
-Detalle de cada comando de `docker/`, puertos y los dos bugs de Windows/Git Bash ya
+Detalle de cada comando de `docker/`, puertos y los bugs de Windows/Git Bash ya
 corregidos: `docker/README.md`.
 
 ### chaincode/

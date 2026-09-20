@@ -26,6 +26,7 @@ export function ChangePasswordDialog({
   const [next, setNext] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
   const [success, setSuccess] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   function reset() {
     setCurrent("")
@@ -34,9 +35,11 @@ export function ChangePasswordDialog({
     setSuccess(false)
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const result = changePassword(current, next)
+    setIsSubmitting(true)
+    const result = await changePassword(current, next)
+    setIsSubmitting(false)
     if (!result.ok) {
       setError(result.error ?? "No se pudo cambiar la contraseña.")
       setSuccess(false)
@@ -51,9 +54,13 @@ export function ChangePasswordDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(next) => {
-        onOpenChange(next)
-        if (!next) reset()
+      onOpenChange={(nextOpen) => {
+        // Ignora el cierre (Escape/clic afuera) mientras hay una request en
+        // vuelo: si se reabriera antes de que resuelva, isSubmitting/error
+        // quedarían mostrando el resultado de la request vieja.
+        if (isSubmitting) return
+        onOpenChange(nextOpen)
+        if (!nextOpen) reset()
       }}
     >
       <DialogContent>
@@ -89,7 +96,9 @@ export function ChangePasswordDialog({
             </p>
           )}
           <DialogFooter>
-            <Button type="submit">Guardar cambios</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando..." : "Guardar cambios"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -19,13 +19,21 @@ export async function getHealth(): Promise<HealthStatus> {
 
 // El backend (backend/src/routes/auth.ts) siempre responde { message } en
 // error — se propaga tal cual, ya son mensajes pensados para mostrarse.
-async function postAuthJson<T>(path: string, body: unknown): Promise<T> {
+async function postAuthJson<T>(path: string, body: unknown, token?: string): Promise<T> {
   let res: Response
   try {
     res = await fetch(`${API_URL}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(body),
+      // Sin esto, un servidor que acepta la conexión pero nunca responde
+      // deja la promesa colgada para siempre — el botón de submit (o el
+      // logout) quedaría deshabilitado sin salida. AbortSignal.timeout es
+      // nativo, sin librería nueva.
+      signal: AbortSignal.timeout(10_000),
     })
   } catch {
     // fetch() rechaza (sin llegar a res.ok) si el backend no responde, hay
@@ -49,4 +57,16 @@ export async function verifyOtp(
   code: string
 ): Promise<{ token: string; user: User }> {
   return postAuthJson("/auth/verify-otp", { email, code })
+}
+
+export async function logout(token: string): Promise<void> {
+  await postAuthJson("/auth/logout", undefined, token)
+}
+
+export async function changePassword(
+  token: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  await postAuthJson("/auth/change-password", { currentPassword, newPassword }, token)
 }

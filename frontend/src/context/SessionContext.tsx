@@ -23,8 +23,8 @@ interface ActionResult {
 interface SessionContextValue extends SessionState {
   login: (email: string, password: string, role: Role) => Promise<ActionResult>
   verifyOtp: (code: string) => Promise<ActionResult>
-  logout: () => void
-  changePassword: (current: string, next: string) => ActionResult
+  logout: () => Promise<void>
+  changePassword: (current: string, next: string) => Promise<ActionResult>
 }
 
 const SessionContext = React.createContext<SessionContextValue | undefined>(
@@ -102,12 +102,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [state.pendingEmail]
   )
 
-  const logout = React.useCallback(() => {
+  const logout = React.useCallback(async () => {
+    const token = state.token
+    if (token) {
+      try {
+        await api.logout(token)
+      } catch {
+        // Best-effort (AC de T7): si el backend no responde o la sesión ya
+        // estaba vencida, igual se limpia el estado local — no dejar al
+        // usuario atrapado esperando una llamada que puede fallar.
+      }
+    }
     setState(initialState)
-  }, [])
+  }, [state.token])
 
   const changePassword = React.useCallback(
-    (current: string, next: string): ActionResult => {
+    async (current: string, next: string): Promise<ActionResult> => {
       if (!current.trim()) {
         return { ok: false, error: "Ingresa tu contraseña actual." }
       }
@@ -117,9 +127,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           error: "La nueva contraseña debe ser diferente a la actual.",
         }
       }
+      const token = state.token
+      if (!token) {
+        return { ok: false, error: "Vuelve a iniciar sesión." }
+      }
+      try {
+        await api.changePassword(token, current, next)
+      } catch (err) {
+        return { ok: false, error: errorMessage(err, "No se pudo cambiar la contraseña.") }
+      }
       return { ok: true }
     },
-    []
+    [state.token]
   )
 
   const value = React.useMemo<SessionContextValue>(

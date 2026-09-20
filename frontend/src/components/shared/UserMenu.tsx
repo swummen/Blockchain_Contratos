@@ -83,8 +83,8 @@ export function UserMenu() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                logout()
+              onClick={async () => {
+                await logout()
                 navigate("/")
               }}
             >

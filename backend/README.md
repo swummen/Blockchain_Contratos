@@ -3,10 +3,12 @@
 Gateway Node.js + Express hacia MongoDB y Hyperledger Fabric (ver `claude_docs/SPEC.md`
 para el diseño completo — este archivo es un resumen práctico, no la fuente de verdad).
 
-## Qué hay hoy (T4 + T5 — walking skeleton, sin lógica de negocio real)
+## Qué hay hoy
 
-Sin lógica de negocio (documentos, verificación, auth) todavía, pero ya prueba de punta a
-punta las dos integraciones externas que necesita el proyecto: Mongo y Fabric.
+Sprint 0 (T4+T5) dejó el *walking skeleton* — Mongo y Fabric probados de punta a punta,
+sin lógica de negocio. Sprint 1 (`identity`, T1-T7) ya agregó la primera lógica de negocio
+real: login con OTP, sesión JWT, RBAC y cambio de contraseña — ver la sección
+"`identity`" más abajo para el contrato completo.
 
 - Express + TypeScript, compilado con `tsc` (CommonJS, no ESM — evita fricción con Jest).
 - `GET /health` — hace un `ping` real a Mongo en cada request (no un flag cacheado de
@@ -18,10 +20,12 @@ punta las dos integraciones externas que necesita el proyecto: Mongo y Fabric.
   message:"..."}` si Fabric no está disponible. Usá cualquiera de las dos rutas como
   plantilla para otros endpoints de estado.
 - Estructura por capas (`claude_docs/SPEC.md` §7): `routes/ → controllers/ → services/ →
-  repositories|fabric/`. Hoy existen `routes/`, `repositories/` (Mongo), `fabric/`
-  (Fabric Gateway) y `config/`; `services/` sigue vacía con `.gitkeep` —
-  `controllers/` ni existe todavía. Créenlas cuando agreguen la primera lógica de negocio
-  real (ninguna de las dos rutas actuales tiene lógica que justifique un service).
+  repositories|fabric/`. `identity` (Sprint 1) ya usa `services/authService.ts` +
+  `middlewares/auth.ts` + `repositories/{user,otp,session}Repository.ts`; `/health` y
+  `/fabric/ping` (Sprint 0) siguen sin un service propio porque no tienen lógica que lo
+  justifique. `controllers/` todavía no existe — las rutas de `identity` son lo bastante
+  finas (validan forma del body, llaman al service, mapean el resultado a status HTTP) que
+  no hizo falta esa capa intermedia; créenla si una ruta empieza a acumular lógica propia.
 - Testing: **Jest** (no Vitest — así lo fija `SPEC.md` §8) + `supertest`. `src/server.ts`
   separa `createApp()` de `main()` (guardado con `if (require.main === module)`) para
   poder testear con `supertest` sin levantar un listener real ni necesitar Mongo/Fabric —
@@ -39,7 +43,8 @@ punta las dos integraciones externas que necesita el proyecto: Mongo y Fabric.
   **de solo lectura** con el material criptográfico de Fabric montado en `/crypto`).
 
 Comandos (correr dentro de `backend/`): `npm run dev`, `npm run build`, `npm test`,
-`npm run lint`. Detalle completo en `claude_docs/SPEC.md` §5.
+`npm run lint`, `npm run seed` (`identity`, usuarios de prueba). Detalle completo en
+`claude_docs/SPEC.md` §5.
 
 ### Cómo funciona la conexión a Fabric (`src/fabric/gateway.ts`)
 
@@ -66,29 +71,67 @@ Comandos (correr dentro de `backend/`): `npm run dev`, `npm run build`, `npm tes
 - **El chaincode de ejemplo (`basic`) sigue siendo el único disponible.** Sirve para
   probar que la conexión funciona; no tiene nada que ver con el negocio.
 
-## Sprint 1 — `identity` (en progreso, ver `claude_docs/tasks/todo-sprint1-identity.md`)
+## `identity` (Sprint 1, T1-T7 — completo)
 
-**T1 (modelo de usuarios + seed) hecho.** `src/repositories/userRepository.ts` maneja la
-colección `users` de Mongo (contraseña con hash `bcryptjs`, nunca en texto plano; `_id` es
-el mismo `userId` legible que ya usa el frontend, ej. `"U001"`). `npm run seed`
-(`src/scripts/seedUsers.ts`) siembra 1 usuario por rol si la colección está vacía —
-idempotente, se puede correr las veces que haga falta.
+Login con credenciales + OTP por correo (2FA), sesión JWT con invalidación real en el
+logout, RBAC, cambio de contraseña. Decisiones de diseño completas en
+`claude_docs/tasks/plan-sprint1-identity.md` (D1‑D9); estado tarea por tarea en
+`claude_docs/tasks/todo-sprint1-identity.md`.
 
-**Contraseña de desarrollo de los usuarios sembrados: `Contratos123!`** (los tres,
-Empleado/Verificador/Administrador — ver el script para los emails). Es solo para probar
-en local/Docker; nunca configurar esto en un ambiente real. Reemplaza a
-`frontend/src/data/users.ts` como fuente real para el login; deja de ser necesario cuando
-HU‑018 (Sprint 4) le dé al Administrador el alta real de usuarios.
+### Seed de usuarios
 
-Falta T2 en adelante: login con OTP por correo, sesión JWT, RBAC, logout, cambio de
-contraseña — ver el plan y el todo de Sprint 1 para el detalle y las decisiones (D1‑D9).
+`npm run seed` (`src/scripts/seedUsers.ts`) siembra 1 usuario por rol si la colección
+`users` está vacía — idempotente, se puede correr las veces que haga falta. **Contraseña
+de desarrollo de los tres: `Contratos123!`** (nunca usar esto en un ambiente real). Ver el
+script para los emails de cada rol. Reemplaza a `frontend/src/data/users.ts` como fuente
+real para el login; deja de ser necesario cuando HU‑018 (Sprint 4) le dé al Administrador
+el alta real de usuarios.
 
-## Qué sigue (el negocio real: chaincode + escrituras al ledger)
+### Contrato de `/auth/*`
 
-Lo que viene ahora es más grande que T5: el chaincode real del proyecto (Sprint 2, módulo
-`ledger` de `claude_docs/SPEC.md` — `RegisterDocument`, huellas SHA-256, eventos,
-`txID`; RF‑16, 22, 35, 40, 51) y la lógica de negocio en el backend que lo invoque
-(auth con JWT+OTP para `identity`, endpoints de documentos/verificación/administración).
+Todas las rutas viven en `src/routes/auth.ts`; todas responden `{ message: "..." }` en
+error (los mensajes ya están pensados para mostrarse tal cual en la UI).
+
+| Ruta | Auth | Body | Respuesta 200 | Errores |
+|---|---|---|---|---|
+| `POST /auth/login` | no | `{email, password, role}` | `{message}` (dispara el envío del OTP) | `400` datos faltantes/`role` inválido · `401` credenciales inválidas (mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta desactivada — RF‑002 CA‑02) · `502` no se pudo enviar el correo |
+| `POST /auth/verify-otp` | no | `{email, code}` | `{token, user}` (`user` sin `passwordHash`, mismas claves que `frontend/src/types/domain.ts`) | `400` código inválido/vencido/incorrecto/intentos agotados · `403` el rol elegido en el login no coincide con el real (HU‑002 CA‑02) |
+| `GET /auth/me` | sí | — | `{user}` | `401` sin sesión válida |
+| `POST /auth/logout` | sí | — | `204` | `401` sin sesión válida |
+| `POST /auth/change-password` | sí | `{currentPassword, newPassword}` | `{message}` | `400` actual incorrecta/nueva inválida · `401` sin sesión válida |
+
+"Auth: sí" = header `Authorization: Bearer <token>`, validado por
+`middlewares/auth.ts#requireAuth()` (o `requireAuth(...roles)` para acotar por rol — no
+usado todavía, ningún endpoint de Sprint 1 lo necesita).
+
+### Cómo funciona la sesión
+
+- El JWT (`jsonwebtoken`, HS256 fijo) trae `sub` (userId), `role`, `jti` — vía las
+  opciones `subject`/`jwtid` de la librería, nunca escritos a mano en el payload.
+- Cada verificación de OTP exitosa crea además un documento en la colección `sessions`
+  (`_id` = `jti`). `requireAuth()` exige firma+expiración del JWT **y** que ese documento
+  siga existiendo — es lo que permite invalidar una sesión de verdad en el logout (un JWT
+  puramente stateless no se puede revocar antes de su expiración).
+- `otp_codes` y `sessions` tienen índices TTL de Mongo sobre `expiresAt`: se limpian
+  solos, sin cron.
+- `JWT_SECRET` no tiene default (es un secreto) — el backend falla al arrancar si falta.
+  `docker/compose.app.yml` sí trae un default de desarrollo (mismo criterio que
+  `MONGO_ROOT_PASSWORD=changeme`), nunca usar eso fuera de local/Docker.
+
+### Probar sin SMTP real
+
+Si `SMTP_HOST` no está seteada, `src/services/emailService.ts` loguea el código OTP a
+consola (`[dev] SMTP no configurado — código OTP para <email>: <código>`) en vez de
+enviarlo — buscalo en `docker logs backend` (o la consola de `npm run dev`). Nunca es un
+fallback silencioso.
+
+## Qué sigue (Sprint 2: chaincode + escrituras al ledger)
+
+Con `identity` completo, lo que viene es el chaincode real del proyecto (módulo `ledger`
+de `claude_docs/SPEC.md` — `RegisterDocument`, huellas SHA-256, eventos, `txID`; RF‑16,
+22, 35, 40, 51) y los endpoints de negocio del backend que lo invoquen (documentos,
+verificación, administración) — esos sí van a necesitar `requireAuth(...roles)` con una
+lista de roles real, a diferencia de `identity` (ninguna de sus rutas la necesitó).
 
 Lo que ya está resuelto para cuando llegue ese momento:
 
@@ -107,10 +150,12 @@ Lo que ya está resuelto para cuando llegue ese momento:
   ruta corridos desde Git Bash (ej. `docker exec backend touch /crypto/x` se mangló solo
   al probarlo) — el escape es `//` al inicio de la ruta (`//crypto/x`). Detalle completo
   en `docker/README.md`.
-- **El frontend real ya existe** (rama `Feat/Front`, ya en `main`) pero es un prototipo
-  visual: usa datos hardcodeados en `src/data/*.ts` y no llama a ningún backend (`grep`
-  de `fetch|axios|VITE_API_URL` en `frontend/src` no encuentra nada). Conectarlo es
-  trabajo pendiente, no algo que ya esté resuelto.
+- **El frontend real ya existe** (rama `Feat/Front`, ya en `main`) y desde Sprint 1 (T6/T7)
+  ya habla de verdad con este backend para todo el flujo de `identity` — login, OTP,
+  sesión, logout, cambio de contraseña (`frontend/src/lib/api.ts`,
+  `frontend/src/context/SessionContext.tsx`). Las pantallas de negocio
+  (Empleado/Verificador/Administrador) siguen con datos hardcodeados de `src/data/*.ts` —
+  conectarlas es trabajo de Sprint 2+, no algo que ya esté resuelto.
 
 ## Referencias
 
@@ -118,6 +163,6 @@ Lo que ya está resuelto para cuando llegue ese momento:
   first/Never), es la fuente de verdad para cualquier duda de diseño.
 - `claude_docs/tasks/todo.md` — plan de tareas del sprint de infraestructura (T1-T8) y su
   estado actual.
-- `claude_docs/tasks/plan-sprint1-identity.md` / `todo-sprint1-identity.md` — plan y tareas
-  del sprint de `identity` (login, OTP, sesión, RBAC) en curso.
+- `claude_docs/tasks/plan-sprint1-identity.md` / `todo-sprint1-identity.md` — plan,
+  decisiones (D1‑D9) y tareas del sprint de `identity` (login, OTP, sesión, RBAC), completo.
 - `docker/README.md` — cómo levantar la red Fabric y Mongo, puertos, prerrequisitos.

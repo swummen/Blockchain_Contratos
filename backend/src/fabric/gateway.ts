@@ -11,6 +11,12 @@ const EVALUATE_TIMEOUT_MS = 3000;
 // orderer, y esperar el commit. Este último es el más largo a propósito —
 // tiene que esperar a que el orderer corte el bloque (~2s de BatchTimeout por
 // default) y el peer lo valide, no un simple round-trip de red.
+// 5s alcanza con la red ya arriba, pero justo después de un network-up.sh el
+// primer invoke puede tardar más (el peer todavía está levantando el
+// contenedor del chaincode) — si un submit falla con un deadline excedido
+// muy pronto después de levantar todo, no es necesariamente un bug del
+// chaincode, puede ser este cold-start. Subir el número si se observa en la
+// práctica, no antes (no agregar retries especulativos sin haberlo visto).
 const ENDORSE_TIMEOUT_MS = 5000;
 const SUBMIT_TIMEOUT_MS = 5000;
 const COMMIT_TIMEOUT_MS = 15000;

@@ -6,6 +6,14 @@ import { connect, Gateway, Identity, Signer, signers } from "@hyperledger/fabric
 import { fabricConfig } from "../config/fabric";
 
 const EVALUATE_TIMEOUT_MS = 3000;
+// submitTransaction pasa por tres fases con timeouts propios (a diferencia de
+// evaluateTransaction, que es un solo round-trip al peer): endosar, mandar al
+// orderer, y esperar el commit. Este último es el más largo a propósito —
+// tiene que esperar a que el orderer corte el bloque (~2s de BatchTimeout por
+// default) y el peer lo valide, no un simple round-trip de red.
+const ENDORSE_TIMEOUT_MS = 5000;
+const SUBMIT_TIMEOUT_MS = 5000;
+const COMMIT_TIMEOUT_MS = 15000;
 
 let gateway: Gateway | undefined;
 let grpcClient: grpc.Client | undefined;
@@ -76,7 +84,22 @@ export async function connectFabric(): Promise<void> {
     identity,
     signer,
     evaluateOptions: () => ({ deadline: Date.now() + EVALUATE_TIMEOUT_MS }),
+    endorseOptions: () => ({ deadline: Date.now() + ENDORSE_TIMEOUT_MS }),
+    submitOptions: () => ({ deadline: Date.now() + SUBMIT_TIMEOUT_MS }),
+    commitStatusOptions: () => ({ deadline: Date.now() + COMMIT_TIMEOUT_MS }),
   });
+}
+
+async function getContract() {
+  if (!gateway) {
+    // Reconexión perezosa: si connectFabric() falló al arrancar (por ejemplo,
+    // el backend arrancó antes de que network-up.sh terminara de generar las
+    // credenciales), una request posterior no debería quedar fallando para
+    // siempre solo porque nadie reinició el contenedor.
+    await connectFabric();
+  }
+  const network = gateway!.getNetwork(fabricConfig.channelName);
+  return network.getContract(fabricConfig.chaincodeName);
 }
 
 // Solo evaluateTransaction (query de solo lectura): la Fabric Gateway API
@@ -84,15 +107,22 @@ export async function connectFabric(): Promise<void> {
 // por su cuenta cuando hace falta (submitTransaction) — el cliente nunca
 // necesita una conexión aparte al orderer.
 export async function queryChaincode(fcn: string, ...args: string[]): Promise<string> {
-  if (!gateway) {
-    // Reconexión perezosa: si connectFabric() falló al arrancar (por ejemplo,
-    // el backend arrancó antes de que network-up.sh terminara de generar las
-    // credenciales), un /fabric/ping posterior no debería quedar en 503 para
-    // siempre solo porque nadie reinició el contenedor.
-    await connectFabric();
-  }
-  const network = gateway!.getNetwork(fabricConfig.channelName);
-  const contract = network.getContract(fabricConfig.chaincodeName);
+  const contract = await getContract();
   const resultBytes = await contract.evaluateTransaction(fcn, ...args);
+  return Buffer.from(resultBytes).toString("utf8");
+}
+
+// A diferencia de queryChaincode, esto sí escribe al ledger: endosa en el
+// peer, manda al orderer, y espera el commit real antes de resolver (no
+// devuelve apenas el peer simula la transacción — eso es justo lo que
+// `peer chaincode invoke` de la CLI NO espera por defecto, y lo que causó la
+// condición de carrera documentada en docker/deploy-cc.sh; submitTransaction
+// del SDK no tiene ese problema, ya espera el estado de commit).
+export async function submitChaincodeTransaction(
+  fcn: string,
+  ...args: string[]
+): Promise<string> {
+  const contract = await getContract();
+  const resultBytes = await contract.submitTransaction(fcn, ...args);
   return Buffer.from(resultBytes).toString("utf8");
 }

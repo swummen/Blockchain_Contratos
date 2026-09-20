@@ -62,6 +62,13 @@ func TestRegisterDocument_Success(t *testing.T) {
 	eventKey, eventValue := stub.PutStateArgsForCall(1)
 	require.Equal(t, "event\x00doc1\x00tx1\x00", eventKey)
 	require.Contains(t, string(eventValue), `"Action":"registro"`)
+
+	// D5: la clave compuesta del evento tiene que quedar armada con
+	// (documentID, txID) — es lo que un futuro GetStateByPartialCompositeKey
+	// por documentID (Sprint 3/4) va a necesitar para recuperar el historial.
+	objType, attrs := stub.CreateCompositeKeyArgsForCall(0)
+	require.Equal(t, "event", objType)
+	require.Equal(t, []string{"doc1", "tx1"}, attrs)
 }
 
 func TestRegisterDocument_AlreadyExists(t *testing.T) {
@@ -114,4 +121,37 @@ func TestRegisterDocument_PutStateFails(t *testing.T) {
 	_, err := c.RegisterDocument(ctx, "doc1", validHash, "U001")
 
 	require.EqualError(t, err, "failed to put document to world state: disk full")
+}
+
+func TestRegisterDocument_PutEventStateFails(t *testing.T) {
+	c, stub, ctx := newContext()
+	// La primera llamada a PutState (el documento) tiene éxito; falla recién
+	// la segunda (el evento) — rama distinta a TestRegisterDocument_PutStateFails.
+	stub.PutStateReturnsOnCall(1, errors.New("disk full"))
+
+	_, err := c.RegisterDocument(ctx, "doc1", validHash, "U001")
+
+	require.EqualError(t, err, "failed to put event to world state: disk full")
+}
+
+func TestRegisterDocument_GetTxTimestampFails(t *testing.T) {
+	c, stub, ctx := newContext()
+	stub.GetTxTimestampReturns(nil, errors.New("clock unavailable"))
+
+	_, err := c.RegisterDocument(ctx, "doc1", validHash, "U001")
+
+	require.EqualError(t, err, "failed to read tx timestamp: clock unavailable")
+	require.Equal(t, 0, stub.PutStateCallCount())
+}
+
+func TestRegisterDocument_CreateCompositeKeyFails(t *testing.T) {
+	c, stub, ctx := newContext()
+	stub.CreateCompositeKeyReturns("", errors.New("bad key"))
+
+	_, err := c.RegisterDocument(ctx, "doc1", validHash, "U001")
+
+	require.EqualError(t, err, "failed to build event composite key: bad key")
+	// El documento ya se guardó (primer PutState) antes de armar la clave del
+	// evento; solo el segundo PutState (el evento) nunca llega a ejecutarse.
+	require.Equal(t, 1, stub.PutStateCallCount())
 }

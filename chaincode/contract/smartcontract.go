@@ -32,10 +32,17 @@ type Document struct {
 type Event struct {
 	Action     string `json:"Action"`
 	DocumentID string `json:"DocumentID"`
-	Result     string `json:"Result,omitempty"`
-	Timestamp  string `json:"Timestamp"`
-	TxID       string `json:"TxID"`
-	User       string `json:"User"`
+	// contractapi genera un schema de la respuesta por reflection y marca todo
+	// campo exportado como obligatorio salvo que lleve `metadata:",optional"`
+	// — el `omitempty` del tag json no alcanza para eso (solo controla el
+	// marshal, no la validación de schema de contractapi). Sin esta etiqueta,
+	// un RegisterDocument real fallaba con "value did not match schema:
+	// Result is required" apenas Result quedaba vacío (el caso normal en un
+	// registro, donde no hay resultado de verificación todavía).
+	Result    string `json:"Result,omitempty" metadata:",optional"`
+	Timestamp string `json:"Timestamp"`
+	TxID      string `json:"TxID"`
+	User      string `json:"User"`
 }
 
 const eventKeyType = "event"

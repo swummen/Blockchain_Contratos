@@ -6,6 +6,7 @@ import { connectMongo } from "./repositories/mongoClient";
 import { ensureIndexes as ensureOtpIndexes } from "./repositories/otpRepository";
 import { ensureIndexes as ensureSessionIndexes } from "./repositories/sessionRepository";
 import { authRouter } from "./routes/auth";
+import { documentsRouter } from "./routes/documents";
 import { fabricRouter } from "./routes/fabric";
 import { healthRouter } from "./routes/health";
 
@@ -39,6 +40,20 @@ export function createApp() {
     }
     next();
   });
+  // /documents (Sprint 2, T4): mismo criterio D8 que /auth — CORS acotado a
+  // FRONTEND_ORIGIN, no el wildcard de /health/fabric. El body va como
+  // multipart/form-data (no JSON), pero el header Authorization igual
+  // dispara el preflight.
+  app.use("/documents", (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", authConfig.frontendOrigin);
+    res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
   app.use(express.json());
   // express.json() rechaza un body malformado con un SyntaxError; sin este
   // handler, Express responde con su página de error HTML por defecto en
@@ -54,6 +69,7 @@ export function createApp() {
   app.use(healthRouter);
   app.use(fabricRouter);
   app.use(authRouter);
+  app.use(documentsRouter);
   // Catch-all al final (T4: primera vez que una ruta protegida hace un
   // await a Mongo en pleno camino de la request — findSessionByJti). Sin
   // esto, una excepción ahí (Mongo caído a mitad de request) cae en la

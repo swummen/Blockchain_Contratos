@@ -128,6 +128,14 @@ infra ──┬──> identity ──> documents ──> verification ──> a
 | Sprint 3 | `verification` | HU‑010…014 |
 | Sprint 4 | `administration` + consultas restantes | HU‑008, 009, 015…020 |
 
+**Estado de implementación (actualizado 2026‑09‑20):** `infra` (Sprint 0) completo —
+RNF‑19, 20, 21, 22, evidencia en `claude_docs/tasks/sprint-0-resultados.md`. `identity`
+(Sprint 1) completo — **RF‑01…07, RF‑52, RF‑53 y RNF‑01, 02, 03, 07 implementados y
+verificados** (login con OTP, sesión JWT con invalidación real, RBAC, cambio de
+contraseña; detalle en `claude_docs/tasks/todo-sprint1-identity.md`). La porción de
+`identity` que corresponde a RF‑43…47 (ciclo de vida de usuarios) no se tocó todavía —
+llega con HU‑018 en Sprint 4, como ya fija la tabla de arriba.
+
 Cada módulo se especifica en su propio `claude_docs/SPEC-<id>.md` **solo si** su diseño
 necesita más detalle del que cabe aquí. El mapa de arriba es el índice de lo que existe.
 
@@ -197,6 +205,7 @@ borrado físico, nunca afecta trazabilidad histórica (RF‑47).
 | `npm run dev` | servidor de desarrollo (`tsx watch`) |
 | `npm run build` | `tsc -p tsconfig.json` |
 | `npm start` | corre el build (`dist/server.js`) |
+| `npm run seed` | siembra usuarios de prueba (`identity`, uno por rol — ver `backend/README.md`) |
 | `npm test` | Jest (`npx jest <archivo>` para un test único) |
 | `npm run lint` | oxlint (mismo linter que `frontend/`, no ESLint) |
 
@@ -677,7 +686,7 @@ Ley 1581/2012. Estado: **13/13 disposiciones aplicables al MVP cubiertas (100 %)
 | Ley 527/1999 Art. 8–9 | Original e integridad de un mensaje de datos | RF‑14, 15, 16, 30, 31, 32, 34; RNF‑05, 14 | Huella SHA‑256 al registrar, anclada en Fabric; comparación automática de hashes detecta alteración. |
 | Ley 527/1999 Art. 6, 12 | Escrito y conservación (accesible para consulta posterior) | RF‑18, 19, 37, 48; RNF‑12 | Módulos de consulta mantienen disponible el historial durante el MVP. |
 | Ley 527/1999 Art. 10–11 | Admisibilidad y valoración probatoria | RF‑21, 22, 35; RNF‑26, 27 | Historial de trazabilidad con acción, usuario, `txID`, fecha desde el ledger. |
-| Decreto 2364/2012 Art. 6 | Custodia de credenciales del firmante | RF‑02, 03, 04, 52, 53; RNF‑01, 02, 07 | Credenciales + OTP por correo + gestión segura de contraseñas. **Cubierto parcialmente.** |
+| Decreto 2364/2012 Art. 6 | Custodia de credenciales del firmante | RF‑02, 03, 04, 52, 53; RNF‑01, 02, 07 | Credenciales + OTP por correo + gestión segura de contraseñas. **Implementado (Sprint 1, `identity`)**: hash+salt (bcrypt), OTP por correo con expiración/reintentos, sesión JWT invalidable, cambio de contraseña autenticado. |
 | Ley 1581/2012 Art. 4 lit. g) | Principio de seguridad | RNF‑01, 03, 05, 07 | Hash + salt, RBAC, sesiones seguras, inmutabilidad de la evidencia. |
 | Ley 1581/2012 Art. 4 lit. h) / Art. 3 | Confidencialidad y minimización de datos | RF‑13, 27; RNF‑04, 08 | No se almacena el contenido del contrato; solo huella y metadatos mínimos; huella visible solo a roles autorizados. |
 | Ley 527/1999 Art. 7 · Decreto 2364/2012 Art. 2, 3, 5 | Firma electrónica | — | **Fuera de alcance** (numerales 2.6.1 / 2.6.2 del anteproyecto). |
@@ -689,8 +698,8 @@ Ley 1581/2012. Estado: **13/13 disposiciones aplicables al MVP cubiertas (100 %)
 
 | # | Tema | Estado |
 |---|---|---|
-| 1 | Canal exclusivo del segundo factor (correo corporativo) frente a SMS / app autenticadora. | Pendiente de validar (nota en RF‑003 / RNF‑02). |
-| 2 | Número máximo de intentos de token y tiempo de expiración exactos. | Por definir en el diseño de `identity` (RF‑004 RN‑02). |
+| 1 | Canal exclusivo del segundo factor (correo corporativo) frente a SMS / app autenticadora. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D1 de `claude_docs/tasks/plan-sprint1-identity.md`):** por ahora el OTP va al correo *registrado* del usuario, no necesariamente corporativo — permite probar el flujo completo durante el desarrollo. Queda pendiente evaluar más adelante si se exige que sea exclusivamente el correo corporativo (nota de cambio: esto relaja, no contradice, RF‑003 — el canal sigue siendo "correo", solo se pospuso la restricción de dominio). |
+| 2 | Número máximo de intentos de token y tiempo de expiración exactos. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D2 del mismo plan):** 6 dígitos, expira a los 5 minutos, máximo 5 intentos — agotados, hay que volver a iniciar sesión para un código nuevo (eso es el "bloqueo temporal del proceso" de RN‑02). Sin valor fijado en `docs/md/Requisitos_Historias_Usuario_MVP_Blockchain_Contratos_2.md`/`Trabajo de grado final.md` (se revisaron ambos), se adoptó este default. |
 | 3 | Topología concreta de Fabric: ¿1 o 2 organizaciones? Política de endorsement. | Por definir en Fase 2 / módulo `infra`. |
 | 4 | Diagramas UML (componentes, secuencia, despliegue) y prototipos UX/UI. | Entregable de Fase 2 (OE2), aún no producidos. |
 | 5 | Estados de aprobación del tutor en la Matriz de Actores (KPI‑1.1). | "Pendiente de aprobación" — actualizar tras revisión. |
@@ -698,5 +707,7 @@ Ley 1581/2012. Estado: **13/13 disposiciones aplicables al MVP cubiertas (100 %)
 
 ---
 
-*Última actualización: 2026‑09‑06. Al cambiar alcance o diseño, edita este archivo primero
-y deja nota de cambio; luego implementa.*
+*Última actualización: 2026‑09‑20 (T8, Sprint 1 `identity`: trazabilidad de RF‑01…07/52/53
+y RNF‑01/02/03/07 marcada como implementada; preguntas abiertas #1 y #2 de la sección 18
+resueltas con las decisiones D1/D2 del plan de Sprint 1). Anterior: 2026‑09‑06. Al cambiar
+alcance o diseño, edita este archivo primero y deja nota de cambio; luego implementa.*

@@ -2,10 +2,11 @@
 
 Plan: `claude_docs/tasks/plan-sprint1-identity.md` (**aprobado 2026‑09‑19**, D1/D2 confirmados).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T7 completos y verificados en backend/mecánicamente. Falta que Sofia
-confirme en navegador real el cambio de contraseña y el logout (con el chequeo de que una
-ruta protegida rechaza el acceso después) antes de cerrar el checkpoint de frontend y
-pasar a T8.**
+Estado: **T1-T8 completos y verificados (incluye un ciclo `down.sh`→`up.sh` desde cero +
+`npm run seed` + smoke test de punta a punta en T8). Sprint 1 (`identity`) terminado en lo
+técnico. Sigue pendiente que Sofia confirme en navegador real el cambio de contraseña y el
+logout con el chequeo de ruta protegida (checkpoint de T7, no bloqueante para el resto),
+y los dos puntos de DoD fuera del alcance de este repo (PR/aceptación de dirección).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -492,32 +493,61 @@ necesario porque `logout()` dejó de ser síncrono).
 env vars nuevas, comandos nuevos si aplica, y la trazabilidad de RF/RNF en `SPEC.md`.
 
 **Criterios de aceptación:**
-- [ ] `docker/.env.example`/`backend/.env.example`/`frontend/.env.example` documentan
-  todas las env vars nuevas (`JWT_SECRET`, `JWT_EXPIRES_IN`, `SMTP_*`, `OTP_TTL_MINUTES`,
-  `BCRYPT_ROUNDS`, `FRONTEND_ORIGIN`).
-- [ ] `backend/README.md` documenta el flujo de auth para quien retome el proyecto
-  (contrato de `/auth/*`, cómo correr el seed, cómo probar sin SMTP real).
-- [ ] `claude_docs/SPEC.md`: marcar RF‑01…07, RF‑52, RF‑53 y RNF‑01, 02, 03, 07 como
-  implementados en la sección de trazabilidad; resolver las preguntas abiertas #1 y #2
-  (líneas 692‑693) con lo que finalmente se haya confirmado (D1/D2), con nota de cambio.
-- [ ] `CLAUDE.md` (si aplica): ningún comando nuevo de nivel raíz, solo `npm run seed` ya
-  cubierto por la tabla de comandos existente de `backend/`.
+- [x] `docker/.env.example`/`backend/.env.example` documentan todas las env vars nuevas
+  (`JWT_SECRET`, `JWT_EXPIRES_MINUTES` — no `JWT_EXPIRES_IN`, ver nota de cambio; `SMTP_*`,
+  `OTP_TTL_MINUTES`, `OTP_MAX_ATTEMPTS`, `BCRYPT_ROUNDS`, `FRONTEND_ORIGIN`); ya se habían
+  ido documentando tarea por tarea (T1‑T3), confirmado ahora que están todas juntas.
+  `frontend/.env.example` no necesitó nada nuevo — `identity` no le agregó ninguna env var
+  al frontend, solo llamadas nuevas a la misma `VITE_API_URL` de siempre.
+- [x] `backend/README.md` reescrito: contrato completo de `/auth/*` (tabla ruta/auth/body/
+  respuesta/errores), cómo funciona la sesión (JWT+`sessions`+TTL), cómo correr el seed,
+  cómo probar sin SMTP real. También se corrigieron dos afirmaciones que habían quedado
+  obsoletas ("sin lógica de negocio todavía" y "el frontend no llama a ningún backend" —
+  ambas falsas después de T1‑T7).
+- [x] `claude_docs/SPEC.md`: nota de estado de implementación agregada junto al mapa de
+  capacidades (§3) marcando RF‑01…07, RF‑52, RF‑53 y RNF‑01, 02, 03, 07 como implementados;
+  la fila del Decreto 2364/2012 Art. 6 (§17) pasó de "Cubierto parcialmente" a
+  "Implementado"; las preguntas abiertas #1 y #2 (§18) resueltas con las decisiones D1/D2,
+  con nota de cambio explicando que D1 relaja (no contradice) RF‑003. Fecha de "Última
+  actualización" del documento avanzada con el detalle del cambio.
+- [x] `CLAUDE.md`: **corrección respecto al AC original** — `npm run seed` en realidad NO
+  estaba en la tabla de comandos de `backend/` todavía (el AC asumía que sí); se agregó
+  ahí y en la tabla equivalente de `claude_docs/SPEC.md` §5. Ningún comando nuevo de nivel
+  raíz.
 
 **Verificación:**
-- [ ] Manual: `docker/up.sh` desde cero + `npm run seed` + smoke manual del flujo completo.
+- [x] Manual: `bash docker/down.sh` (ciclo completo, no solo los servicios de la app) +
+  `bash docker/up.sh` desde cero (red Fabric + chaincode de ejemplo + Mongo/backend/
+  frontend, todo reconstruido) + `npm run seed` + smoke test real: `login` → OTP del log
+  → `verify-otp` → JWT → `/auth/me` → `logout` → `/auth/me` de nuevo (`401`, confirma
+  invalidación). `/health` y `/fabric/ping` (Sprint 0) sin regresión; `/` y
+  `/system-status` del frontend en `200`. `npm run build`/`test` (52/52)/`lint` del
+  backend, todos en verde en esta misma corrida final.
+- [x] Ronda de `code-reviewer` (verdict: APPROVE, sin Required) enfocada en exactitud de
+  la documentación, no estilo: releyó `routes/auth.ts`/`authService.ts`/`config/auth.ts`
+  completos y confirmó que la tabla de contrato de `/auth/*`, la nota de "Estado de
+  implementación" de `SPEC.md` §3, y la resolución de las preguntas abiertas #1/#2 (§18)
+  coinciden exactamente con el código y con las decisiones D1/D2 del plan — nada
+  documentado que el código no haga, nada implementado que quedara sin documentar. Único
+  hallazgo (barato, aplicado): la lista corta de comandos al inicio de
+  `backend/README.md` no mencionaba `npm run seed` aunque ya estaba en las tablas de
+  `CLAUDE.md`/`SPEC.md` §5 — agregada ahí también.
 
 **Dependencias:** T1‑T7.
 
-**Archivos:** `docker/.env.example`, `backend/.env.example`, `frontend/.env.example`,
-`backend/README.md`, `claude_docs/SPEC.md`.
+**Archivos:** `backend/README.md`, `claude_docs/SPEC.md`, `CLAUDE.md`.
 
 **Alcance:** S.
 
 ---
 
 ### ✅ Checkpoint: HU‑001…004 terminadas (DoD — SPEC §10.2)
-- [ ] Los 8 escenarios Gherkin de HU‑001…004 (CA‑01/CA‑02 cada una) en PASS.
-- [ ] RF‑01…07, RF‑52, RF‑53 y RNF‑01, 02, 03, 07 marcados como implementados.
-- [ ] Entorno verificado en Docker Compose.
-- [ ] PR abierto y revisado; mensaje de commit redactado (sin commit automático).
-- [ ] Aceptación de dirección/codirección registrada.
+- [x] Los 8 escenarios Gherkin de HU‑001…004 (CA‑01/CA‑02 cada una) en PASS — cubiertos por
+  los tests de T2‑T5 (52/52) y por la verificación manual de punta a punta de T8.
+- [x] RF‑01…07, RF‑52, RF‑53 y RNF‑01, 02, 03, 07 marcados como implementados en
+  `claude_docs/SPEC.md`.
+- [x] Entorno verificado en Docker Compose — ciclo `down.sh`→`up.sh` desde cero en T8.
+- [ ] PR abierto y revisado; mensaje de commit redactado (sin commit automático) — pendiente
+  de Sofia (ya mergeado `feat/blockchain` → `main` para Sprint 0; Sprint 1 queda por
+  mergear).
+- [ ] Aceptación de dirección/codirección registrada — fuera del alcance de este repo.

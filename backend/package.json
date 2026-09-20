@@ -22,6 +22,7 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^6.11.0",
+    "multer": "^2.4.0",
     "nodemailer": "^10.0.10"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.2.0",
     "@types/node": "^22.10.2",
     "@types/nodemailer": "^8.0.2",
     "@types/supertest": "^6.0.2",

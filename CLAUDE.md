@@ -65,6 +65,7 @@ configured.
 | `npm run dev` | dev server (`tsx watch`) |
 | `npm run build` | `tsc -p tsconfig.json` |
 | `npm start` | run the build (`dist/server.js`) |
+| `npm run seed` | seed dev users (`identity`, one per role — see `backend/README.md`) |
 | `npm test` | Jest (`npx jest <file>` for a single test) |
 | `npm run lint` | oxlint (same linter as `frontend/`, not ESLint) |
 

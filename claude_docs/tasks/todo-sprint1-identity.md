@@ -2,10 +2,10 @@
 
 Plan: `claude_docs/tasks/plan-sprint1-identity.md` (**aprobado 2026‑09‑19**, D1/D2 confirmados).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T5 completos y verificados (backend de `identity` completo). T6 (frontend:
-login/OTP reales + selector de rol) implementado y verificado mecánicamente (sin navegador
-en este entorno) — pendiente que Sofia confirme el click-through real en el navegador
-antes de pasar a T7.**
+Estado: **T1-T7 completos y verificados en backend/mecánicamente. Falta que Sofia
+confirme en navegador real el cambio de contraseña y el logout (con el chequeo de que una
+ruta protegida rechaza el acceso después) antes de cerrar el checkpoint de frontend y
+pasar a T8.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -388,10 +388,9 @@ aparte.
   sirviendo `200` (sin romper el diagnóstico de Sprint 0); simulé el preflight `OPTIONS`
   exacto que mandaría el navegador desde `http://localhost:5173` contra
   `POST /auth/login` → `204` con los headers CORS correctos.
-- [ ] **Pendiente de Sofia** (igual que en Sprint 0 T6): confirmar en un navegador real
-  que el login completo funciona — selector de rol, credenciales del seed, OTP real,
-  entra al panel del rol correspondiente; y que credenciales/rol/OTP equivocados muestran
-  el error sin colgar la UI.
+- [x] Confirmado por Sofia en navegador real (2026‑09‑19): probó los 3 roles del seed
+  (Empleado, Verificador, Administrador) con el selector de rol + credenciales + OTP real
+  — los tres entran al panel correspondiente sin problemas.
 - [x] Ronda de `code-reviewer`: encontró que una falla de red (backend caído, CORS
   bloqueado, `VITE_API_URL` mal configurada) hacía que `fetch()` rechazara *antes* de que
   `postAuthJson` armara su propio error — el mensaje que terminaba mostrando la UI era el
@@ -419,21 +418,60 @@ aparte.
 `POST /auth/change-password` reales en vez de solo resetear el estado local.
 
 **Criterios de aceptación:**
-- [ ] `logout` llama al backend antes de limpiar el estado local; si la llamada falla,
-  igual limpia la sesión del lado del cliente (no dejar al usuario "atrapado").
-- [ ] `ChangePasswordDialog` llama al backend real; error de contraseña actual incorrecta
-  se muestra en la UI existente sin cambiar su diseño.
-- [ ] `ProtectedRoute` redirige a `/` si el JWT ya no es válido (probar recargando tras un
-  logout, o dejando expirar el JWT si el tiempo de expiración de dev es corto).
+- [x] `logout` llama al backend (`POST /auth/logout`, invalida la sesión de verdad en
+  Mongo) antes de limpiar el estado local; si la llamada falla (backend caído, token ya
+  vencido), el `catch` la absorbe y **siempre** limpia el estado local igual — no dejar al
+  usuario "atrapado" esperando algo que puede fallar.
+- [x] `ChangePasswordDialog` llama al backend real (`POST /auth/change-password`); error
+  de contraseña actual incorrecta se muestra en la UI existente sin cambiar su diseño
+  (mismo `<p className="text-destructive">` de siempre, ahora con el mensaje real del
+  backend en vez del mock).
+- [x] `ProtectedRoute` — **alcance aclarado**: ya redirige a `/` cuando `stage` no es
+  `"authenticated"` (lógica preexistente, sin cambios). Recargar tras un logout ya
+  funciona por diseño (D7: el JWT vive solo en memoria, una recarga siempre resetea a
+  `anonymous`, sin código nuevo que agregar). El caso "dejando expirar el JWT sin recargar
+  la página" no se pudo verificar de punta a punta: Sprint 1 no tiene ninguna pantalla de
+  negocio real conectada al backend todavía (Empleado/Verificador/Administrador siguen con
+  datos mock de `Feat/Front`, ver nota de T6/Sprint 0) — no hay ninguna llamada autenticada
+  real disparándose desde esas rutas hoy que pueda toparse con un 401 mientras la SPA
+  sigue montada. Un interceptor global de 401 (para forzar logout ante cualquier llamada
+  autenticada que falle) queda como trabajo natural de Sprint 2, cuando existan esas
+  llamadas reales — no se inventa acá sin nada real que lo ejercite.
 
 **Verificación:**
-- [ ] Manual en navegador: logout → intentar volver a una ruta protegida con el botón
-  "atrás" del navegador → redirige al login (HU‑003 CA‑02).
-- [ ] Manual: cambio de contraseña exitoso y fallido, ambos con feedback visible.
+- [x] Manual contra el stack real (rebuild de `frontend`, requests simulados con la forma
+  exacta que manda el navegador — mismos headers/Content-Type/ausencia de body que usan
+  `api.logout`/`api.changePassword`): login+verify-otp real → JWT; `POST /auth/logout` con
+  ese JWT → `204`; `GET /auth/me` con el mismo JWT después → `401` (invalidación real,
+  igual que T4). `POST /auth/change-password` real → `200`; login con la contraseña vieja
+  falla, con la nueva funciona; se restauró la contraseña de desarrollo al final.
+- [x] Preflight `OPTIONS` real desde `http://localhost:5173` contra `/auth/logout` y
+  `/auth/change-password` (con el header `Authorization` en `Access-Control-Request-
+  Headers`) → `204` con los headers CORS correctos en ambos.
+- [x] `npm run build`/`npm run lint` del frontend limpios (mismos 4 warnings preexistentes
+  de "only-export-components", ninguno nuevo).
+- [x] Ronda de `code-reviewer` (verdict: APPROVE, sin Required): confirmó que el
+  `try/catch` de `logout()` garantiza `setState(initialState)` en todos los casos donde la
+  promesa de `fetch` se resuelve o rechaza, y que la decisión de no construir un
+  interceptor global de 401 es razonable para el alcance actual (solo 2 endpoints usan
+  `requireAuth()` hoy, y ninguna pantalla de negocio real depende de eso todavía). Se
+  aplicaron los 2 hallazgos Optional, ambos baratos: (1) `postAuthJson` no tenía timeout —
+  un servidor que acepta la conexión pero nunca responde dejaba la promesa colgada para
+  siempre (botón deshabilitado sin salida); se agregó `signal: AbortSignal.timeout(10_000)`
+  (nativo, sin librería nueva). (2) `ChangePasswordDialog` podía reabrirse mientras una
+  request seguía en vuelo, mostrando el resultado de la request vieja en el diálogo
+  "nuevo"; se agregó una guarda en `onOpenChange` que ignora el cierre mientras
+  `isSubmitting` es `true`. Re-verificado: build/lint limpios, rebuild del contenedor
+  `frontend`, ciclo completo login→logout→`/auth/me` (401) repetido con éxito.
 
 **Dependencias:** T4, T5, T6.
 
-**Archivos:** `frontend/src/context/SessionContext.tsx`, `frontend/src/components/shared/ChangePasswordDialog.tsx`.
+**Archivos:** `frontend/src/lib/api.ts` (`logout`, `changePassword`, `postAuthJson` ahora
+acepta un `token` opcional para el header `Authorization`), `frontend/src/context/SessionContext.tsx`
+(`logout`/`changePassword` ahora async y reales), `frontend/src/components/shared/ChangePasswordDialog.tsx`
+(submit async + estado de envío), `frontend/src/components/shared/UserMenu.tsx` (el botón
+de logout ahora espera la promesa antes de navegar — cambio menor no listado originalmente,
+necesario porque `logout()` dejó de ser síncrono).
 
 **Alcance:** S.
 

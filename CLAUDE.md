@@ -73,10 +73,12 @@ env-file gotcha:
 
 | | |
 |---|---|
-| `bash docker/network-up.sh` | Fabric network + `contratoschannel` channel |
-| `bash docker/network-down.sh` | tear down the Fabric network |
+| `bash docker/up.sh` | whole stack in one shot (T7): Fabric network + sample chaincode + Mongo/backend/frontend |
+| `bash docker/down.sh` | inverse of `up.sh`: tear down everything, volumes included |
+| `bash docker/network-up.sh` | Fabric network + `contratoschannel` channel only |
+| `bash docker/network-down.sh` | tear down the Fabric network only |
 | `bash docker/deploy-sample-cc.sh` | sample chaincode, pipeline smoke test |
-| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend` | Mongo + backend |
+| `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend frontend` | Mongo + backend + frontend |
 
 `chaincode/`: nothing yet (Sprint 2, `ledger` module) — will be `go build ./...`,
 `go test ./...`, `go vet ./...`.

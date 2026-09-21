@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom"
 import AuthLayout from "@/layouts/AuthLayout"
 import RoleLayout from "@/layouts/RoleLayout"
 import { ProtectedRoute } from "./ProtectedRoute"
-#
+
 import LoginPage from "@/pages/LoginPage"
 import OtpPage from "@/pages/OtpPage"
 

@@ -10,8 +10,9 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
 - Git Bash o WSL2 para correr los scripts `.sh` — **nunca PowerShell/cmd.exe** directamente.
   Windows con `core.autocrlf=true` reescribiría los `.sh` con CRLF si no fuera por
   `.gitattributes` (`*.sh eol=lf`) en la raíz del repo.
-- Go 1.22+ — ya lo necesita el chaincode de ejemplo (T2/T7, `go mod vendor` al empaquetarlo);
-  el módulo `ledger` real de Sprint 2 lo va a seguir usando.
+- Go 1.22+ — lo necesita el chaincode real del proyecto (`chaincode/`, módulo `ledger` de
+  Sprint 2) para `go mod vendor` al empaquetarlo (`deploy-cc.sh`), y para compilar/testear
+  el módulo en sí (`go build`/`go test`/`go vet`, ver `chaincode/README.md`).
 - `jq` (lo usan internamente los scripts de `fabric-samples`, a partir de T2).
 - Conexión a internet la primera vez: `network-up.sh` descarga binarios + imágenes Docker
   de Hyperledger Fabric (~2‑3 GB) si `docker/fabric-samples/` no existe todavía.
@@ -35,19 +36,19 @@ MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/S
 
 ## Comandos
 
-**Para levantar todo de una sola vez (T7):** `bash docker/up.sh` encadena
-`network-up.sh` + `deploy-sample-cc.sh` + el `compose up` de la última fila.
+**Para levantar todo de una sola vez (T7 de Sprint 0):** `bash docker/up.sh` encadena
+`network-up.sh` + `deploy-cc.sh` + el `compose up` de la última fila.
 `bash docker/down.sh` es la inversa: `compose down -v` + `network-down.sh` (no exactamente
 las mismas dos filas de "Comandos" — `down.sh` siempre borra el volumen de Mongo, la fila
 suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas sueltas.
 
 | Comando | Qué hace |
 |---|---|
-| `bash docker/up.sh` | Orquesta todo el stack: red Fabric → chaincode de ejemplo → Mongo/backend/frontend. Crea `docker/.env` desde `.env.example` si no existe. Verifica `go` y `jq` en el `PATH` antes de arrancar. A diferencia de la fila de `compose up` de abajo, usa `--build` siempre — reconstruye las imágenes de `backend`/`frontend` aunque ya existan, para no quedarse con una imagen vieja mientras el proyecto sigue en desarrollo activo. Seguro de correr desde un checkout limpio. |
+| `bash docker/up.sh` | Orquesta todo el stack: red Fabric → chaincode real del proyecto (`contracts`, Sprint 2) → Mongo/backend/frontend. Crea `docker/.env` desde `.env.example` si no existe. Verifica `go` y `jq` en el `PATH` antes de arrancar. A diferencia de la fila de `compose up` de abajo, usa `--build` siempre — reconstruye las imágenes de `backend`/`frontend` aunque ya existan, para no quedarse con una imagen vieja mientras el proyecto sigue en desarrollo activo. Seguro de correr desde un checkout limpio. |
 | `bash docker/down.sh` | Inversa de `up.sh`: baja Mongo/backend/frontend (con `-v`, borra también el volumen de Mongo) y la red Fabric. Deja el checkout listo para volver a `up.sh`. |
 | `bash docker/network-up.sh` | 1ª vez: descarga `fabric-samples` + binarios + imágenes Docker fijadas en Fabric 2.5.16 / CA 1.5.22. Luego levanta la test-network con Fabric CA (`-ca`) y crea/une el canal `contratoschannel` con LevelDB como state DB (decisión D3). |
 | `bash docker/network-down.sh` | Baja la red: elimina contenedores, volúmenes y material criptográfico. Deja el entorno limpio para volver a `network-up.sh`. |
-| `bash docker/deploy-sample-cc.sh` | Despliega el chaincode de ejemplo `asset-transfer-basic` en `contratoschannel` (prueba de pipeline; requiere la red arriba). Idempotente. |
+| `bash docker/deploy-cc.sh` | Despliega el chaincode real del proyecto (`chaincode/`, `contracts`) en `contratoschannel` (requiere la red arriba). Empaqueta con `go mod vendor` (automático, corre dentro del script de `fabric-samples`), instala, aprueba, comete, e invoca `RegisterDocument` dos veces para probar el ciclo completo (un registro exitoso + un rechazo de duplicado). Idempotente — si el chaincode ya está desplegado, salta directo a la prueba de invocación. Reemplaza a `deploy-sample-cc.sh` (`asset-transfer-basic`), retirado en Sprint 2 (Sprint 0, decisión D9: "se elimina cuando entre el chaincode real"). |
 | `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend frontend` | Levanta Mongo (imagen fijada `7.0.41`, con auth activada), el `backend` (Express+TS, T4/T5: `/health` + `/fabric/ping` reales, espera a que Mongo esté `healthy`) y el `frontend` (T6: build de Vite servido por `nginx:alpine`, `VITE_API_URL` horneado en el bundle en tiempo de build — un cambio ahí requiere `docker compose build frontend`, no alcanza con reiniciar el contenedor), todos unidos a la red `fabric_test` que crea `network-up.sh`. `backend` monta `fabric-samples/test-network/organizations` en `/crypto` (solo lectura) para leer la identidad de Fabric — requiere que `network-up.sh` haya corrido antes, si no `/fabric/ping` responde `503`. Se puede omitir cualquier servicio de la lista para levantar solo los otros. |
 | `docker compose -f docker/compose.app.yml down` | Baja **todos** los servicios que comparten este compose file (`mongo`, `backend`, `frontend`). El volumen de Mongo (`contratos_mongo_data`) sobrevive; agregar `-v` para borrarlo también. |
 
@@ -89,8 +90,9 @@ suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas 
   `Access-Control-Allow-Origin: *`, acotado a `/health` y `/fabric` (no global) — sin eso,
   `fetch` desde `SystemStatusPage` se bloquea aunque el backend responda `200`. Es
   aceptable con `*` porque son endpoints de diagnóstico sin datos sensibles; se acotó a
-  propósito para que un endpoint de negocio futuro (Sprint 2+) no herede el wildcard en
-  silencio.
+  propósito para que los endpoints de negocio de Sprint 1+ no heredaran el wildcard en
+  silencio — y así fue: `/auth` (Sprint 1) y `/documents` (Sprint 2) usan cada uno su
+  propio middleware CORS acotado a `FRONTEND_ORIGIN` (env var), no `*`.
 - **Si `curl localhost:8080/...` devuelve una respuesta vieja o de otra corrida:**
   probablemente un proceso nativo de Windows (un `npm run dev` / `tsx watch` que no murió
   bien) sigue escuchando en `127.0.0.1:8080`, más específico que el `0.0.0.0:8080` real de
@@ -101,8 +103,9 @@ suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas 
   entero). Si es `node.exe` con una ruta del proyecto en el `CommandLine`, es seguro
   matarlo.
 - **`docker ps -a` con contenedores de nombre random tipo `nifty_sammet` (`Created`,
-  nunca `Up`):** son intentos de build del chaincode (`deploy-sample-cc.sh`, T2) — el
-  builder externo de Fabric crea uno por cada paquete/instalación. No son parte de
+  nunca `Up`):** son intentos de build del chaincode (`deploy-cc.sh`, y antes
+  `deploy-sample-cc.sh` en Sprint 0) — el builder externo de Fabric crea uno por cada
+  paquete/instalación. No son parte de
   ningún servicio de este proyecto y `docker/down.sh` no los toca a propósito (un
   `docker container prune -f` los limpiaría, pero afecta contenedores detenidos de
   **cualquier** proyecto en la máquina, no solo este — hacerlo a mano, bajo tu propio

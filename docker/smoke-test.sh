@@ -32,11 +32,14 @@ done
 
 echo
 echo "==> CA-01: el chaincode responde en contratoschannel (GET /fabric/ping)"
+# Desde Sprint 2, /fabric/ping consulta GetMetadata (query de sistema de
+# contractapi) en vez de "GetAllAssets" del chaincode de ejemplo retirado —
+# la respuesta ya no trae "ID", pero sí el nombre del contrato real.
 if ping_output="$(curl -fsS --connect-timeout 5 --max-time 15 "http://127.0.0.1:${BACKEND_PORT}/fabric/ping" 2>&1)" \
-   && echo "${ping_output}" | grep -q '"ID"'; then
-  echo "OK: /fabric/ping devolvió activos del ledger."
+   && echo "${ping_output}" | grep -q '"ContractsContract"'; then
+  echo "OK: /fabric/ping devolvió la metadata del chaincode real."
 else
-  echo "FALLO: GET /fabric/ping no devolvió datos del ledger. Salida: ${ping_output}" >&2
+  echo "FALLO: GET /fabric/ping no devolvió la metadata esperada. Salida: ${ping_output}" >&2
   fail=1
 fi
 

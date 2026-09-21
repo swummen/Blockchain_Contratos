@@ -2,11 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint2-documents-ledger.md` (**aprobado 2026‑09‑20**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T4 completos, verificados y revisados. Pausado acá a pedido de Sofia — T5
-arrancado pero sin terminar: `docker/up.sh` ya apunta a `deploy-cc.sh` (arreglado, ya no
-está roto), pero falta actualizar `docker/README.md` y volver a verificar con un ciclo
-`down.sh`+`up.sh` completo desde cero (el stack quedó abajo, `down.sh` fue lo último que se
-corrió). Retomar T5 desde ahí.**
+Estado: **T1-T6 completos y revisados (T6: APPROVE). Listos para commit. Pendiente que
+Sofia confirme el flujo real en el navegador antes de cerrar el checkpoint de
+HU‑005…007. Sigue T7 (documentación y cierre).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -356,18 +354,61 @@ real de negocio al ledger, primera vez que un fallo de blockchain no debe verse 
 cambiar ninguno).
 
 **Criterios de aceptación:**
-- [ ] `docker/up.sh` llama a `deploy-cc.sh` (no a `deploy-sample-cc.sh`, que ya no existe).
-- [ ] `docker/README.md`: notas de T2 de Sprint 0 sobre el chaincode de ejemplo
-  actualizadas/retiradas donde ya no apliquen; nueva nota si el deploy real necesitó algo
-  distinto (ej. `go mod vendor`).
+- [x] `docker/up.sh` llama a `deploy-cc.sh` (no a `deploy-sample-cc.sh`, que ya no existe).
+- [x] `docker/README.md`: notas de Sprint 0 sobre el chaincode de ejemplo actualizadas
+  (prerrequisito de Go, fila de `up.sh`/`deploy-cc.sh` en la tabla de comandos, nota de
+  CORS que ya daba por "futuro" algo que Sprint 1/2 ya implementaron, nota de los
+  contenedores `nifty_sammet`).
+- [x] **Hallazgo real durante la verificación en vivo, fuera del AC original pero
+  imposible de no arreglar**: `GET /fabric/ping` (Sprint 0, T5) quedó roto — llamaba a
+  `GetAllAssets`, una función que solo existía en el chaincode de ejemplo retirado. El
+  chaincode real no tiene ninguna función pública de solo-lectura todavía (D6: las
+  consultas son Sprint 3/4), así que no había nada de negocio para "pinguear". Corregido
+  usando `org.hyperledger.fabric:GetMetadata` — una query de **sistema** que
+  `contractapi` expone automáticamente en cualquier chaincode (nombre del contrato,
+  funciones), sin agregar nada al chaincode ni construir una función de solo lectura para
+  un diagnóstico. También se actualizó `docker/smoke-test.sh` (Sprint 0, T8 — su chequeo
+  de CA‑01 grepeaba `"ID"`, específico del chaincode viejo) para que grepee
+  `"ContractsContract"` en su lugar; sin este segundo fix, la evidencia de HU‑021 para el
+  PPS habría quedado rota por este mismo cambio.
 
 **Verificación:**
-- [ ] Manual: `bash docker/down.sh && bash docker/up.sh` desde cero → stack completo arriba
-  con el chaincode `contracts` desplegado (no `basic`).
+- [x] Manual: **Docker Desktop se cayó a mitad de esta tarea** (el motor dejó de responder
+  sin que yo lo tocara; Sofia lo reinició) — una vez reiniciado: `bash docker/down.sh &&
+  bash docker/up.sh` desde cero → stack completo arriba con el chaincode `contracts`
+  desplegado (confirmado por el nombre real de los contenedores
+  `dev-peer0.org*-contracts_1.0-...`, no `basic`). `npm run seed` + flujo completo por
+  `curl`: login → OTP real → `POST /documents` con un PDF real → `201` → `logout` →
+  `/auth/me` con el mismo token → `401`. `GET /fabric/ping` → `200` con la metadata real
+  del chaincode. `bash docker/smoke-test.sh` → `PASS` (CA‑01 y CA‑02 de HU‑021, Sprint 0).
+  `/` y `/system-status` del frontend en `200`.
+- [x] `npm run build`/`test` (63/63, incluye el ajuste de `tests/fabric.test.ts`)/`lint`
+  del backend, todos en verde.
+- [x] Ronda de `code-reviewer` (verdict: REQUEST CHANGES → aplicado): confirmó que
+  `GetMetadata` es la elección correcta (verificado leyendo el `contractapi` vendorizado:
+  `SystemContractName`/`GetEvaluateTransactions()` registra `GetMetadata` como query de
+  solo lectura en todo chaincode hecho con `contractapi.NewChaincode`) — agregar una
+  función de negocio al chaincode solo para sostener un endpoint de diagnóstico habría
+  sido la sobre-ingeniería real acá; D6 (consultas para Sprint 3/4) queda intacta. También
+  confirmó que el grep `"ContractsContract"` de `smoke-test.sh` es específico y no da falso
+  positivo con la rama de error (`curl -f` corta antes con un 503, y el cuerpo de error no
+  podría interpolar ese literal). Encontró un hueco real: `backend/README.md` (líneas
+  17‑21 y 58‑59, más una tercera mención en la sección "Qué sigue") seguía describiendo
+  `GetAllAssets`/`basic` como el estado actual — corregido. La sección "Qué sigue (Sprint
+  2)" completa (línea ~131) sigue redactada como trabajo futuro aunque T1‑T5 ya están
+  hechos; se deja así a propósito porque es exactamente el alcance de T7 (documentación de
+  `documents`/`ledger` en `backend/README.md`), no un olvido de T5. Sin otros hallazgos de
+  correctitud/diseño; no re-corrió el build/test/lint completo ni un ciclo `docker/up.sh`
+  en vivo (solo `npx jest tests/fabric.test.ts`, 2/2), apoyándose en la verificación en vivo
+  ya hecha para T5 más su propia lectura del código vendorizado.
 
 **Dependencias:** T4.
 
-**Archivos:** `docker/up.sh`, `docker/README.md`.
+**Archivos:** `docker/up.sh`, `docker/README.md`, `backend/src/routes/fabric.ts`
+(`GetAllAssets` → `GetMetadata`), `backend/tests/fabric.test.ts` (ajustado a la nueva
+forma de la respuesta), `docker/smoke-test.sh` (ajustado el grep de CA‑01),
+`backend/README.md` (3 menciones de `GetAllAssets`/`basic` actualizadas, hallazgo del
+review).
 
 **Alcance:** S.
 
@@ -380,24 +421,82 @@ cambiar ninguno).
 `SessionContext` ya guarda desde Sprint 1.
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `uploadDocument(token, file)` — `multipart/form-data`,
-  no JSON (distinto de todo lo que ya existe en `api.ts`).
-- [ ] `CargarDocumentoPage` llama a la función real; error de validación (formato, tamaño)
-  o de registro en el ledger se muestra en la UI existente.
-- [ ] **Primer caso real de un 401 autenticado en una pantalla de negocio** (a diferencia
-  de Sprint 1, donde no había ninguna) — decidir acá si conviene el interceptor global
-  que T7 de Sprint 1 dejó pendiente para "cuando exista una llamada real que lo necesite".
-- [ ] `npm run build`/`npm run lint` pasan. El chequeo de "sin infraestructura directa"
-  (`grep` de Sprint 0/1) sigue sin encontrar nada.
+- [x] `frontend/src/lib/api.ts` gana `uploadDocument(token, file)` — `multipart/form-data`
+  (`FormData`, campo `"document"`, sin `Content-Type` manual para que el navegador ponga
+  el boundary), no JSON (distinto de todo lo que ya existe en `api.ts`, no puede pasar por
+  `postAuthJson`). Timeout propio de 30s (más largo que los 10s de `postAuthJson`: además
+  del round-trip HTTP espera el commit real del bloque en Fabric,
+  `COMMIT_TIMEOUT_MS=15s` del lado del backend).
+- [x] `CargarDocumentoPage` llama a la función real (ya no a `useAppData().registerDocument`,
+  que queda intacto para las demás pantallas todavía mockeadas — D del plan: T6 conecta
+  solo la carga, no toda `AppDataContext`); error de validación (formato, tamaño, HTTP)
+  o de registro en el ledger se muestra en la UI existente (`try/catch` alrededor del
+  `uploadDocument`, mismo patrón que ya usa `SessionContext`). El backend no devuelve
+  el hash ni la fecha (solo `documentId`, D del plan de T4) — se recalculan en cliente
+  con `computeSha256Hex` (mismo helper que ya usaba el mock) solo para mostrarlos, la
+  huella que cuenta es la que ancló el backend.
+- [x] **Primer caso real de un 401 autenticado en una pantalla de negocio**: decisión
+  tomada — no se construyó el interceptor global que T7 de Sprint 1 dejó pendiente. El
+  mensaje que ya manda `requireAuth` (`"Sesión inválida o vencida."`) es presentable tal
+  cual, mismo criterio que ya usa `SessionContext` para todos los demás errores de
+  `/auth/*` — un interceptor global para un único caso real todavía sería
+  sobre-construir; se reconsidera si Sprint 3+ agrega una segunda pantalla de negocio con
+  el mismo problema.
+- [x] `npm run build`/`npm run lint` pasan. El chequeo de "sin infraestructura directa"
+  (`grep` de Sprint 0/1) sigue sin encontrar nada (no se referencia `VITE_API_URL` de
+  forma distinta a como ya lo hacía `api.ts`).
 
 **Verificación:**
-- [ ] Manual en navegador (o mecánico si no hay navegador disponible en el entorno, mismo
-  criterio que T6/T7 de Sprint 1): login como Empleado → cargar un PDF real → confirma
-  éxito con el `documentId`; cargar un archivo inválido → error visible.
+- [x] `npm run build` (`tsc -b` + `vite build`) sin errores; `npm run lint` (oxlint) sin
+  warnings nuevos (los 4 preexistentes son de archivos no tocados por T6:
+  `SessionContext.tsx`, `AppDataContext.tsx`, `badge.tsx`, `button.tsx` — regla
+  `only-export-components`, ya existían antes de esta tarea).
+- [x] **Mecánico, sin navegador disponible en este entorno (mismo criterio que T6/T7 de
+  Sprint 1):** no hay herramienta de automatización de navegador en este entorno, así que
+  se simuló contra el stack real (`docker ps`, ya arriba con el chaincode `contracts`) la
+  request exacta que produce `uploadDocument()` — multipart, campo `document`, header
+  `Authorization: Bearer <token>` — con un login+OTP real (`m.lopez@empresa.com`,
+  Empleado) seguido de un `curl -F "document=@archivo.pdf"`: `201` con `documentId` real
+  (`a915c7e9-...`). Un token inválido en la misma request confirmó el `401` con
+  `"Sesión inválida o vencida."` — el mensaje que la UI muestra tal cual. Se reconstruyó
+  la imagen del contenedor `frontend` (`docker compose build frontend`, el bundle se
+  hornea en build-time — reiniciar el contenedor no alcanza) y se confirmó que el bundle
+  nuevo referencia `documents` y que `/` y `/system-status` siguen en `200`.
+  **Pendiente de Sofia:** click-through real en el navegador (login Empleado → cargar un
+  PDF real → ver el `documentId`/hash en la tarjeta de éxito; cargar un archivo no-PDF →
+  ver el error) — la simulación mecánica prueba el contrato HTTP, no el render ni el
+  estado de React en un navegador real.
+- [x] Ronda de `code-reviewer` (verdict: **APPROVE**, sin Required): confirmó que el hash
+  recalculado en cliente no puede divergir del que ancla el backend en el camino de éxito
+  (mismos bytes de `File`, ambos lados hashean el mismo buffer — un archivo que engaña la
+  validación del cliente pero no la firma real `%PDF-` del servidor nunca llega a
+  `setRegistered`, corta en el `400`), que omitir `Content-Type` a mano en el multipart es
+  correcto (necesario para que el navegador ponga el boundary), y que la ausencia de tests
+  automatizados de frontend es aceptable dado que `CLAUDE.md` documenta que no hay test
+  runner configurado ahí todavía — la verificación mecánica contra el stack real fue
+  evaluada como un sustituto creíble. Aplicado el hallazgo Optional más barato: un aviso
+  de una línea bajo la tarjeta de éxito ("este documento todavía no aparece en 'Mis
+  documentos' ni en los listados de Verificador/Administrador") para que no se lea como un
+  bug en una demo. **Hallazgo real, no accionable ahora, dejado registrado:** el timeout de
+  30s del cliente (`uploadDocument`) deja poco margen sobre el peor caso del backend
+  (endorse 5s + submit 5s + commit 15s = 25s) — si el cliente aborta primero, la UI muestra
+  el mismo mensaje que un fallo de red genuino, indistinguible de "puede que sí haya
+  anclado igual"; combinado con que `documentId` es un `crypto.randomUUID()` sin ninguna
+  clave de idempotencia, un reintento del usuario tras ese timeout podría generar dos
+  registros on-chain para el mismo archivo. No es un problema introducido por T6 (es
+  inherente al diseño del chaincode/gateway de T1‑T3), pero T6 es el primer lugar donde un
+  usuario real puede gatillarlo — queda para quien diseñe la lectura/reconciliación de
+  Sprint 3/4, no se resuelve acá (idempotencia real requeriría tocar el chaincode). También
+  señaló que `responsibleUser`/`registeredAt` de la tarjeta de éxito son fabricados en
+  cliente (Mongo guarda el `userId`, no el nombre; tiene su propia fecha) — inofensivo hoy
+  porque ese objeto nunca vuelve al backend, pero quien conecte los listados reales en
+  Sprint 3/4 no debe asumir que ya calzan con la forma de Mongo.
 
 **Dependencias:** T4.
 
-**Archivos:** `frontend/src/lib/api.ts`, `frontend/src/pages/empleado/CargarDocumentoPage.tsx`.
+**Archivos:** `frontend/src/lib/api.ts` (`uploadDocument`),
+`frontend/src/pages/empleado/CargarDocumentoPage.tsx` (ya no usa `useAppData`; aviso de
+"no aparece todavía en los listados" agregado tras el review).
 
 **Alcance:** M.
 

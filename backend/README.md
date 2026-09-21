@@ -14,11 +14,12 @@ real: login con OTP, sesión JWT, RBAC y cambio de contraseña — ver la secci�
 - `GET /health` — hace un `ping` real a Mongo en cada request (no un flag cacheado de
   "conectado"), responde `200 {status:"ok", mongo:"connected"}` o `503 {status:"error",
   mongo:"down"}`.
-- `GET /fabric/ping` — consulta `GetAllAssets` del chaincode de ejemplo (`basic`) en el
-  canal `contratoschannel` vía Fabric Gateway real (TLS, identidad desde archivo, sin
-  `localhost`). Responde `200 {status:"ok", result:[...]}` o `503 {status:"error",
-  message:"..."}` si Fabric no está disponible. Usá cualquiera de las dos rutas como
-  plantilla para otros endpoints de estado.
+- `GET /fabric/ping` — consulta `org.hyperledger.fabric:GetMetadata` (query de sistema
+  que expone cualquier chaincode de `contractapi` automáticamente, no una función de
+  negocio) en el canal `contratoschannel` vía Fabric Gateway real (TLS, identidad desde
+  archivo, sin `localhost`). Responde `200 {status:"ok", result:{...}}` o
+  `503 {status:"error", message:"..."}` si Fabric no está disponible. Usá cualquiera de
+  las dos rutas como plantilla para otros endpoints de estado.
 - Estructura por capas (`claude_docs/SPEC.md` §7): `routes/ → controllers/ → services/ →
   repositories|fabric/`. `identity` (Sprint 1) ya usa `services/authService.ts` +
   `middlewares/auth.ts` + `repositories/{user,otp,session}Repository.ts`; `/health` y
@@ -55,7 +56,7 @@ Comandos (correr dentro de `backend/`): `npm run dev`, `npm run build`, `npm tes
 - **Solo se dialoga con el peer, nunca con el orderer directamente.** A diferencia del
   SDK viejo (`fabric-network`), la Fabric Gateway API abre una única conexión gRPC a un
   peer; ese peer resuelve el endorsement y reenvía al orderer por su cuenta cuando hace
-  falta (`submitTransaction`). `GetAllAssets` además es una `evaluateTransaction` (query
+  falta (`submitTransaction`). `GetMetadata` además es una `evaluateTransaction` (query
   de solo lectura), que ni siquiera pasa por el orderer. No hace falta cablear
   `orderer.example.com` en el cliente.
 - **TLS siempre activo** (`grpcs://` vía `grpc.credentials.createSsl`) — nunca
@@ -68,8 +69,10 @@ Comandos (correr dentro de `backend/`): `npm run dev`, `npm run build`, `npm tes
   volumen no está montado o la red no generó las credenciales todavía, `connectFabric()`
   falla al arrancar y `/fabric/ping` responde `503` con un mensaje claro — no tumba el
   proceso (mismo criterio que Mongo).
-- **El chaincode de ejemplo (`basic`) sigue siendo el único disponible.** Sirve para
-  probar que la conexión funciona; no tiene nada que ver con el negocio.
+- **El chaincode real del proyecto (`contracts`, Sprint 2) ya reemplazó al de ejemplo
+  (`basic`).** Todavía no expone ninguna función de lectura propia (D6: las consultas de
+  negocio son Sprint 3/4), por eso `/fabric/ping` usa la query de sistema `GetMetadata`
+  en vez de una función del contrato — sirve igual para probar que la conexión funciona.
 
 ## `identity` (Sprint 1, T1-T7 — completo)
 

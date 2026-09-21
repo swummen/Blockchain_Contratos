@@ -70,3 +70,38 @@ export async function changePassword(
 ): Promise<void> {
   await postAuthJson("/auth/change-password", { currentPassword, newPassword }, token)
 }
+
+export interface UploadDocumentResult {
+  documentId: string
+}
+
+// multipart/form-data, no JSON — no puede pasar por postAuthJson (fija
+// Content-Type: application/json). El campo se llama "document" porque así
+// lo espera `upload.single("document")` en backend/src/routes/documents.ts.
+export async function uploadDocument(
+  token: string,
+  file: File
+): Promise<UploadDocumentResult> {
+  const formData = new FormData()
+  formData.append("document", file)
+
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/documents`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+      // Más largo que el de postAuthJson: además del round-trip HTTP, este
+      // endpoint espera el commit real del bloque en Fabric antes de
+      // responder (backend/src/fabric/gateway.ts, COMMIT_TIMEOUT_MS=15s).
+      signal: AbortSignal.timeout(30_000),
+    })
+  } catch {
+    throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
+  }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.message ?? `El backend respondió ${res.status}`)
+  }
+  return data as UploadDocumentResult
+}

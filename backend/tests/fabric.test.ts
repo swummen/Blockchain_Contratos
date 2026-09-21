@@ -14,9 +14,9 @@ jest.mock("../src/fabric/gateway", () => ({
 import { queryChaincode } from "../src/fabric/gateway";
 
 describe("GET /fabric/ping", () => {
-  it("responde 200 con el resultado del chaincode", async () => {
+  it("responde 200 con la metadata del chaincode (GetMetadata, query de sistema)", async () => {
     (queryChaincode as jest.Mock).mockResolvedValue(
-      '[{"ID":"asset1","Owner":"Tomoko"}]',
+      '{"contracts":{"ContractsContract":{"name":"ContractsContract"}}}',
     );
 
     const res = await request(createApp()).get("/fabric/ping");
@@ -24,8 +24,9 @@ describe("GET /fabric/ping", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       status: "ok",
-      result: [{ ID: "asset1", Owner: "Tomoko" }],
+      result: { contracts: { ContractsContract: { name: "ContractsContract" } } },
     });
+    expect(queryChaincode).toHaveBeenCalledWith("org.hyperledger.fabric:GetMetadata");
   });
 
   it("responde 503 cuando Fabric no está disponible", async () => {

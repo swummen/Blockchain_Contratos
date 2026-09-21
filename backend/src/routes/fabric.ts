@@ -5,7 +5,15 @@ export const fabricRouter = Router();
 
 fabricRouter.get("/fabric/ping", async (_req, res) => {
   try {
-    const raw = await queryChaincode("GetAllAssets");
+    // GetMetadata es una query de sistema que expone cualquier chaincode de
+    // contractapi automáticamente (nombre del contrato, funciones) — no una
+    // función de negocio del contrato en sí. Hasta Sprint 2 esto llamaba a
+    // "GetAllAssets" del chaincode de ejemplo (asset-transfer-basic); el
+    // chaincode real (`contracts`) no tiene ninguna función pública de
+    // solo-lectura todavía (D6 de Sprint 2: las consultas son Sprint 3/4),
+    // así que no hay ninguna función de negocio real para "pinguear" sin
+    // agregar una solo para este diagnóstico.
+    const raw = await queryChaincode("org.hyperledger.fabric:GetMetadata");
     res.status(200).json({ status: "ok", result: JSON.parse(raw) });
   } catch (err) {
     // A diferencia de /health (que solo dice "down"), acá sí se expone el

@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as api from "@/lib/api"
-import type { Role, User } from "@/types/domain"
+import type { User } from "@/types/domain"
 
 type AuthStage = "anonymous" | "pending-otp" | "authenticated"
 
@@ -11,7 +11,6 @@ interface SessionState {
   // se pierde al recargar la página — aceptable, no hay RF que pida
   // "recordarme".
   token: string | null
-  pendingRole: Role | null
   pendingEmail: string | null
 }
 
@@ -21,7 +20,7 @@ interface ActionResult {
 }
 
 interface SessionContextValue extends SessionState {
-  login: (email: string, password: string, role: Role) => Promise<ActionResult>
+  login: (email: string, password: string) => Promise<ActionResult>
   verifyOtp: (code: string) => Promise<ActionResult>
   logout: () => Promise<void>
   changePassword: (current: string, next: string) => Promise<ActionResult>
@@ -35,7 +34,6 @@ const initialState: SessionState = {
   stage: "anonymous",
   user: null,
   token: null,
-  pendingRole: null,
   pendingEmail: null,
 }
 
@@ -47,13 +45,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<SessionState>(initialState)
 
   const login = React.useCallback(
-    async (email: string, password: string, role: Role): Promise<ActionResult> => {
+    async (email: string, password: string): Promise<ActionResult> => {
       if (!email.trim() || !password.trim()) {
         return { ok: false, error: "Ingresa tu correo y tu contraseña." }
       }
       const trimmedEmail = email.trim()
       try {
-        await api.login(trimmedEmail, password, role)
+        await api.login(trimmedEmail, password)
       } catch (err) {
         return { ok: false, error: errorMessage(err, "No se pudo iniciar sesión.") }
       }
@@ -61,7 +59,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         stage: "pending-otp",
         user: null,
         token: null,
-        pendingRole: role,
         pendingEmail: trimmedEmail,
       })
       return { ok: true }
@@ -94,7 +91,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         stage: "authenticated",
         user: result.user,
         token: result.token,
-        pendingRole: null,
         pendingEmail: null,
       })
       return { ok: true }

@@ -1,6 +1,5 @@
 import { Collection } from "mongodb";
 import { getDb } from "./mongoClient";
-import { Role } from "./userRepository";
 
 // _id es el userId (un solo OTP activo por usuario a la vez): un login nuevo
 // reemplaza cualquier código pendiente anterior en vez de acumular varios.
@@ -8,10 +7,6 @@ export interface OtpDoc {
   _id: string;
   codeHash: string;
   attempts: number;
-  // Rol seleccionado en el paso 1 (login): se valida contra el rol real del
-  // usuario en la verificación (T3, HU-002 CA-02) sin que el cliente tenga
-  // que reenviarlo.
-  selectedRole: Role;
   expiresAt: Date;
 }
 

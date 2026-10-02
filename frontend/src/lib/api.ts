@@ -1,4 +1,4 @@
-import type { Role, User } from "@/types/domain"
+import type { User } from "@/types/domain"
 
 // Único punto de contacto con el backend (RNF-20): el frontend nunca le
 // habla a Fabric ni a Mongo directamente, siempre a través de esta URL.
@@ -48,8 +48,8 @@ async function postAuthJson<T>(path: string, body: unknown, token?: string): Pro
   return data as T
 }
 
-export async function login(email: string, password: string, role: Role): Promise<void> {
-  await postAuthJson("/auth/login", { email, password, role })
+export async function login(email: string, password: string): Promise<void> {
+  await postAuthJson("/auth/login", { email, password })
 }
 
 export async function verifyOtp(

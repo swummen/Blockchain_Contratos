@@ -14,7 +14,6 @@ import {
   findUserByEmail,
   findUserById,
   PublicUser,
-  Role,
   toPublicUser,
   updatePasswordHash,
 } from "../repositories/userRepository";
@@ -54,7 +53,6 @@ function generateOtpCode(): string {
 export async function login(
   email: string,
   password: string,
-  role: Role,
 ): Promise<LoginResult> {
   const user = await findUserByEmail(email);
   const passwordOk = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
@@ -74,7 +72,6 @@ export async function login(
     _id: user._id,
     codeHash,
     attempts: 0,
-    selectedRole: role,
     expiresAt,
   });
 
@@ -140,20 +137,9 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
     return { ok: false, status: 400, message: "Código incorrecto." };
   }
 
-  // Se consume el código apenas se confirma que es correcto, sin importar el
-  // resultado del chequeo de rol de abajo (RN-01: un token solo se usa una
-  // vez — un rol equivocado no debería dejarlo reutilizable).
+  // RN-01: un token solo se usa una vez — se consume el código apenas se
+  // confirma que es correcto.
   await deleteOtp(user._id);
-
-  // HU-002 CA-02: el rol elegido en el login (paso 1) tiene que coincidir
-  // con el rol real del usuario.
-  if (otp.selectedRole !== user.role) {
-    return {
-      ok: false,
-      status: 403,
-      message: "El rol seleccionado no coincide con tu cuenta.",
-    };
-  }
 
   const jti = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + authConfig.jwtExpiresMinutes * 60_000);

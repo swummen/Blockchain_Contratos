@@ -41,7 +41,6 @@ let passwordHash: string;
 const VALID_BODY = {
   email: "m.lopez@empresa.com",
   password: PASSWORD,
-  role: "Empleado",
 };
 
 const SEED_USER = {
@@ -68,7 +67,7 @@ describe("POST /auth/login", () => {
 
     expect(res.status).toBe(200);
     expect(upsertOtp).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: "U001", selectedRole: "Empleado", attempts: 0 }),
+      expect.objectContaining({ _id: "U001", attempts: 0 }),
     );
     expect(sendOtpEmail).toHaveBeenCalledWith(
       VALID_BODY.email,
@@ -119,14 +118,6 @@ describe("POST /auth/login", () => {
 
     expect(res.status).toBe(400);
     expect(findUserByEmail).not.toHaveBeenCalled();
-  });
-
-  it("role fuera del catálogo: 400", async () => {
-    const res = await request(createApp())
-      .post("/auth/login")
-      .send({ ...VALID_BODY, role: "Superadmin" });
-
-    expect(res.status).toBe(400);
   });
 
   it("falla el envío del correo: 502, no un 200 falso", async () => {

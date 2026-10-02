@@ -1,17 +1,10 @@
 import * as React from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { OtpInput } from "@/components/shared/OtpInput"
 import { useSession } from "@/context/SessionContext"
 import { Mail, RotateCcw } from "lucide-react"
-
-const ROLE_LABEL: Record<string, string> = {
-  Empleado: "EMPLEADO / FIRMANTE",
-  Verificador: "VERIFICADOR",
-  Administrador: "ADMINISTRADOR",
-}
 
 function maskEmail(email: string): string {
   const [user, domain] = email.split("@")
@@ -28,7 +21,7 @@ const ROLE_HOME: Record<string, string> = {
 
 export default function OtpPage() {
   const navigate = useNavigate()
-  const { stage, user, pendingRole, pendingEmail, verifyOtp } = useSession()
+  const { stage, user, pendingEmail, verifyOtp } = useSession()
 
   const [code, setCode] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
@@ -42,7 +35,7 @@ export default function OtpPage() {
     }
   }, [stage, user, navigate])
 
-  if (!pendingRole || !pendingEmail) return null
+  if (!pendingEmail) return null
 
   async function handleVerify() {
     setIsSubmitting(true)
@@ -66,10 +59,6 @@ export default function OtpPage() {
 
       <Card>
         <CardContent className="space-y-4 text-left">
-          <div className="flex justify-center">
-            <Badge variant="outline">ROL: {ROLE_LABEL[pendingRole]}</Badge>
-          </div>
-
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Mail className="size-4" />
             Código enviado a {maskEmail(pendingEmail)}

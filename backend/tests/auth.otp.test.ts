@@ -69,7 +69,6 @@ function otpDoc(overrides: Partial<Record<string, unknown>> = {}) {
     _id: SEED_USER._id,
     codeHash,
     attempts: 0,
-    selectedRole: "Empleado",
     expiresAt: new Date(Date.now() + 5 * 60_000),
     ...overrides,
   };
@@ -181,19 +180,6 @@ describe("POST /auth/verify-otp", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/vuelve a iniciar sesión/i);
-    expect(deleteOtp).toHaveBeenCalledWith("U001");
-    expect(createSession).not.toHaveBeenCalled();
-  });
-
-  it("rol seleccionado no coincide con el rol real del usuario: 403 (HU-002 CA-02)", async () => {
-    (findUserByEmail as jest.Mock).mockResolvedValue(SEED_USER);
-    (findOtpByUserId as jest.Mock).mockResolvedValue(otpDoc({ selectedRole: "Administrador" }));
-
-    const res = await request(createApp())
-      .post("/auth/verify-otp")
-      .send({ email: EMAIL, code: CODE });
-
-    expect(res.status).toBe(403);
     expect(deleteOtp).toHaveBeenCalledWith("U001");
     expect(createSession).not.toHaveBeenCalled();
   });

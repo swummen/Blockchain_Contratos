@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth";
-import { Role, VALID_ROLES } from "../repositories/userRepository";
 import {
   changePassword,
   getPublicUserById,
@@ -12,24 +11,21 @@ import {
 export const authRouter = Router();
 
 authRouter.post("/auth/login", async (req, res) => {
-  const { email, password, role } = req.body ?? {};
+  const { email, password } = req.body ?? {};
 
   if (
     typeof email !== "string" ||
     !email.trim() ||
     typeof password !== "string" ||
-    !password ||
-    typeof role !== "string" ||
-    !VALID_ROLES.includes(role as Role)
+    !password
   ) {
     res.status(400).json({
-      message:
-        "email, password y role (Empleado|Verificador|Administrador) son obligatorios.",
+      message: "email y password son obligatorios.",
     });
     return;
   }
 
-  const result = await login(email, password, role as Role);
+  const result = await login(email, password);
   if (!result.ok) {
     res.status(result.status).json({ message: result.message });
     return;

@@ -4,18 +4,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSession } from "@/context/SessionContext"
-import type { Role } from "@/types/domain"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
-
-const ROLES: Role[] = ["Empleado", "Verificador", "Administrador"]
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login } = useSession()
 
-  const [role, setRole] = React.useState<Role>("Empleado")
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
@@ -25,7 +20,7 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setIsSubmitting(true)
-    const result = await login(email, password, role)
+    const result = await login(email, password)
     setIsSubmitting(false)
     if (!result.ok) {
       setError(result.error ?? "No se pudo iniciar sesión.")
@@ -39,23 +34,6 @@ export default function LoginPage() {
     <Card>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            {/* RF-01: seleccionar el rol antes de autenticarse. Quién puede
-                *ser* cada rol lo asigna el Administrador (RF-45/46,
-                Sprint 4) — esto solo declara con cuál se intenta entrar; el
-                backend lo valida contra el rol real de la cuenta. */}
-            <Label>Rol</Label>
-            <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
-              <TabsList className="w-full">
-                {ROLES.map((r) => (
-                  <TabsTrigger key={r} value={r}>
-                    {r}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </div>
-
           <div className="space-y-1.5">
             <Label htmlFor="email">Correo electrónico</Label>
             <div className="relative">

@@ -52,7 +52,7 @@ UC_Verify .> UC_Login : <<include>>
 UC_Dashboard .> UC_Login : <<include>>
 
 note bottom of UC_Login
-  RF-01 a RF-07: seleccion de rol,
+  RF-001 a RF-007:
   credenciales + segundo factor
   enviado al correo corporativo.
 end note

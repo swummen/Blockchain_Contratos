@@ -167,6 +167,14 @@ compensación/saga automático para ese caso límite — queda documentado como 
 manual (sobre-construirlo ahora sería resolver un problema que todavía no se presentó en
 un MVP de tesis).
 
+**Hueco conocido, sin resolver todavía:** el timeout del cliente (30s,
+`frontend/src/lib/api.ts#uploadDocument`) deja poco margen sobre el peor caso del backend
+(endorse + submit + commit ≈ 25s) y `documentId` no tiene ninguna clave de idempotencia
+(`crypto.randomUUID()` por intento) — si el cliente corta primero, un reintento del
+usuario podría anclar el mismo archivo dos veces on-chain. Queda para quien diseñe la
+reconciliación/lectura de Sprint 3/4 (resolverlo de verdad requiere tocar el chaincode,
+no solo el backend).
+
 ### El chaincode real ya reemplazó al de ejemplo
 
 El nombre del chaincode (`contracts`) y el canal (`contratoschannel`) están en

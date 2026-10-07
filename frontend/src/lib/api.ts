@@ -91,9 +91,9 @@ export async function uploadDocument(
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
-      // Más largo que el de postAuthJson: además del round-trip HTTP, este
-      // endpoint espera el commit real del bloque en Fabric antes de
-      // responder (backend/src/fabric/gateway.ts, COMMIT_TIMEOUT_MS=15s).
+      // Más largo que el de postAuthJson: además del round-trip HTTP, el
+      // backend espera un commit real de la red blockchain antes de
+      // responder (ver COMMIT_TIMEOUT_MS en el gateway del backend).
       signal: AbortSignal.timeout(30_000),
     })
   } catch {

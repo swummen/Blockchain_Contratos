@@ -136,11 +136,16 @@ contraseña; detalle en `claude_docs/tasks/todo-sprint1-identity.md`). La porci�
 `identity` que corresponde a RF‑43…47 (ciclo de vida de usuarios) no se tocó todavía —
 llega con HU‑018 en Sprint 4, como ya fija la tabla de arriba.
 
-`documents` + `ledger` (Sprint 2) completos — **RF‑08…17 y RNF‑04, 05, 09, 11, 13, 23, 24
-implementados y verificados** (chaincode Go real con `RegisterDocument`, `POST /documents`
-con validación de PDF por firma real + tamaño, huella SHA‑256, escritura real al ledger
-seguida de Mongo, nunca al revés — D13/RNF‑13 —, `CargarDocumentoPage` del frontend
-conectada; detalle en `claude_docs/tasks/todo-sprint2-documents-ledger.md`). RF‑18…22 (la
+`documents` + `ledger` (Sprint 2) completos para la mitad de **carga** del módulo —
+**RF‑08…17 y RNF‑04, 05, 13, 23, 24 implementados y verificados** (chaincode Go real con
+`RegisterDocument`, `POST /documents` con validación de PDF por firma real + tamaño,
+huella SHA‑256, escritura real al ledger seguida de Mongo, nunca al revés — D13/RNF‑13 —,
+`CargarDocumentoPage` del frontend conectada; detalle en
+`claude_docs/tasks/todo-sprint2-documents-ledger.md`). **RNF‑09 y RNF‑11 solo parciales,
+no completos:** RNF‑09 ("tiempo de respuesta adecuado en consulta **y verificación**") no
+tiene nada que medir todavía — Sprint 2 no construyó ninguna consulta. RNF‑11
+("generación **y comparación** de huellas SHA‑256") solo tiene la generación; la
+comparación es del módulo `verification` (Sprint 3). RF‑18…22 (la
 porción de consulta de "mis documentos"/trazabilidad del Empleado, dentro de la misma
 épica) no se tocaron todavía — el chaincode no expone ninguna función de lectura (decisión
 D6 del plan de Sprint 2); llegan con Sprint 3/4 junto con `verification`/`administration`,

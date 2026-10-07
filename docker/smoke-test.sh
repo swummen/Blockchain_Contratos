@@ -45,6 +45,10 @@ fi
 
 echo
 echo "==> CA-02: frontend/src no referencia infraestructura directamente"
+# Case-sensitive a propósito (sin -i): "Fabric" con mayúscula (ya usado en
+# comentarios/nombres legítimos de frontend/src) no dispara el chequeo, pero
+# "fabric" en minúscula en cualquier comentario nuevo sí lo haría (pasó una
+# vez, Sprint 2 T7 — ver claude_docs/tasks/todo-sprint2-documents-ledger.md).
 grep_output="$(grep -rIE "7051|9051|7050|27017|:5984|fabric|mongodb://" ../frontend/src 2>&1)"
 rc=$?
 if [ "${rc}" -eq 0 ]; then

@@ -8,36 +8,61 @@ participant "Chaincode (Go)" as CC
 database "MongoDB" as DB
 
 == Carga y registro de documento ==
-Empleado -> FE : Selecciona PDF a registrar (RF-08)
-FE -> FE : Valida formato PDF y tamano <= 20MB (RF-09, RF-11)
+Empleado -> FE : Selecciona PDF a registrar (RF-008)
+FE -> FE : Valida formato PDF y tamano <= 20MB (RF-009, RF-011)
 FE -> BE : POST /documentos {archivo, metadatos}
-BE -> BE : Validacion previa de formato/tamano (RF-12)
-BE -> Hash : Generar huella SHA-256 (RF-14)
-Hash --> BE : huellaCriptografica
-BE -> SDK : invoke RegistrarHuella(docId, huella)
-SDK -> CC : Transaccion RegistrarHuella
-CC --> SDK : txID
-SDK --> BE : txID (RF-16)
-BE -> DB : Guardar metadatos + huella, estado = Pendiente (RF-13, RF-15)
-DB --> BE : OK
-BE --> FE : 201 Created (confirmacion) (RF-17)
-FE --> Empleado : Documento registrado correctamente
+BE -> BE : Validacion previa de formato/tamano (RF-012)
+
+alt formato o tamano invalido
+    BE --> FE : 400 Bad Request
+    FE --> Empleado : Mensaje de error claro
+else archivo valido
+    BE -> Hash : Generar huella SHA-256 (RF-014)
+    Hash --> BE : huellaCriptografica
+    BE -> SDK : invoke RegistrarHuella(docId, huella)
+    SDK -> CC : Transaccion RegistrarHuella
+
+    alt Fabric confirma la transaccion
+        CC --> SDK : txID
+        SDK --> BE : txID (RF-016)
+        BE -> DB : Guardar metadatos + huella, estado = Pendiente (RF-013, RF-015)
+        alt MongoDB guarda correctamente
+            DB --> BE : OK
+            BE -> SDK : invoke RegistrarEvento(docId, "Registro", usuario, "Exitoso")
+            SDK -> CC : Transaccion RegistrarEvento
+            CC --> SDK : txID del evento
+            SDK --> BE : txID del evento
+            BE --> FE : 201 Created (confirmacion) (RF-017)
+            FE --> Empleado : Documento registrado correctamente
+        else MongoDB falla (RNF-013)
+            DB --> BE : Error
+            BE -> BE : Registrar error y marcar para reconciliacion
+            BE --> FE : 500 (registro incompleto)
+            FE --> Empleado : Mensaje de error claro
+        end
+    else Fabric rechaza o no responde
+        CC --> SDK : Error
+        SDK --> BE : Error
+        BE --> FE : 502 Bad Gateway (nada se guarda en MongoDB)
+        FE --> Empleado : Mensaje de error claro
+    end
+end
 
 == Consulta de mis documentos ==
-Empleado -> FE : Consultar mis documentos (RF-18)
+Empleado -> FE : Consultar mis documentos (RF-018)
 FE -> BE : GET /documentos?usuario=yo
 BE -> DB : Buscar documentos del usuario autenticado
-DB --> BE : Lista [nombre, id, fecha, estado] (RF-19, RF-20)
+DB --> BE : Lista [nombre, id, fecha, estado] (RF-019, RF-020)
 BE --> FE : 200 OK
 FE --> Empleado : Muestra documentos y su estado
 
 == Consulta de trazabilidad ==
-Empleado -> FE : Consultar trazabilidad (RF-21)
+Empleado -> FE : Consultar trazabilidad (RF-021)
 FE -> BE : GET /documentos/{id}/trazabilidad
 BE -> SDK : query ConsultarTrazabilidad(docId)
 SDK -> CC : Consulta de eventos del documento
 CC --> SDK : Eventos [accion, usuario, txID, fecha]
 SDK --> BE : Eventos
-BE --> FE : 200 OK (RF-22)
+BE --> FE : 200 OK (RF-022)
 FE --> Empleado : Historial del documento
 @enduml

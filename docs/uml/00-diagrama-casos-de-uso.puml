@@ -15,6 +15,7 @@ rectangle "Sistema Web de Verificacion de Integridad Documental (Blockchain)" {
   usecase "Iniciar sesion\n(rol + credenciales + 2FA)" as UC_Login
   usecase "Cerrar sesion" as UC_Logout
   usecase "Cambiar contrasena" as UC_ChangePwd
+  usecase "Aceptar politica de\ntratamiento de datos" as UC_Policy
 
   usecase "Cargar documento contractual" as UC_Upload
   usecase "Consultar mis documentos" as UC_MyDocs
@@ -32,6 +33,8 @@ rectangle "Sistema Web de Verificacion de Integridad Documental (Blockchain)" {
 
 UsuarioBase --> UC_Login
 UsuarioBase --> UC_Logout
+UsuarioBase --> UC_Policy
+UC_Login .> UC_Policy : <<include>>
 UsuarioBase --> UC_ChangePwd
 
 Empleado --> UC_Upload
@@ -52,8 +55,11 @@ UC_Verify .> UC_Login : <<include>>
 UC_Dashboard .> UC_Login : <<include>>
 
 note bottom of UC_Login
-  RF-001 a RF-007:
-  credenciales + segundo factor
-  enviado al correo corporativo.
+  RF-001 a RF-007: credenciales +
+  segundo factor enviado al correo
+  corporativo. El rol se asigna desde
+  la cuenta (no se selecciona).
+  RF-054: bloqueo por intentos fallidos.
+  RF-055: aceptacion de politica.
 end note
 @enduml

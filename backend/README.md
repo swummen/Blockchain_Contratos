@@ -6,9 +6,11 @@ para el diseño completo — este archivo es un resumen práctico, no la fuente 
 ## Qué hay hoy
 
 Sprint 0 (T4+T5) dejó el *walking skeleton* — Mongo y Fabric probados de punta a punta,
-sin lógica de negocio. Sprint 1 (`identity`, T1-T7) ya agregó la primera lógica de negocio
-real: login con OTP, sesión JWT, RBAC y cambio de contraseña — ver la sección
-"`identity`" más abajo para el contrato completo.
+sin lógica de negocio. Sprint 1 (`identity`, T1-T7) agregó la primera lógica de negocio
+real: login con OTP, sesión JWT, RBAC y cambio de contraseña. Sprint 2 (`documents` +
+`ledger`, T1-T6) agregó la primera escritura real al ledger: el Empleado carga un PDF,
+se valida, se registra su huella SHA‑256 en el chaincode real y se guarda en Mongo — ver
+las secciones "`identity`" y "`documents`" más abajo para el contrato completo de cada una.
 
 - Express + TypeScript, compilado con `tsc` (CommonJS, no ESM — evita fricción con Jest).
 - `GET /health` — hace un `ping` real a Mongo en cada request (no un flag cacheado de
@@ -128,37 +130,66 @@ consola (`[dev] SMTP no configurado — código OTP para <email>: <código>`) en
 enviarlo — buscalo en `docker logs backend` (o la consola de `npm run dev`). Nunca es un
 fallback silencioso.
 
-## Qué sigue (Sprint 2: chaincode + escrituras al ledger)
+## `documents` (Sprint 2, T1-T6 — completo)
 
-Con `identity` completo, lo que viene es el chaincode real del proyecto (módulo `ledger`
-de `claude_docs/SPEC.md` — `RegisterDocument`, huellas SHA-256, eventos, `txID`; RF‑16,
-22, 35, 40, 51) y los endpoints de negocio del backend que lo invoquen (documentos,
-verificación, administración) — esos sí van a necesitar `requireAuth(...roles)` con una
-lista de roles real, a diferencia de `identity` (ninguna de sus rutas la necesitó).
+El Empleado carga un PDF (`POST /documents`), se valida (firma real `%PDF-`, no el
+`Content-Type` del cliente; tamaño ≤ 20MB; un solo archivo), se calcula su huella SHA‑256,
+se registra en el chaincode real (`RegisterDocument`, vía `submitChaincodeTransaction`) y
+recién si eso tuvo éxito se guarda en Mongo (`documents`). Decisiones completas en
+`claude_docs/tasks/plan-sprint2-documents-ledger.md` (D1‑D13); estado tarea por tarea en
+`claude_docs/tasks/todo-sprint2-documents-ledger.md`.
 
-Lo que ya está resuelto para cuando llegue ese momento:
+### Escribir al ledger: `submitChaincodeTransaction`
 
-- **Escribir al ledger es `submitTransaction`, no `evaluateTransaction`.** `gateway.ts`
-  solo expone `queryChaincode()` (evaluate, solo lectura) porque es todo lo que T5
-  necesitaba. Para registrar una huella o un evento van a necesitar un
-  `submitTransaction(fcn, ...args)` — misma conexión, mismo `contract`, sin nada nuevo
-  que cablear.
-- El nombre del chaincode (`basic`) y el canal (`contratoschannel`) van a cambiar cuando
-  exista el chaincode real — están en `src/config/fabric.ts`, no hardcodeados en
-  `gateway.ts` ni en las rutas.
-- **Dos bugs de Windows + Git Bash** ya aparecieron y están resueltos en los scripts de
-  `docker/` (reescritura de rutas por MSYS) — si al scriptear algo similar ven errores
-  raros de rutas tipo `C:\Program Files\Git\...` donde no debería haber una ruta de
-  Windows, es ese problema. También afecta a `docker exec`/`docker run` con argumentos de
-  ruta corridos desde Git Bash (ej. `docker exec backend touch /crypto/x` se mangló solo
-  al probarlo) — el escape es `//` al inicio de la ruta (`//crypto/x`). Detalle completo
-  en `docker/README.md`.
-- **El frontend real ya existe** (rama `Feat/Front`, ya en `main`) y desde Sprint 1 (T6/T7)
-  ya habla de verdad con este backend para todo el flujo de `identity` — login, OTP,
-  sesión, logout, cambio de contraseña (`frontend/src/lib/api.ts`,
-  `frontend/src/context/SessionContext.tsx`). Las pantallas de negocio
-  (Empleado/Verificador/Administrador) siguen con datos hardcodeados de `src/data/*.ts` —
-  conectarlas es trabajo de Sprint 2+, no algo que ya esté resuelto.
+`src/fabric/gateway.ts` gana la contraparte de escritura de `queryChaincode()`:
+`submitChaincodeTransaction(fcn, ...args)` — sí pasa por endoso + orden real (a
+diferencia de `evaluateTransaction`), con sus propios deadlines
+(`ENDORSE_TIMEOUT_MS`/`SUBMIT_TIMEOUT_MS` = 5s, `COMMIT_TIMEOUT_MS` = 15s, más largo porque
+tiene que esperar el corte real del bloque). Nunca atrapa el error del SDK — lo deja
+propagar tal cual, porque el mensaje real de un rechazo del chaincode (ej. "documento ya
+registrado") no viaja en `.message` sino en `.details[0].message`
+(`GatewayError.details`) — quien llama decide cuánto de eso exponer al cliente.
+
+### Contrato de `POST /documents`
+
+| Ruta | Auth | Body | Respuesta 201 | Errores |
+|---|---|---|---|---|
+| `POST /documents` | sí, solo `Empleado` (`requireAuth("Empleado")` — primer uso real de la variante con roles) | `multipart/form-data`, campo `document` (un PDF) | `{documentId}` | `400` sin archivo/más de uno/no-PDF (firma real, no `Content-Type`)/archivo > 20MB · `401` sin sesión válida · `403` rol distinto de Empleado · `502` el chaincode rechazó el registro (ver RNF‑13 abajo) · `500` el ledger anotó el registro pero Mongo falló después |
+
+### Por qué nunca hay un éxito a medias (RNF‑13, HU‑007‑CA‑02)
+
+Mongo **nunca** se toca antes de confirmar la escritura en el ledger — si
+`submitChaincodeTransaction` falla, se responde `502` y no se guarda nada. Si el ledger
+tuvo éxito pero el guardado en Mongo falla después (el hash ya quedó anclado e inmutable
+on-chain, RNF‑05 — no hay forma de revertirlo), se loguea como una inconsistencia real
+server-side y se responde `500`, nunca un `200` falso. No hay ningún mecanismo de
+compensación/saga automático para ese caso límite — queda documentado como reconciliación
+manual (sobre-construirlo ahora sería resolver un problema que todavía no se presentó en
+un MVP de tesis).
+
+### El chaincode real ya reemplazó al de ejemplo
+
+El nombre del chaincode (`contracts`) y el canal (`contratoschannel`) están en
+`src/config/fabric.ts` (`chaincodeName`/`channelName`), no hardcodeados en `gateway.ts` ni
+en las rutas. Detalle del contrato Go en sí (qué valida, modelo de datos, cómo
+compilarlo/desplegarlo): `chaincode/README.md`.
+
+### El frontend real ya conecta la carga de documentos
+
+Desde Sprint 1 (T6/T7) el frontend real (rama `Feat/Front`, ya en `main`) habla de verdad
+con este backend para `identity` (login, OTP, sesión, logout, cambio de contraseña). Sprint
+2 (T6) conectó además `CargarDocumentoPage` a este `POST /documents` real
+(`frontend/src/lib/api.ts#uploadDocument`). Las demás pantallas de negocio (listados de
+Verificador/Administrador, "Mis documentos") siguen con datos hardcodeados de
+`src/data/*.ts` — el chaincode todavía no expone ninguna función de lectura (D6 de Sprint
+2), conectarlas es trabajo de Sprint 3/4.
+
+**Dos bugs de Windows + Git Bash** ya aparecieron y están resueltos en los scripts de
+`docker/` (reescritura de rutas por MSYS) — si al scriptear algo similar ven errores raros
+de rutas tipo `C:\Program Files\Git\...` donde no debería haber una ruta de Windows, es ese
+problema. También afecta a `docker exec`/`docker run` con argumentos de ruta corridos desde
+Git Bash (ej. `docker exec backend touch /crypto/x` se mangló solo al probarlo) — el escape
+es `//` al inicio de la ruta (`//crypto/x`). Detalle completo en `docker/README.md`.
 
 ## Referencias
 
@@ -168,4 +199,9 @@ Lo que ya está resuelto para cuando llegue ese momento:
   estado actual.
 - `claude_docs/tasks/plan-sprint1-identity.md` / `todo-sprint1-identity.md` — plan,
   decisiones (D1‑D9) y tareas del sprint de `identity` (login, OTP, sesión, RBAC), completo.
+- `claude_docs/tasks/plan-sprint2-documents-ledger.md` / `todo-sprint2-documents-ledger.md`
+  — plan, decisiones (D1‑D13) y tareas del sprint de `documents`+`ledger` (carga de PDF,
+  huella SHA‑256, chaincode real), completo.
+- `chaincode/README.md` — qué hace el contrato Go, modelo de datos, cómo
+  compilarlo/testearlo/desplegarlo.
 - `docker/README.md` — cómo levantar la red Fabric y Mongo, puertos, prerrequisitos.

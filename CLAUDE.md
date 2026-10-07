@@ -4,12 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-`frontend/` still has real tooling but is the Vite starter UI (`src/App.tsx` is the
-template counter page — replace it, don't build on it). `docker/` and `backend/` have
-real tooling too (Sprint 0 `infra` module, T1-T4: Fabric network, Mongo, backend walking
-skeleton — see `claude_docs/tasks/todo.md` for status). `chaincode/` is still placeholder
-`README.md` only — no `go.mod`. When adding code there you're establishing the
-conventions.
+`frontend/` has real tooling and, since Sprint 1/2, real business logic too — `identity`
+(login/OTP/sesión/RBAC, see `backend/README.md`) and the Sprint 2 document-upload flow
+(`CargarDocumentoPage`) talk to the real backend; the other role screens
+(Verificador/Administrador, "Mis documentos") still run on hardcoded mocks from
+`src/data/*.ts` until Sprint 3/4 add read endpoints. `docker/`, `backend/` and
+`chaincode/` all have real tooling: Sprint 0 (`infra`: Fabric network, Mongo, backend
+walking skeleton), Sprint 1 (`identity`), Sprint 2 (`documents`+`ledger`: real Go
+chaincode, `POST /documents`) — see `claude_docs/tasks/todo-sprint2-documents-ledger.md`
+for current status.
 
 Source of truth for scope/design/planning is **`claude_docs/SPEC.md`** — it
 consolidates every `docs/md/*` doc (53 RF, 30 RNF, 21 HU, 42 Gherkin scenarios,
@@ -74,15 +77,15 @@ env-file gotcha:
 
 | | |
 |---|---|
-| `bash docker/up.sh` | whole stack in one shot (T7): Fabric network + sample chaincode + Mongo/backend/frontend |
+| `bash docker/up.sh` | whole stack in one shot (T7): Fabric network + real project chaincode (`contracts`) + Mongo/backend/frontend |
 | `bash docker/down.sh` | inverse of `up.sh`: tear down everything, volumes included |
 | `bash docker/network-up.sh` | Fabric network + `contratoschannel` channel only |
 | `bash docker/network-down.sh` | tear down the Fabric network only |
-| `bash docker/deploy-sample-cc.sh` | sample chaincode, pipeline smoke test |
+| `bash docker/deploy-cc.sh` | deploy the real project chaincode (`chaincode/`, `contracts`), package/install/approve/commit + an end-to-end invoke smoke test |
 | `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend frontend` | Mongo + backend + frontend |
 
-`chaincode/`: nothing yet (Sprint 2, `ledger` module) — will be `go build ./...`,
-`go test ./...`, `go vet ./...`.
+`chaincode/` (Sprint 2, `ledger` module, real since T1): `go build ./...`,
+`go test ./...`, `go vet ./...` — see `chaincode/README.md`.
 
 ## NORMAS QUE LE PUSE 
 

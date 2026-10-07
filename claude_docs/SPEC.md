@@ -128,13 +128,23 @@ infra ──┬──> identity ──> documents ──> verification ──> a
 | Sprint 3 | `verification` | HU‑010…014 |
 | Sprint 4 | `administration` + consultas restantes | HU‑008, 009, 015…020 |
 
-**Estado de implementación (actualizado 2026‑09‑20):** `infra` (Sprint 0) completo —
+**Estado de implementación (actualizado 2026‑10‑07):** `infra` (Sprint 0) completo —
 RNF‑19, 20, 21, 22, evidencia en `claude_docs/tasks/sprint-0-resultados.md`. `identity`
 (Sprint 1) completo — **RF‑01…07, RF‑52, RF‑53 y RNF‑01, 02, 03, 07 implementados y
 verificados** (login con OTP, sesión JWT con invalidación real, RBAC, cambio de
 contraseña; detalle en `claude_docs/tasks/todo-sprint1-identity.md`). La porción de
 `identity` que corresponde a RF‑43…47 (ciclo de vida de usuarios) no se tocó todavía —
 llega con HU‑018 en Sprint 4, como ya fija la tabla de arriba.
+
+`documents` + `ledger` (Sprint 2) completos — **RF‑08…17 y RNF‑04, 05, 09, 11, 13, 23, 24
+implementados y verificados** (chaincode Go real con `RegisterDocument`, `POST /documents`
+con validación de PDF por firma real + tamaño, huella SHA‑256, escritura real al ledger
+seguida de Mongo, nunca al revés — D13/RNF‑13 —, `CargarDocumentoPage` del frontend
+conectada; detalle en `claude_docs/tasks/todo-sprint2-documents-ledger.md`). RF‑18…22 (la
+porción de consulta de "mis documentos"/trazabilidad del Empleado, dentro de la misma
+épica) no se tocaron todavía — el chaincode no expone ninguna función de lectura (decisión
+D6 del plan de Sprint 2); llegan con Sprint 3/4 junto con `verification`/`administration`,
+que dependen de esa misma lectura.
 
 Cada módulo se especifica en su propio `claude_docs/SPEC-<id>.md` **solo si** su diseño
 necesita más detalle del que cabe aquí. El mapa de arriba es el índice de lo que existe.
@@ -213,11 +223,11 @@ borrado físico, nunca afecta trazabilidad histórica (RF‑47).
 
 | Comando | Qué hace |
 |---|---|
-| `bash docker/up.sh` | todo el stack en un solo comando (T7): red Fabric → chaincode de ejemplo → Mongo/backend/frontend. Crea `docker/.env` si falta. |
+| `bash docker/up.sh` | todo el stack en un solo comando (T7 de Sprint 0, actualizado en T5 de Sprint 2): red Fabric → chaincode real del proyecto (`contracts`) → Mongo/backend/frontend. Crea `docker/.env` si falta. |
 | `bash docker/down.sh` | inversa de `up.sh`: baja todo, volúmenes incluidos |
 | `bash docker/network-up.sh` | solo la red Fabric + canal `contratoschannel` (T1) |
 | `bash docker/network-down.sh` | solo baja la red Fabric |
-| `bash docker/deploy-sample-cc.sh` | chaincode de ejemplo, prueba de pipeline (T2) |
+| `bash docker/deploy-cc.sh` | despliega el chaincode real del proyecto (`chaincode/`, `contracts`): empaqueta/instala/aprueba/comete + una prueba de extremo a extremo (Sprint 2, T2). Reemplaza a `deploy-sample-cc.sh` (retirado, Sprint 0 decisión D9). |
 | `cp docker/.env.example docker/.env` | prerrequisito único antes de los comandos sueltos de Mongo/backend/frontend (T3) — `up.sh` ya lo hace solo |
 | `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend frontend` | Mongo + backend + frontend (T3/T4/T6), unidos a la red `fabric_test` |
 | `docker compose -f docker/compose.app.yml down` | baja Mongo/backend/frontend (agregar `-v` para borrar también el volumen de Mongo) |
@@ -227,8 +237,10 @@ corregidos: `docker/README.md`.
 
 ### chaincode/
 
-Aún sin andamiar (Sprint 2, módulo `ledger`): `go build ./...`, `go test ./...`,
-`go test -run <TestName> ./...` (test único), `go vet ./...`.
+Real desde Sprint 2 (módulo `ledger`, T1): `go build ./...`, `go test ./...`,
+`go test -run <TestName> ./...` (test único), `go vet ./...`, `gofmt -l .`. Detalle del
+contrato (qué valida, modelo de datos, cómo desplegarlo con `docker/deploy-cc.sh`):
+`chaincode/README.md`.
 
 ---
 

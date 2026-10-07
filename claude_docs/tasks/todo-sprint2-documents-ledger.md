@@ -2,9 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint2-documents-ledger.md` (**aprobado 2026‑09‑20**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T6 completos y revisados (T6: APPROVE). Listos para commit. Pendiente que
-Sofia confirme el flujo real en el navegador antes de cerrar el checkpoint de
-HU‑005…007. Sigue T7 (documentación y cierre).**
+Estado: **T1-T6 completos, revisados (T6: APPROVE) y confirmados en navegador real por
+Sofia. Checkpoint de HU‑005…007 cerrado del lado de carga de documentos. Sigue T7
+(documentación y cierre).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -462,10 +462,9 @@ review).
   la imagen del contenedor `frontend` (`docker compose build frontend`, el bundle se
   hornea en build-time — reiniciar el contenedor no alcanza) y se confirmó que el bundle
   nuevo referencia `documents` y que `/` y `/system-status` siguen en `200`.
-  **Pendiente de Sofia:** click-through real en el navegador (login Empleado → cargar un
-  PDF real → ver el `documentId`/hash en la tarjeta de éxito; cargar un archivo no-PDF →
-  ver el error) — la simulación mecánica prueba el contrato HTTP, no el render ni el
-  estado de React en un navegador real.
+  **Confirmado por Sofia en navegador real:** cargó un PDF real desde la UI y el flujo
+  completo funcionó (login Empleado → carga → éxito) — cierra la brecha que la simulación
+  mecánica no podía cubrir (contrato HTTP sí, render/estado de React no).
 - [x] Ronda de `code-reviewer` (verdict: **APPROVE**, sin Required): confirmó que el hash
   recalculado en cliente no puede divergir del que ancla el backend en el camino de éxito
   (mismos bytes de `File`, ambos lados hashean el mismo buffer — un archivo que engaña la

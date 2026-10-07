@@ -15,10 +15,10 @@ Convenciones de trazabilidad de origen:
 
 | Fuente | Archivo |
 |---|---|
-| Requerimientos | `docs/md/SRS_v2_Requerimientos (2).md` |
-| Backlog, HU, Gherkin, DoD | `docs/md/Requisitos_Historias_Usuario_MVP_Blockchain_Contratos_2.md` |
+| Requerimientos | `docs/md/Requerimientos funcionales y no funcionales.md` |
+| Backlog, HU, Gherkin, DoD | `docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md` |
 | Actores / universo de KPI | `docs/md/Matriz_Actores_Stakeholders.md` |
-| Trazabilidad normativa | `docs/md/Matriz_Trazabilidad_Normativa.md` |
+| Trazabilidad normativa | `docs/md/Matriz_Normativa.md` |
 | Objetivos, KPIs, metodología, stack | `docs/md/Trabajo de grado final.md` |
 | Referencia operativa de Fabric | `claude_docs/ops_guide/`, `claude_docs/tutorials/` |
 
@@ -437,8 +437,8 @@ Al abrir `claude_docs/tasks/plan.md` para un sprint / módulo:
 
 ## 13. Requerimientos funcionales (53)
 
-> Texto completo y detallado (precondiciones, flujo, RN, criterios): `docs/md/SRS_v2_Requerimientos (2).md`
-> y `docs/md/Requisitos_Historias_Usuario_MVP_Blockchain_Contratos_2.md` (hoja `Ficha_RF`).
+> Texto completo y detallado (precondiciones, flujo, RN, criterios): `docs/md/Requerimientos funcionales y no funcionales.md`
+> y `docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md` (hoja `Ficha_RF`).
 
 ### Autenticación y acceso
 
@@ -592,7 +592,7 @@ Al abrir `claude_docs/tasks/plan.md` para un sprint / módulo:
 ## 15. Historias de usuario (21)
 
 > Detalle narrativo, INVEST y DoD: hoja `Historias_Usuario` de
-> `docs/md/Requisitos_Historias_Usuario_MVP_Blockchain_Contratos_2.md`.
+> `docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md`.
 
 | HU | Épica | Título | RF | RNF | MoSCoW | Pts | Sprint |
 |---|---|---|---|---|---|---|---|
@@ -699,7 +699,7 @@ Ley 1581/2012. Estado: **13/13 disposiciones aplicables al MVP cubiertas (100 %)
 | # | Tema | Estado |
 |---|---|---|
 | 1 | Canal exclusivo del segundo factor (correo corporativo) frente a SMS / app autenticadora. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D1 de `claude_docs/tasks/plan-sprint1-identity.md`):** por ahora el OTP va al correo *registrado* del usuario, no necesariamente corporativo — permite probar el flujo completo durante el desarrollo. Queda pendiente evaluar más adelante si se exige que sea exclusivamente el correo corporativo (nota de cambio: esto relaja, no contradice, RF‑003 — el canal sigue siendo "correo", solo se pospuso la restricción de dominio). |
-| 2 | Número máximo de intentos de token y tiempo de expiración exactos. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D2 del mismo plan):** 6 dígitos, expira a los 5 minutos, máximo 5 intentos — agotados, hay que volver a iniciar sesión para un código nuevo (eso es el "bloqueo temporal del proceso" de RN‑02). Sin valor fijado en `docs/md/Requisitos_Historias_Usuario_MVP_Blockchain_Contratos_2.md`/`Trabajo de grado final.md` (se revisaron ambos), se adoptó este default. |
+| 2 | Número máximo de intentos de token y tiempo de expiración exactos. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D2 del mismo plan):** 6 dígitos, expira a los 5 minutos, máximo 5 intentos — agotados, hay que volver a iniciar sesión para un código nuevo (eso es el "bloqueo temporal del proceso" de RN‑02). Sin valor fijado en `docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md`/`Trabajo de grado final.md` (se revisaron ambos), se adoptó este default. |
 | 3 | Topología concreta de Fabric: ¿1 o 2 organizaciones? Política de endorsement. | Por definir en Fase 2 / módulo `infra`. |
 | 4 | Diagramas UML (componentes, secuencia, despliegue) y prototipos UX/UI. | Entregable de Fase 2 (OE2), aún no producidos. |
 | 5 | Estados de aprobación del tutor en la Matriz de Actores (KPI‑1.1). | "Pendiente de aprobación" — actualizar tras revisión. |

@@ -2,8 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint2-documents-ledger.md` (**aprobado 2026‑09‑20**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T7 completos y revisados (T7: REQUEST CHANGES → aplicado). Sprint 2
-(`documents`+`ledger`, HU‑005…007) listo para commit final y PR.**
+Estado: **T1-T7 completos, revisados y commiteados a `main`. Sprint 2
+(`documents`+`ledger`, HU‑005…007) cerrado — sin PR (excepción documentada en el
+checkpoint de abajo, ver DoD). Solo falta la aceptación de dirección/codirección.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -618,8 +619,17 @@ hallazgo de la verificación), `docker/smoke-test.sh` (comentario, hallazgo del 
 - [x] Los 6 escenarios Gherkin de HU‑005…007 (CA‑01/CA‑02 cada una) en PASS (cubiertos por
   la verificación manual de T4/T6/T7 — no hay runner de tests E2E automatizado todavía,
   mismo criterio que el resto del proyecto).
-- [x] RF‑08…17 y RNF‑04, 05, 09, 11, 13, 23, 24 marcados como implementados.
+- [x] RF‑08…17 y RNF‑04, 05, 13, 23, 24 marcados como implementados (RNF‑09/11 quedan
+  explícitamente parciales — ver corrección del review de T7 en `SPEC.md` §3: falta
+  consulta y comparación, Sprint 3).
 - [x] Entorno verificado en Docker Compose (ciclo completo desde cero, smoke test PASS).
-- [ ] PR abierto y revisado; mensaje de commit redactado (sin commit automático) — mensaje
-  pendiente de redactar para este cierre de T7.
+- [x] Commits de cierre (T1‑T7) hechos directo a `main` por Sofia, sin PR — **excepción
+  documentada, no un olvido**: `feat/blockchain` (la rama donde vivió T1‑T6) ya estaba
+  completamente mergeada a `main` antes de que arrancara T7, así que T7 se commiteó
+  directo ahí (no había una rama separada para abrir un PR real — comparar cualquier rama
+  nueva contra `main` en este punto no mostraría ningún diff). Aceptable para un proyecto
+  de tesis de una sola desarrolladora; mensajes de commit siempre redactados por Claude y
+  nunca commiteados automáticamente, por norma del equipo. **A partir de Sprint 3**, el
+  trabajo arranca en una rama nueva para que el PR real vuelva a tener sentido como
+  checkpoint del DoD.
 - [ ] Aceptación de dirección/codirección registrada.

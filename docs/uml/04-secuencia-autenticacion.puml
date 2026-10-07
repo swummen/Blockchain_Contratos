@@ -5,30 +5,56 @@ participant "Backend\nAuth Controller" as BE
 database "MongoDB" as DB
 participant "Servicio de correo" as Mail
 
-Usuario -> FE : Selecciona rol (RF-01)
-Usuario -> FE : Ingresa usuario y contrasena (RF-02)
-FE -> BE : POST /auth/login {usuario, password, rol}
-BE -> DB : Validar credenciales (hash + salt) (RNF-01)
-DB --> BE : Usuario valido
-BE -> BE : Generar token de segundo factor (RF-03)
-BE -> Mail : Enviar token al correo corporativo
-Mail --> Usuario : Token de verificacion
-BE --> FE : 200 OK (pendiente de 2FA)
+Usuario -> FE : Ingresa usuario y contrasena (RF-002)
+FE -> BE : POST /auth/login {usuario, password}
+BE -> DB : Validar credenciales (hash + salt) (RNF-001)
 
-Usuario -> FE : Ingresa token recibido
-FE -> BE : POST /auth/verify-token {token}
-BE -> BE : Validar token (RF-04)
-
-alt credenciales, token y rol validos (RF-05)
-    BE --> FE : 200 OK + sesion / JWT
-    FE --> Usuario : Redireccion al panel segun rol (RF-06)
-else credenciales o token invalidos
+alt cuenta bloqueada (RF-054)
+    BE --> FE : 423 Locked
+    FE --> Usuario : Mensaje de cuenta bloqueada temporalmente
+else credenciales invalidas
+    BE -> DB : intentosFallidos++ (si llega al limite: bloqueadoHasta) (RF-054)
     BE --> FE : 401 Unauthorized
-    FE --> Usuario : Mensaje de error claro (RNF-18)
+    FE --> Usuario : Mensaje de error claro (RNF-018)
+else credenciales validas
+    BE -> DB : intentosFallidos = 0
+    BE -> BE : Generar token de segundo factor con vigencia (RF-003)
+    BE -> Mail : Enviar token al correo corporativo
+    Mail --> Usuario : Token de verificacion
+    BE --> FE : 200 OK (pendiente de 2FA)
+
+    Usuario -> FE : Ingresa token recibido
+    FE -> BE : POST /auth/verify-token {token}
+    BE -> BE : Validar token: vigencia y maximo 3 intentos (RF-004)
+
+    opt token vencido o intentos agotados
+        Usuario -> FE : Solicitar reenvio de token
+        FE -> BE : POST /auth/resend-token
+        BE -> Mail : Enviar nuevo token
+        Mail --> Usuario : Nuevo token de verificacion
+    end
+
+    alt token valido
+        opt primer ingreso sin politica aceptada (RF-055)
+            FE --> Usuario : Muestra politica de tratamiento de datos
+            Usuario -> FE : Acepta politica
+            FE -> BE : POST /auth/aceptar-politica
+            BE -> DB : politicaAceptada = true, fechaAceptacionPolitica
+        end
+        BE --> FE : 200 OK + sesion / JWT (rol tomado de la cuenta) (RF-005)
+        FE --> Usuario : Redireccion al panel segun rol (RF-006)
+    else token invalido
+        BE --> FE : 401 Unauthorized
+        FE --> Usuario : Mensaje de error claro (RNF-018)
+    end
 end
 
+...15 minutos sin actividad...
+FE -> BE : POST /auth/logout (cierre automatico por inactividad)
+BE --> FE : Sesion invalidada
+
 ...tiempo despues...
-Usuario -> FE : Cerrar sesion (RF-07)
+Usuario -> FE : Cerrar sesion (RF-007)
 FE -> BE : POST /auth/logout
-BE --> FE : Sesion invalidada (RNF-07)
+BE --> FE : Sesion invalidada (RNF-007)
 @enduml

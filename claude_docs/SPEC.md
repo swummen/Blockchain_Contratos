@@ -151,6 +151,25 @@ porción de consulta de "mis documentos"/trazabilidad del Empleado, dentro de la
 D6 del plan de Sprint 2); llegan con Sprint 3/4 junto con `verification`/`administration`,
 que dependen de esa misma lectura.
 
+`verification` (Sprint 3) completo — **RF‑23…36 y RNF‑05, 08, 23, 24, 27 implementados y
+verificados** (chaincode con `GetDocument` (primera función de lectura) y
+`RecordVerification`; `GET /documents/:id` con enmascarado del hash por rol (RF‑27);
+`POST /documents/:id/verifications` con comparación real de huellas y actualización de
+estado — ledger primero, Mongo después, mismo criterio D13 de Sprint 2 —;
+`VerificarIntegridadPage` del frontend conectada; detalle en
+`claude_docs/tasks/todo-sprint3-verification.md`). Esto también completa RNF‑09 y
+RNF‑11 (marcadas parciales en Sprint 2 por faltarles la consulta y la comparación —
+ya existen las dos). **RNF‑10 y RNF‑14 quedan parciales, no completos:** son benchmarks
+formales (RNF‑10: P95 ≤ 3000ms en 50 peticiones consecutivas; RNF‑14: 100% de detección
+de alteraciones sobre un set de validación de 20 documentos) — la comparación de hashes
+detecta correctamente cualquier alteración en las pruebas manuales hechas (es SHA‑256,
+cualquier cambio de un bit cambia el hash), pero ninguno de los dos benchmarks formales
+se corrió todavía. RF‑37…40 (consulta general de documentos/trazabilidad del
+Verificador, HU‑015/016) siguen sin su alcance completo — Sprint 3 adelantó un listado
+mínimo (decisión D8 del plan, `GET /documents`, sin filtros/búsqueda/paginación, pedido
+por Sofia para no obligar a memorizar un `documentId`) para elegir qué verificar; el
+resto (búsqueda, trazabilidad general) sigue para Sprint 4.
+
 Cada módulo se especifica en su propio `claude_docs/SPEC-<id>.md` **solo si** su diseño
 necesita más detalle del que cabe aquí. El mapa de arriba es el índice de lo que existe.
 

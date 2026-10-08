@@ -7,27 +7,42 @@ PDF** (RNF‑04) — solo la huella que el backend ya calculó off-chain.
 
 ## Qué hace (`contract/smartcontract.go`)
 
-- `ContractsContract` — el contrato (`contractapi.Contract`), una sola función de negocio
-  por ahora: `RegisterDocument(ctx, documentID, sha256Hex, user) (*Event, error)`.
-- `RegisterDocument`: valida que `documentID`/`user` no estén vacíos y que `sha256Hex`
-  tenga formato hex de 64 caracteres (SHA‑256); rechaza un `documentID` ya registrado;
-  usa `ctx.GetStub().GetTxTimestamp()` para el timestamp (nunca `time.Now()` — todo peer
+- `ContractsContract` — el contrato (`contractapi.Contract`), 3 funciones de negocio:
+  `RegisterDocument`, `GetDocument` y `RecordVerification`.
+- `RegisterDocument(ctx, documentID, sha256Hex, user) (*Event, error)`: valida que
+  `documentID`/`user` no estén vacíos y que `sha256Hex` tenga formato hex de 64
+  caracteres (SHA‑256); rechaza un `documentID` ya registrado; usa
+  `ctx.GetStub().GetTxTimestamp()` para el timestamp (nunca `time.Now()` — todo peer
   endosante tiene que llegar al mismo resultado determinista para la misma transacción);
   devuelve el `Event` con el `TxID` real de Fabric (RF‑16).
+- `GetDocument(ctx, documentID) (*Document, error)` (Sprint 3, T1) — primera función de
+  **lectura** (`evaluateTransaction`): devuelve el `Document` ya anclado, o error si
+  `documentID` nunca se registró. La usa el backend para confirmar existencia (RF‑25) y
+  consultar la huella registrada (RF‑26).
+- `RecordVerification(ctx, documentID, result, user) (*Event, error)` (Sprint 3, T1):
+  valida `result` ∈ `{"confirmada","comprometida"}` (el backend ya hizo la comparación de
+  hashes — este contrato nunca recibe ni compara los dos hashes, ni el PDF, RNF‑04);
+  falla si el documento no existe; actualiza `Document.Status` a `"Verificado"`/
+  `"Alterado"` según corresponda (RF‑34, nunca otro camino lo cambia) y escribe un nuevo
+  `Event{Action:"verificacion", Result, ...}` sin tocar el evento de `"registro"`
+  original. Permite re-verificar el mismo documento sin restricción (HU‑014‑CA‑02,
+  "Nueva verificación") — cada verificación es un evento más, no un reemplazo.
 - No valida identidad/MSPID dentro del chaincode — es deliberado: el backend ya gatekeepea
   con JWT + OTP + RBAC antes de llamar a Fabric (decisión D6b,
   `claude_docs/tasks/plan-sprint2-documents-ledger.md`).
-- Sin ninguna función de **lectura** propia todavía (D6 del mismo plan: las consultas de
-  trazabilidad/estado son Sprint 3/4). `backend/src/routes/fabric.ts` usa la query de
-  sistema `org.hyperledger.fabric:GetMetadata` (la expone cualquier chaincode de
-  `contractapi` automáticamente) para su diagnóstico, no una función de este contrato.
+- Sigue sin ninguna función que **liste** documentos o eventos (D6 de Sprint 2, todavía
+  vigente: ese alcance completo es RF‑37…40, Sprint 4). El listado mínimo que sí existe
+  desde Sprint 3 (`GET /documents` del backend) lee de MongoDB, nunca del chaincode —
+  ver `backend/README.md`. `backend/src/routes/fabric.ts` usa la query de sistema
+  `org.hyperledger.fabric:GetMetadata` (la expone cualquier chaincode de `contractapi`
+  automáticamente) para su diagnóstico, no una función de este contrato.
 
 ### Modelo de datos (world state)
 
 | Tipo | Clave | Campos | Notas |
 |---|---|---|---|
-| `Document` | `documentID` | `DocumentID`, `Sha256Hex`, `Status` | Un registro por documento; `Status` siempre `"Pendiente"` al crearse — el chaincode no tiene todavía ninguna función que lo cambie (Sprint 3/4, módulo `verification`). |
-| `Event` | clave compuesta `CreateCompositeKey("event", [documentID, TxID])` | `Action`, `DocumentID`, `Result` (opcional), `Timestamp`, `TxID`, `User` | Nunca se sobreescribe — cada acción es un evento nuevo, lo que permite reconstruir el historial completo con `GetStateByPartialCompositeKey("event", [documentID])` cuando exista esa consulta. `Action` hoy siempre `"registro"`; `"verificacion"` llega con el módulo `verification`. |
+| `Document` | `documentID` | `DocumentID`, `Sha256Hex`, `Status` | Un registro por documento. `Status` empieza en `"Pendiente"` al registrarse y pasa a `"Verificado"`/`"Alterado"` solo vía `RecordVerification` (Sprint 3) — ningún otro camino lo cambia. |
+| `Event` | clave compuesta `CreateCompositeKey("event", [documentID, TxID])` | `Action`, `DocumentID`, `Result` (opcional), `Timestamp`, `TxID`, `User` | Nunca se sobreescribe — cada acción es un evento nuevo, lo que permite reconstruir el historial completo con `GetStateByPartialCompositeKey("event", [documentID])` cuando exista esa consulta (todavía no existe — Sprint 4). `Action` ∈ `"registro"` \| `"verificacion"` (Sprint 3); `Result` solo viene poblado en los eventos de `"verificacion"`. |
 
 `Event.Result` lleva `metadata:",optional"` (no alcanza con `json:",omitempty"`):
 `contractapi` genera el JSON Schema de la respuesta por reflection y marca todo campo
@@ -62,16 +77,21 @@ ya corregidos: `docker/README.md`.
 
 ## Tests unitarios (`contract/smartcontract_test.go`)
 
-Mocks `counterfeiter` copiados de `asset-transfer-basic` (`ChaincodeStub`,
-`TransactionContext`, `StateQueryIterator`) — sin red, sin Docker. Casos: registro
-exitoso (confirma las dos escrituras de `PutState` y la clave compuesta del evento),
-documento ya existente, hash con formato inválido, `documentID`/`user` vacíos, y fallos
-inyectados de `GetState`, `PutState` (documento y evento, por separado),
-`GetTxTimestamp` y `CreateCompositeKey`.
+24 tests, mocks `counterfeiter` copiados de `asset-transfer-basic` (`ChaincodeStub`,
+`TransactionContext`, `StateQueryIterator`) — sin red, sin Docker.
+- `RegisterDocument`: registro exitoso (confirma las dos escrituras de `PutState` y la
+  clave compuesta del evento), documento ya existente, hash con formato inválido,
+  `documentID`/`user` vacíos, y fallos inyectados de `GetState`, `PutState` (documento y
+  evento, por separado), `GetTxTimestamp` y `CreateCompositeKey`.
+- `GetDocument`: éxito, documento no encontrado, `documentID` vacío, fallo de `GetState`,
+  fallo de unmarshal.
+- `RecordVerification`: éxito con `"confirmada"` (confirma `Status→"Verificado"`) y con
+  `"comprometida"` (`Status→"Alterado"`), documento no encontrado, `result` inválido (sin
+  siquiera leer el estado), `documentID`/`user` vacíos, y los mismos 5 fallos inyectados
+  que ya cubre `RegisterDocument`.
 
 ## Qué no hace todavía
 
-Ninguna función de **lectura** (listar documentos, historial de eventos, estado) — es
-Sprint 3/4 (módulos `verification`/`administration`, ver el mapa de capacidades de
-`claude_docs/SPEC.md` §3). Tampoco ninguna función que cambie `Status` — llega con la
-verificación de integridad.
+Ninguna función que **liste** documentos o el historial completo de eventos — es
+Sprint 4 (RF‑37…40, ver el mapa de capacidades de `claude_docs/SPEC.md` §3; el listado
+mínimo que existe desde Sprint 3 vive en MongoDB, vía el backend, no en este chaincode).

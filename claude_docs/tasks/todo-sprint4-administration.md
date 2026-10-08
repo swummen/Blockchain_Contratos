@@ -2,8 +2,8 @@
 
 Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10‑08**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1 completo y revisado (REQUEST CHANGES → aplicado). Listo para commit. Sigue
-T2 (deploy del chaincode actualizado).**
+Estado: **T1-T3 completos y revisados (T3: APPROVE, 2 Optional aplicados). Listo para
+commit. Sigue T4 (`GET /events` trazabilidad general + `GET /documents/summary`).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -66,15 +66,20 @@ construyó (D1/D2 del plan). Sin red todavía — solo compila y sus tests pasan
 `GetDocumentEvents`/`GetAllEvents` contra la red real — mismo patrón que T2 de Sprint 3.
 
 **Criterios de aceptación:**
-- [ ] Upgrade manual (`./network.sh deployCC ... -ccv <nueva>`, bypaseando el guard de
-  idempotencia de `deploy-cc.sh` — no detecta cambios de código, mismo criterio ya
-  documentado en Sprint 2/3).
+- [x] Upgrade manual (`./network.sh deployCC -c contratoschannel -ccn contracts -ccp
+  ../../../chaincode -ccl go -ccv 1.1`, bypaseando el guard de idempotencia de
+  `deploy-cc.sh` — no detecta cambios de código, mismo criterio ya documentado en
+  Sprint 2/3). Confirmado `querycommitted` en ambos orgs: `Version: 1.1, Sequence: 2`.
 
 **Verificación:**
-- [ ] Manual: con al menos un documento registrado y una verificación ya hecha
-  (reutilizar lo que quede de pruebas anteriores o generar datos nuevos), `peer
-  chaincode query` real a `GetDocumentEvents` devuelve los eventos reales (registro +
-  verificación) con sus `TxID` reales; `GetAllEvents` los incluye también.
+- [x] Manual contra la red real: `RegisterDocument` + `RecordVerification` reales sobre
+  un documento nuevo → `GetDocumentEvents` devuelve los 2 eventos reales (registro +
+  verificación, con `Result:"confirmada"` en el segundo) con sus `TxID` reales, en el
+  orden en que se escribieron. `GetAllEvents` (probado con cero argumentos — la forma
+  exacta que va a usar `queryChaincode("GetAllEvents")` desde el backend) devuelve 6
+  eventos de 3 documentos distintos, acumulados de pruebas de sprints anteriores que
+  siguen vivos en el ledger. `GetDocumentEvents` de un `documentID` inventado → `[]` sin
+  error (comportamiento documentado en T1, no un bug).
 
 **Dependencias:** T1.
 
@@ -85,9 +90,10 @@ construyó (D1/D2 del plan). Sin red todavía — solo compila y sus tests pasan
 ---
 
 ### ✅ Checkpoint: chaincode operativo
-- [ ] `GetDocumentEvents`/`GetAllEvents` compilan, sus tests pasan, y una consulta real
-  en la red devuelve eventos reales.
-- [ ] Revisado por `code-reviewer`.
+- [x] `GetDocumentEvents`/`GetAllEvents` compilan, sus tests pasan (34/34), y una
+  consulta real en la red devuelve eventos reales (registro + verificación, con `TxID`
+  reales; `GetAllEvents` agregando 3 documentos distintos).
+- [x] Revisado por `code-reviewer` (REQUEST CHANGES → aplicado).
 
 ---
 
@@ -100,29 +106,56 @@ faltaba — el listado ya existía (D8 de Sprint 3), falta que el Empleado lo us
 lo suyo, y la trazabilidad por documento (nadie la tiene todavía).
 
 **Criterios de aceptación:**
-- [ ] `GET /documents` (ya existe) se abre a `requireAuth()` sin roles — si
+- [x] `GET /documents` (ya existía) se abre a `requireAuth()` sin roles — si
   `req.user.role === "Empleado"`, el service filtra por `responsibleUser ===
   req.user.sub` (Mongo, un `find({responsibleUser: ...})` en vez de `find()`); otros
   roles, sin cambio (D3).
-- [ ] `GET /documents/:id/events` (nuevo): llama a `GetDocument` (confirma que existe,
-  reusa `queryLedgerDocument`) + `GetDocumentEvents`; si `req.user.role === "Empleado"`
-  y `document.responsibleUser !== req.user.sub` → `403` (D4/RF‑21‑CA‑02); devuelve
-  `[{action, user, txId, timestamp, result?}, ...]` ordenados por `timestamp`.
+- [x] `GET /documents/:id/events` (nuevo): llama a `queryLedgerDocument` (confirma que
+  existe — mismo helper que ya usan `getDocument`/`verifyDocument`) + `GetDocumentEvents`;
+  si `req.user.role === "Empleado"` y `document.responsibleUser !== req.user.sub` →
+  `403` (D4/RF‑21‑CA‑02) — incluido el caso "existe en el ledger pero no en Mongo"
+  (fail closed: sin Mongo no hay forma de confirmar el dueño, se niega por defecto, no
+  se asume). Devuelve `[{documentId, action, user, txId, timestamp, result?}, ...]`
+  ordenados por `timestamp` (comparación lexicográfica de un string RFC3339 en UTC
+  siempre con el mismo formato — alcanza sin parsear a `Date`, D2 del plan).
 
 **Verificación:**
-- [ ] Manual contra la red real: Empleado ve solo sus documentos en `GET /documents`;
-  Empleado consultando la trazabilidad de un documento ajeno → `403`; Empleado
-  consultando la suya → ve el evento de registro (y de verificación, si ya se verificó).
-- [ ] Tests: filtro por rol en `GET /documents` (Empleado ve menos que Verificador con
-  los mismos datos), `GET /documents/:id/events` éxito, 403 ajeno, 404 documento
-  inexistente, 401.
-- [ ] Build/test/lint del backend en verde.
-- [ ] Ronda de `code-reviewer`.
+- [x] Manual contra la red real: Empleado real (`m.lopez`) ve solo sus 2 documentos en
+  `GET /documents` (confirmado `responsibleUser === "U001"` en los dos) mientras el
+  Verificador ve el mismo total sin filtro; Empleado consultando la trazabilidad de su
+  propio documento → `200` con el evento de registro real; `documentId` inexistente →
+  `404`. El caso "Empleado consultando un documento ajeno → 403" no se probó en vivo
+  (solo hay un Empleado sembrado) — sí está cubierto por 2 tests unitarios (ajeno +
+  ledger-sin-Mongo). Sin regresión: `bash docker/smoke-test.sh` → `PASS`.
+- [x] Tests: 9 casos nuevos — filtro por rol en `GET /documents` (Empleado acotado,
+  Verificador sin filtro), `GET /documents/:id/events` éxito con orden cronológico
+  confirmado (eventos deliberadamente desordenados en el mock), Empleado dueño, Empleado
+  ajeno (403, nunca llega a pedir los eventos), Empleado con ledger-sin-Mongo (403, fail
+  closed), 404, 502, 401 — 91/91 tests del backend en verde.
+- [x] Build/lint del backend en 0 errores/warnings.
+- [x] Ronda de `code-reviewer` (verdict: **APPROVE**, sin Required): confirmó leyendo el
+  chaincode que las dos consultas en serie a Fabric (`GetDocument` + `GetDocumentEvents`)
+  no son redundantes — `GetDocumentEvents` nunca devuelve "not found", solo `[]`, así que
+  la primera consulta es la única fuente real del 404 — y que el costo de dos queries de
+  solo lectura en serie es insignificante para el volumen de un MVP de tesis. Confirmó que
+  `GET /documents` y `GET /documents/:id/events` usan el mismo criterio de "dueño"
+  (`responsibleUser`/`req.user.sub`), sin inconsistencia entre los dos. Aplicados los 2
+  hallazgos Optional: **(1)** el chequeo de propiedad de `getDocumentEvents` dejó de
+  depender de Mongo (`findDocumentById`) — ahora compara contra el `User` del propio
+  evento `"registro"` que ya devuelve `GetDocumentEvents` (una consulta menos, y cierra
+  del todo el caso límite "ledger-sin-Mongo" que antes negaba el acceso al dueño real por
+  una inconsistencia de Mongo). **(2)** Sembrado un segundo Empleado de prueba
+  (`c.ruiz@empresa.com`, U002 — ya existía en el mock del frontend, solo faltaba en el
+  seed) para poder probar el `403` de verdad contra la red real, no solo con mocks.
+  Re-verificado tras los 2 fixes: 91/91 tests, build/lint limpios, y en vivo: `c.ruiz`
+  (U002) pidiendo la trazabilidad del documento de `m.lopez` (U001) → `403` real.
 
 **Dependencias:** T2.
 
-**Archivos:** `backend/src/routes/documents.ts`, `backend/src/services/documentService.ts`,
-`backend/src/repositories/documentRepository.ts` (filtro por `responsibleUser`), tests.
+**Archivos:** `backend/src/routes/documents.ts`, `backend/src/services/documentService.ts`
+(`listDocuments` con filtro por rol, `getDocumentEvents` nuevo — propiedad desde el
+ledger, no Mongo), `backend/src/repositories/documentRepository.ts` (filtro por
+`responsibleUser`), `backend/src/scripts/seedUsers.ts` (segundo Empleado), tests.
 
 **Alcance:** M.
 

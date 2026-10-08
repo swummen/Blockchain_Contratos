@@ -1,7 +1,13 @@
 import { NextFunction, Request, Response, Router } from "express";
 import multer from "multer";
 import { requireAuth } from "../middlewares/auth";
-import { getDocument, listDocuments, registerDocument, verifyDocument } from "../services/documentService";
+import {
+  getDocument,
+  getDocumentEvents,
+  listDocuments,
+  registerDocument,
+  verifyDocument,
+} from "../services/documentService";
 
 export const documentsRouter = Router();
 
@@ -60,16 +66,14 @@ documentsRouter.post(
 
 documentsRouter.get(
   "/documents",
-  // A diferencia de GET /documents/:id (cualquier rol, el riesgo lo resuelve
-  // el enmascarado del hash), esto enumera TODOS los documentos de TODOS los
-  // usuarios — ya avisado en D5b del plan ("revisar si esto cambia si una
-  // consulta general permite enumerar documentos"). RF-37 ya lo nombra como
-  // del Verificador; Administrador entra por el mismo criterio que el hash
-  // completo (RF-27). Un Empleado no lo necesita — RF-18 (Sprint 4) le va a
-  // dar su propio listado acotado a sus documentos, más angosto que esto.
-  requireAuth("Verificador", "Administrador"),
-  async (_req, res) => {
-    res.status(200).json(await listDocuments());
+  // Sprint 3 (D5b) lo dejó acotado a Verificador/Administrador porque
+  // todavía exponía TODOS los documentos de TODOS los usuarios a cualquiera.
+  // Sprint 4 (D3) lo resuelve bien en vez de seguir esperando: mismo
+  // endpoint, pero el service filtra por `responsibleUser` si el rol es
+  // Empleado (RF-18, "Mis documentos") — ya no hace falta negarle el acceso.
+  requireAuth(),
+  async (req, res) => {
+    res.status(200).json(await listDocuments(req.user!.role, req.user!.sub));
   },
 );
 
@@ -86,6 +90,26 @@ documentsRouter.get(
       return;
     }
     res.status(200).json(result.document);
+  },
+);
+
+documentsRouter.get(
+  "/documents/:id/events",
+  // RF-21-CA-02: un Empleado que no es el dueño del documento se queda sin
+  // acceso — el service decide el 403, no esta ruta (necesita el rol para
+  // decidir, `requireAuth()` sin lista solo exige sesión válida).
+  requireAuth(),
+  async (req, res) => {
+    const result = await getDocumentEvents(
+      req.params.id as string, // mismo motivo que las rutas de arriba: no es un wildcard.
+      req.user!.role,
+      req.user!.sub,
+    );
+    if (!result.ok) {
+      res.status(result.status).json({ message: result.message });
+      return;
+    }
+    res.status(200).json(result.events);
   },
 );
 

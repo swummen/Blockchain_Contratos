@@ -38,7 +38,11 @@ export async function updateDocumentStatus(documentId: string, status: DocumentS
 // una sería de verdad el alcance completo de RF-37/48 (Sprint 4), no esto.
 // Ordenado por más reciente primero; límite defensivo de 100 (no hay
 // paginación todavía, no hace falta para un MVP de tesis con pocos
-// documentos de prueba).
-export async function listDocuments(): Promise<DocumentDoc[]> {
-  return documentsCollection().find().sort({ registeredAt: -1 }).limit(100).toArray();
+// documentos de prueba). `responsibleUser` opcional (Sprint 4, D3): filtra a
+// los documentos de un solo usuario — lo que usa el Empleado para "Mis
+// documentos" (RF-18), el mismo listado que Verificador/Administrador ven
+// completo.
+export async function listDocuments(responsibleUser?: string): Promise<DocumentDoc[]> {
+  const filter = responsibleUser ? { responsibleUser } : {};
+  return documentsCollection().find(filter).sort({ registeredAt: -1 }).limit(100).toArray();
 }

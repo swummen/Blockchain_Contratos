@@ -17,14 +17,25 @@ import {
 
 const DEV_PASSWORD = "Contratos123!";
 
-// Un usuario por rol alcanza para probar el login de Sprint 1; no se siembran
-// todos los mocks de frontend/src/data/users.ts (deliberadamente se omiten
-// U002/U004, ambos Empleado como U001).
+// Un usuario por rol alcanzaba para probar el login de Sprint 1; Sprint 4
+// (T3) agrega un segundo Empleado (mismo usuario que ya tenía mockeado
+// frontend/src/data/users.ts como U002) — sin esto, el chequeo de "un
+// Empleado no puede ver la trazabilidad de otro" (RF-21-CA-02) no se podía
+// probar en vivo, solo con mocks. U004 (Verificador en el mock) sigue sin
+// sembrarse — no hace falta un segundo usuario de ese rol para nada que
+// el backend necesite probar hoy.
 const SEED_USERS: Array<Omit<UserDoc, "passwordHash">> = [
   {
     _id: "U001",
     name: "María López",
     email: "m.lopez@empresa.com",
+    role: "Empleado",
+    status: "Activo",
+  },
+  {
+    _id: "U002",
+    name: "Carlos Ruiz",
+    email: "c.ruiz@empresa.com",
     role: "Empleado",
     status: "Activo",
   },
@@ -54,7 +65,7 @@ async function main() {
     console.log(`Usuario listo: ${user.email} (${user.role})`);
   }
 
-  console.log(`\nContraseña de desarrollo para los 3: "${DEV_PASSWORD}" (ver backend/README.md)`);
+  console.log(`\nContraseña de desarrollo para los ${SEED_USERS.length}: "${DEV_PASSWORD}" (ver backend/README.md)`);
   await closeMongo();
 }
 

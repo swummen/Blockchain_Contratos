@@ -494,7 +494,7 @@ Al abrir `claude_docs/tasks/plan.md` para un sprint / módulo:
 | ID | Título | Enunciado (resumen) | Prioridad |
 |---|---|---|---|
 | RF‑23 | Acceso al módulo de verificación | El Verificador accede al módulo de verificación de integridad. | Must |
-| RF‑24 | Selección del documento registrado | Seleccionar un documento previamente registrado para verificar. | Must |
+| RF‑24 | Selección del documento registrado | Seleccionar un documento previamente registrado para verificar (nota de cambio, Sprint 3 T5: la ficha detallada del RF describe también un listado visible de documentos como alternativa — eso depende de una consulta que todavía no existe, RF‑37…40, Sprint 4; hasta entonces la selección es ingresando el identificador directo, que de todas formas ya exige RF‑25 un renglón más abajo). | Must |
 | RF‑25 | Validación de existencia | Consultar por identificador si el documento está registrado. | Must |
 | RF‑26 | Consulta de huella registrada | Mostrar la huella criptográfica registrada del documento. | Must |
 | RF‑27 | Restricción de visualización del hash | La huella completa es visible solo para Verificador y Administrador. | Must |

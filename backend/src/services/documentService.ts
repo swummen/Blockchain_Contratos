@@ -4,6 +4,7 @@ import {
   DocumentStatus,
   findDocumentById,
   insertDocument,
+  listDocuments as listDocumentsFromMongo,
   updateDocumentStatus,
 } from "../repositories/documentRepository";
 import { Role } from "../repositories/userRepository";
@@ -11,6 +12,14 @@ import { Role } from "../repositories/userRepository";
 export type RegisterDocumentResult =
   | { ok: true; documentId: string }
   | { ok: false; status: number; message: string };
+
+export interface DocumentSummary {
+  documentId: string;
+  name: string;
+  responsibleUser: string;
+  registeredAt: string;
+  status: DocumentStatus;
+}
 
 export interface DocumentView {
   documentId: string;
@@ -134,6 +143,25 @@ export async function registerDocument(
   }
 
   return { ok: true, documentId };
+}
+
+// Ampliación de alcance de Sprint 3 T5 (pedida por Sofia): sin esto, elegir
+// un documento para verificar exigía que alguien le pasara el documentId a
+// mano al Verificador — nada que lo liste todavía (eso es RF-37/48, Sprint
+// 4). Lee directo de Mongo (nunca del chaincode: no es una fuente de verdad
+// de cuáles existen, D6) — el `status` que muestra puede estar un instante
+// desactualizado frente al ledger si algo falló a mitad de camino en
+// verifyDocument, pero `GetDocument` (al elegir un documento puntual) sigue
+// siendo la fuente real para hash/status antes de verificar nada.
+export async function listDocuments(): Promise<DocumentSummary[]> {
+  const docs = await listDocumentsFromMongo();
+  return docs.map((doc) => ({
+    documentId: doc._id,
+    name: doc.name,
+    responsibleUser: doc.responsibleUser,
+    registeredAt: doc.registeredAt.toISOString(),
+    status: doc.status,
+  }));
 }
 
 // RF-27/RNF-08: el hash completo solo lo ve Verificador/Administrador. Mismo

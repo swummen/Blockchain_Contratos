@@ -129,11 +129,26 @@ export interface DocumentLookup {
   status: "Pendiente" | "Verificado" | "Alterado"
 }
 
-// RF-25/26 (HU-010/011): no hay todavía ningún listado de documentos (Sprint
-// 4), así que esto se busca por el identificador exacto, no se elige de una
-// lista — 404 si no existe (HU-010-CA-02).
+// RF-25/26 (HU-010/011): consulta puntual por identificador exacto — 404 si
+// no existe (HU-010-CA-02). Es la fuente real de hash/status (el ledger es
+// la autoridad); `listDocuments` de abajo es solo para elegir cuál consultar.
 export async function getDocument(token: string, documentId: string): Promise<DocumentLookup> {
   return getAuthJson(`/documents/${encodeURIComponent(documentId)}`, token)
+}
+
+export interface DocumentSummary {
+  documentId: string
+  name: string
+  responsibleUser: string
+  registeredAt: string
+  status: "Pendiente" | "Verificado" | "Alterado"
+}
+
+// Listado mínimo (ampliación de alcance de Sprint 3 T5): nunca trae el hash
+// — alcanza con lo que hace falta para elegir un documento; el hash real se
+// pide recién con getDocument().
+export async function listDocuments(token: string): Promise<DocumentSummary[]> {
+  return getAuthJson("/documents", token)
 }
 
 export interface VerifyDocumentResult {

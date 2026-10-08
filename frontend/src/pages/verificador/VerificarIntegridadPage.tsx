@@ -3,15 +3,36 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
 import { FileDropzone } from "@/components/shared/FileDropzone"
 import { HashDisplay } from "@/components/shared/HashDisplay"
 import { HashCompareResult } from "@/components/shared/HashCompareResult"
 import { useSession } from "@/context/SessionContext"
-import { getDocument, verifyDocument, type DocumentLookup, type VerifyDocumentResult } from "@/lib/api"
+import {
+  getDocument,
+  listDocuments,
+  verifyDocument,
+  type DocumentLookup,
+  type DocumentSummary,
+  type VerifyDocumentResult,
+} from "@/lib/api"
 import { formatDateTime } from "@/lib/format"
 
 export default function VerificarIntegridadPage() {
   const { token } = useSession()
+
+  // HU-010-CA-01: "el Verificador lo selecciona" — de una lista si hay una
+  // (ampliación de alcance de Sprint 3 T5) o ingresando el identificador
+  // directo (siempre disponible, por si el documento no aparece en esta
+  // primera página de 100 o la lista no cargó).
+  const [documents, setDocuments] = React.useState<DocumentSummary[]>([])
+  const [documentsError, setDocumentsError] = React.useState<string | null>(null)
 
   const [documentIdInput, setDocumentIdInput] = React.useState("")
   const [document, setDocument] = React.useState<DocumentLookup | null>(null)
@@ -23,11 +44,20 @@ export default function VerificarIntegridadPage() {
   const [verifyError, setVerifyError] = React.useState<string | null>(null)
   const [verifyLoading, setVerifyLoading] = React.useState(false)
 
-  // Sin listado de documentos todavía (Sprint 4, RF-37...40) — se busca por
-  // el identificador exacto (RF-25), no se elige de una lista (HU-010-CA-01).
-  async function handleLookup() {
-    const id = documentIdInput.trim()
+  React.useEffect(() => {
+    if (!token) return
+    listDocuments(token)
+      .then(setDocuments)
+      .catch((err) => {
+        // No bloqueante: si falla, queda la búsqueda manual por identificador.
+        setDocumentsError(err instanceof Error ? err.message : "No se pudo cargar el listado.")
+      })
+  }, [token])
+
+  async function handleLookup(idToLookup?: string) {
+    const id = (idToLookup ?? documentIdInput).trim()
     if (!id || !token) return
+    setDocumentIdInput(id)
     setLookupLoading(true)
     setLookupError(null)
     setDocument(null)
@@ -110,6 +140,38 @@ export default function VerificarIntegridadPage() {
                 </span>
                 Documento a verificar
               </p>
+
+              {!document && documents.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="document-select">Elegir de los documentos registrados</Label>
+                  <Select
+                    // Siempre sin seleccionar a propósito: elegir una opción
+                    // dispara handleLookup, que pone `document` y esconde
+                    // todo este bloque — nunca llega a quedar "elegido".
+                    value={undefined}
+                    onValueChange={(id) => handleLookup(id)}
+                    disabled={lookupLoading}
+                  >
+                    <SelectTrigger id="document-select">
+                      <SelectValue placeholder="Seleccionar documento registrado..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {documents.map((doc) => (
+                        <SelectItem key={doc.documentId} value={doc.documentId}>
+                          {doc.name} — {doc.status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">o ingresá el identificador directo:</p>
+                </div>
+              )}
+              {!document && documentsError && (
+                <p className="text-xs text-muted-foreground">
+                  No se pudo cargar el listado ({documentsError}) — buscá por identificador.
+                </p>
+              )}
+
               <form
                 className="space-y-1.5"
                 onSubmit={(e) => {

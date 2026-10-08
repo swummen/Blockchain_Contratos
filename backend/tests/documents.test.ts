@@ -34,12 +34,14 @@ jest.mock("../src/repositories/documentRepository", () => ({
   insertDocument: jest.fn(),
   findDocumentById: jest.fn(),
   updateDocumentStatus: jest.fn(),
+  listDocuments: jest.fn(),
 }));
 
 import { queryChaincode, submitChaincodeTransaction } from "../src/fabric/gateway";
 import {
   findDocumentById,
   insertDocument,
+  listDocuments,
   updateDocumentStatus,
 } from "../src/repositories/documentRepository";
 import { findSessionByJti } from "../src/repositories/sessionRepository";
@@ -420,5 +422,90 @@ describe("POST /documents/:id/verifications", () => {
       .attach("document", PDF_BUFFER, "contrato.pdf");
 
     expect(res.status).toBe(500);
+  });
+});
+
+describe("GET /documents", () => {
+  it("200 con el resumen de los documentos (sin el hash)", async () => {
+    (listDocuments as jest.Mock).mockResolvedValue([
+      {
+        _id: "doc2",
+        name: "b.pdf",
+        responsibleUser: "U001",
+        registeredAt: new Date("2026-10-02T00:00:00.000Z"),
+        hash: "deadbeef",
+        status: "Pendiente",
+      },
+      {
+        _id: "doc1",
+        name: "a.pdf",
+        responsibleUser: "U001",
+        registeredAt: new Date("2026-10-01T00:00:00.000Z"),
+        hash: "cafef00d",
+        status: "Verificado",
+      },
+    ]);
+
+    const res = await request(createApp())
+      .get("/documents")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      {
+        documentId: "doc2",
+        name: "b.pdf",
+        responsibleUser: "U001",
+        registeredAt: "2026-10-02T00:00:00.000Z",
+        status: "Pendiente",
+      },
+      {
+        documentId: "doc1",
+        name: "a.pdf",
+        responsibleUser: "U001",
+        registeredAt: "2026-10-01T00:00:00.000Z",
+        status: "Verificado",
+      },
+    ]);
+    // El hash nunca viaja en el listado — ni completo ni enmascarado, no
+    // hace falta para elegir un documento (se pide recién al consultarlo).
+    expect(res.body[0].hash).toBeUndefined();
+  });
+
+  it("Administrador: 200 (mismo acceso que Verificador)", async () => {
+    (listDocuments as jest.Mock).mockResolvedValue([]);
+
+    const res = await request(createApp())
+      .get("/documents")
+      .set("Authorization", `Bearer ${token("Administrador")}`);
+
+    expect(res.status).toBe(200);
+  });
+
+  it("sin documentos: 200 con un arreglo vacío", async () => {
+    (listDocuments as jest.Mock).mockResolvedValue([]);
+
+    const res = await request(createApp())
+      .get("/documents")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it("Empleado: 403 — este listado enumera documentos de todos los usuarios, no solo los propios (RF-18 es un endpoint distinto, Sprint 4)", async () => {
+    const res = await request(createApp())
+      .get("/documents")
+      .set("Authorization", `Bearer ${token("Empleado")}`);
+
+    expect(res.status).toBe(403);
+    expect(listDocuments).not.toHaveBeenCalled();
+  });
+
+  it("sin JWT: 401, no llega a consultar Mongo", async () => {
+    const res = await request(createApp()).get("/documents");
+
+    expect(res.status).toBe(401);
+    expect(listDocuments).not.toHaveBeenCalled();
   });
 });

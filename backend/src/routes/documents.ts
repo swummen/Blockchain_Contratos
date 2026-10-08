@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
 import multer from "multer";
 import { requireAuth } from "../middlewares/auth";
-import { getDocument, registerDocument, verifyDocument } from "../services/documentService";
+import { getDocument, listDocuments, registerDocument, verifyDocument } from "../services/documentService";
 
 export const documentsRouter = Router();
 
@@ -55,6 +55,21 @@ documentsRouter.post(
       return;
     }
     res.status(201).json({ documentId: result.documentId });
+  },
+);
+
+documentsRouter.get(
+  "/documents",
+  // A diferencia de GET /documents/:id (cualquier rol, el riesgo lo resuelve
+  // el enmascarado del hash), esto enumera TODOS los documentos de TODOS los
+  // usuarios — ya avisado en D5b del plan ("revisar si esto cambia si una
+  // consulta general permite enumerar documentos"). RF-37 ya lo nombra como
+  // del Verificador; Administrador entra por el mismo criterio que el hash
+  // completo (RF-27). Un Empleado no lo necesita — RF-18 (Sprint 4) le va a
+  // dar su propio listado acotado a sus documentos, más angosto que esto.
+  requireAuth("Verificador", "Administrador"),
+  async (_req, res) => {
+    res.status(200).json(await listDocuments());
   },
 );
 

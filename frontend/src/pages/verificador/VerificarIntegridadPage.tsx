@@ -116,6 +116,19 @@ export default function VerificarIntegridadPage() {
       {result ? (
         <Card>
           <CardContent className="space-y-4">
+            {/* RF-33: la evidencia no es solo el hash — hace falta ver
+                claramente qué documento registrado se comparó contra qué
+                archivo subido, para poder justificar el resultado. */}
+            <div className="grid gap-3 rounded-xl border border-border bg-card p-4 text-sm sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Documento registrado</p>
+                <p className="font-medium">{document?.name ?? document?.documentId}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Archivo cargado para comparar</p>
+                <p className="font-medium">{compareFile?.name}</p>
+              </div>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <HashDisplay hash={result.registeredHash} canViewFull label="Hash registrado" />
               <HashDisplay

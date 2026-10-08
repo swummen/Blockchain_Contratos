@@ -398,7 +398,23 @@ prueba en sí, no solo "se vería mejor":
 `backend/src/repositories/documentRepository.ts` (`listDocuments`),
 `backend/tests/documents.test.ts`, `claude_docs/SPEC.md` (RF‑24).
 
-**Alcance:** M (original) + ampliación chica pedida en el camino.
+**Segunda ronda de feedback de Sofia, probando ya en el navegador real:** confirmó que la
+verificación funciona, pero señaló que la tarjeta de resultado no dejaba "defender" el
+resultado — solo mostraba los dos hashes, sin decir qué documento registrado ni qué
+archivo subido se compararon. Agregado un bloque de evidencia (nombre del documento
+registrado + nombre del archivo cargado) arriba de los hashes en el resultado — cierra
+mejor RF‑33 ("mostrar la huella original y la obtenida como evidencia del resultado": la
+evidencia ahora tiene contexto, no son solo hashes crudos). Build/lint limpios,
+contenedor `frontend` reconstruido, `bash docker/smoke-test.sh` → `PASS`. Cambio chico de
+solo-UI (datos que ya estaban en el estado del componente, sin tocar ningún endpoint) —
+no se lanzó una ronda completa de `code-reviewer` para esto.
+
+También aclarado para Sofia (sin cambio de código, pregunta conceptual): el Verificador
+no "tiene los contratos definitivos" — nunca se guarda el PDF en ningún lado (RNF‑04), el
+Verificador sube cualquier copia que tenga a mano para chequear si esa copia puntual
+sigue siendo idéntica a la huella anclada originalmente, mismo principio que un checksum.
+
+**Alcance:** M (original) + ampliación chica pedida en el camino + ajuste de evidencia.
 
 ---
 

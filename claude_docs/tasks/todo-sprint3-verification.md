@@ -2,9 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint3-verification.md` (**aprobado 2026‑10‑07**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T4 completos y revisados (T4: APPROVE). Checkpoint "backend↔ledger real
-(verificación)" cerrado. Listo para commit. Sigue T5 (frontend:
-`VerificarIntegridadPage`).**
+Estado: **T1-T5 completos y revisados (T5: REQUEST CHANGES → aplicado). Listo para
+commit. Pendiente confirmación de Sofia en el navegador antes de cerrar el checkpoint
+de HU‑010…014. Sigue T6 (documentación y cierre).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -285,27 +285,76 @@ mayor riesgo del sprint (HU‑012/013/014 completas).
 los endpoints reales.
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `getDocument(token, documentId)` y
-  `verifyDocument(token, documentId, file)`.
-- [ ] `VerificarIntegridadPage` deja de usar `useAppData().verifyDocument` (el mock) para
-  la llamada real; error de validación o de comparación se muestra en la UI existente.
-- [ ] **Contrato a tener en cuenta (hallazgo del review de T3):** `GET /documents/:id`
-  puede responder `name`/`responsibleUser`/`registeredAt` ausentes (`undefined`) si el
-  documento existe en el ledger pero no en Mongo (inconsistencia real, poco común) — la
-  UI tiene que mostrar un placeholder razonable en ese caso, no asumir que esos campos
-  siempre vienen.
-- [ ] `npm run build`/`npm run lint` pasan. El chequeo de "sin infraestructura directa"
+- [x] `frontend/src/lib/api.ts` gana `getDocument(token, documentId)` y
+  `verifyDocument(token, documentId, file)`. De paso, factorizado `parseJsonResponse()`
+  compartido (ya era el tercer/cuarto call site repitiendo el mismo parseo de error —
+  hallazgo Optional que había quedado anotado en el review de T6 de Sprint 2).
+- [x] `VerificarIntegridadPage` deja de usar `useAppData()` (el mock) por completo —
+  **decisión de diseño no anticipada en el plan, tomada ahora**: como todavía no existe
+  ningún listado de documentos (RF‑37…40, Sprint 4), el modo "Desde el sistema" (un
+  `<Select>` poblado del mock) no tenía ningún equivalente real para conectar. Tampoco
+  "Ingresar manualmente" (pegar un hash a mano) — el backend real siempre compara contra
+  el hash *registrado* de un `documentId` conocido, nunca contra un hash arbitrario que
+  el cliente proponga. Las dos pestañas se reemplazaron por un único flujo real: tipeás
+  el identificador, "Buscar" (`GET /documents/:id`, confirma existencia + muestra la
+  huella registrada — HU‑010/011), después cargás el PDF a comparar y "Comparar huellas"
+  (`POST /documents/:id/verifications` — HU‑012/013/014). Error de búsqueda o de
+  comparación se muestra en la UI existente.
+- [x] El hallazgo del review de T3 (`name`/`responsibleUser`/`registeredAt` pueden venir
+  `undefined`) ya está cubierto: la tarjeta del documento solo renderiza `name`/
+  `registeredAt` si vienen presentes (`document.name &&`/`document.registeredAt &&`), sin
+  asumir que siempre están.
+- [x] `npm run build`/`npm run lint` pasan. El chequeo de "sin infraestructura directa"
   sigue sin encontrar nada.
 
 **Verificación:**
-- [ ] Manual en navegador (o mecánico si no hay navegador disponible, mismo criterio que
-  T6 de Sprint 2): Verificador consulta un documento real → ve su huella completa; sube
-  un PDF idéntico → `Verificado`; sube uno distinto → `Alterado`.
+- [x] Mecánico, sin navegador disponible en este entorno (mismo criterio que T6 de
+  Sprint 2): se simuló contra el stack real la secuencia exacta que hace la página —
+  login Empleado real → `POST /documents` con un PDF real → login Verificador real →
+  `GET /documents/:id` (misma forma que `getDocument()` del frontend) → `200` con la
+  huella real → `POST /documents/:id/verifications` con el mismo PDF (misma forma que
+  `verifyDocument()`) → `200 {status:"Verificado", matches:true, ...}` con los dos
+  hashes idénticos; un `documentId` inexistente → `404`. Se reconstruyó el contenedor
+  `frontend` y se confirmó que sirve `200`. Sin regresión: `bash docker/smoke-test.sh` →
+  `PASS`. **Pendiente de Sofia:** click-through real en el navegador.
+- [x] Ronda de `code-reviewer` (verdict: **REQUEST CHANGES** → aplicado, 3 Required):
+  1. La tarjeta de resultado mostraba `document?.registeredAt` (la fecha de **registro**
+     original del documento) como si fuera la fecha de la **verificación** — bug real de
+     copiar mal el patrón de `CargarDocumentoPage` (ahí sí correspondía mostrar la fecha
+     de carga, acá no). Corregido: siempre `new Date().toISOString()`, mismo criterio que
+     ya usa `CargarDocumentoPage` cuando el backend no devuelve timestamp. **Causa raíz
+     real, no resuelta todavía (fuera de alcance de T5, anotada para un sprint futuro):**
+     `verifyDocument` (T4, backend) descarta el `Event` real que devuelve
+     `RecordVerification` (con su `Timestamp`/`TxID` determinista del ledger) — ninguna
+     capa tiene hoy el momento real de la verificación para mostrar, solo una
+     aproximación del reloj del navegador. Si RNF‑05/HU‑014 necesitan ese dato como
+     evidencia real, hay que hacer que `verifyDocument` capture y devuelva el `Event`.
+  2. Condición de carrera real: el input del id solo se deshabilitaba con
+     `disabled={!!document}`, no mientras la búsqueda estaba en curso (`lookupLoading`)
+     — si el usuario cambiaba el id mientras la respuesta vieja todavía no volvía, podía
+     terminar mostrando el documento del id viejo con el id nuevo ya escrito en el campo.
+     Corregido: `disabled={!!document || lookupLoading}` (mismo criterio que ya usaba el
+     botón "Buscar").
+  3. El paso 1 no estaba envuelto en un `<form>`, rompiendo la convención del resto del
+     proyecto (`LoginPage`, `UsuariosPage`): Enter no disparaba la búsqueda. Corregido con
+     `<form onSubmit>` + botón `type="submit"`.
+  Hallazgos Optional: `AppDataContext.verifyDocument` quedó sin ningún consumidor real en
+  todo el frontend (confirmado por el reviewer con grep) — código muerto, pero no se
+  tocó `AppDataContext` en esta tarea (fuera de alcance de T5; el resto del contexto —
+  `documents`, `eventsForDocument`, etc. — sigue en uso real por otras pantallas
+  mockeadas); queda anotado para una limpieza futura. Se agregó la nota de cambio
+  pendiente en `SPEC.md` RF‑24 (la ficha detallada describe también un listado como
+  alternativa — eso depende de RF‑37…40, Sprint 4; hasta entonces la selección es por
+  identificador directo). Se borró el `onChange` muerto que limpiaba `document`/
+  `lookupError` (inalcanzable: el input está deshabilitado exactamente cuando esas
+  limpiezas importarían). Re-verificado tras los 3 fixes: build/lint limpios, contenedor
+  `frontend` reconstruido, `bash docker/smoke-test.sh` → `PASS` de nuevo.
 
 **Dependencias:** T4.
 
-**Archivos:** `frontend/src/lib/api.ts`,
-`frontend/src/pages/verificador/VerificarIntegridadPage.tsx`.
+**Archivos:** `frontend/src/lib/api.ts` (`getDocument`, `verifyDocument`,
+`parseJsonResponse` compartido), `frontend/src/pages/verificador/VerificarIntegridadPage.tsx`
+(reescrita — ya no usa `AppDataContext`).
 
 **Alcance:** M.
 

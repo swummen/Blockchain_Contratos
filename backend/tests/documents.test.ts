@@ -31,10 +31,11 @@ jest.mock("../src/repositories/sessionRepository", () => ({
 
 jest.mock("../src/repositories/documentRepository", () => ({
   insertDocument: jest.fn(),
+  findDocumentById: jest.fn(),
 }));
 
-import { submitChaincodeTransaction } from "../src/fabric/gateway";
-import { insertDocument } from "../src/repositories/documentRepository";
+import { queryChaincode, submitChaincodeTransaction } from "../src/fabric/gateway";
+import { findDocumentById, insertDocument } from "../src/repositories/documentRepository";
 import { findSessionByJti } from "../src/repositories/sessionRepository";
 import { createApp } from "../src/server";
 
@@ -181,5 +182,123 @@ describe("POST /documents", () => {
       .attach("document", PDF_BUFFER, "contrato.pdf");
 
     expect(res.status).toBe(500);
+  });
+});
+
+const FULL_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+const MASKED_HASH = `e3b0c442${"•".repeat(20)}7852b855`;
+
+describe("GET /documents/:id", () => {
+  const registeredAt = new Date("2026-10-01T10:00:00.000Z");
+
+  beforeEach(() => {
+    (queryChaincode as jest.Mock).mockResolvedValue(
+      JSON.stringify({ DocumentID: "doc1", Sha256Hex: FULL_HASH, Status: "Pendiente" }),
+    );
+    (findDocumentById as jest.Mock).mockResolvedValue({
+      _id: "doc1",
+      name: "contrato.pdf",
+      responsibleUser: "U001",
+      registeredAt,
+      hash: FULL_HASH,
+      status: "Pendiente",
+    });
+  });
+
+  it("Verificador: 200 con el hash completo", async () => {
+    const res = await request(createApp())
+      .get("/documents/doc1")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      documentId: "doc1",
+      name: "contrato.pdf",
+      responsibleUser: "U001",
+      registeredAt: registeredAt.toISOString(),
+      hash: FULL_HASH,
+      status: "Pendiente",
+    });
+    expect(queryChaincode).toHaveBeenCalledWith("GetDocument", "doc1");
+  });
+
+  it("Administrador: 200 con el hash completo", async () => {
+    const res = await request(createApp())
+      .get("/documents/doc1")
+      .set("Authorization", `Bearer ${token("Administrador")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.hash).toBe(FULL_HASH);
+  });
+
+  it("Empleado: 200 con el hash enmascarado (RF-27/RNF-08)", async () => {
+    const res = await request(createApp())
+      .get("/documents/doc1")
+      .set("Authorization", `Bearer ${token("Empleado")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.hash).toBe(MASKED_HASH);
+  });
+
+  it("documento inexistente: 404 (HU-010-CA-02)", async () => {
+    // Forma real de un GatewayError cuando el chaincode rechaza la propuesta
+    // (ver gatewayerror.d.ts): el mensaje real vive en .details[0].message,
+    // no en .message (ese es un texto gRPC genérico) — mismo hallazgo de T3
+    // de Sprint 2.
+    const chaincodeError = Object.assign(new Error("endorsement failure"), {
+      details: [{ message: "document doc1 not found" }],
+    });
+    (queryChaincode as jest.Mock).mockRejectedValue(chaincodeError);
+
+    const res = await request(createApp())
+      .get("/documents/doc1")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("error de transporte/config sin .details, aunque mencione 'not found': 502, no 404", async () => {
+    // Un timeout o un canal/chaincode mal configurado nunca trae .details
+    // poblado (eso solo pasa con una respuesta real del peer) — este caso
+    // prueba que el chequeo de 404 no se deja engañar por una coincidencia
+    // de texto en un error que en realidad es de infraestructura.
+    (queryChaincode as jest.Mock).mockRejectedValue(
+      new Error("channel 'foo' not found: deadline exceeded"),
+    );
+
+    const res = await request(createApp())
+      .get("/documents/doc1")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(502);
+  });
+
+  it("falla la consulta al chaincode por otro motivo: 502", async () => {
+    (queryChaincode as jest.Mock).mockRejectedValue(new Error("peer no disponible"));
+
+    const res = await request(createApp())
+      .get("/documents/doc1")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(502);
+  });
+
+  it("sin JWT: 401, no llega a consultar el chaincode", async () => {
+    const res = await request(createApp()).get("/documents/doc1");
+
+    expect(res.status).toBe(401);
+    expect(queryChaincode).not.toHaveBeenCalled();
+  });
+
+  it("el documento existe en el ledger pero no en Mongo: 200 igual, con metadata ausente", async () => {
+    (findDocumentById as jest.Mock).mockResolvedValue(null);
+
+    const res = await request(createApp())
+      .get("/documents/doc1")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.hash).toBe(FULL_HASH);
+    expect(res.body.name).toBeUndefined();
   });
 });

@@ -2,9 +2,8 @@
 
 Plan: `claude_docs/tasks/plan-sprint3-verification.md` (**aprobado 2026‑10‑07**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T2 completos. Checkpoint "chaincode operativo" cerrado — `GetDocument`/
-`RecordVerification` funcionando en vivo contra la red real. Listo para commit. Sigue T3
-(backend: `GET /documents/:id`).**
+Estado: **T1-T3 completos y revisados (T3: REQUEST CHANGES → aplicado). Listo para
+commit. Sigue T4 (`POST /documents/:id/verifications`, el slice de mayor riesgo).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -144,28 +143,60 @@ negocio (hasta ahora solo lo usaba el diagnóstico de `/fabric/ping`). Consulta 
 documento por id; enmascara el hash completo salvo rol Verificador/Administrador (D5).
 
 **Criterios de aceptación:**
-- [ ] `GET /documents/:id`, `requireAuth(...)` (cualquier rol autenticado puede consultar
-  — RF‑25/26 no restringen por rol como sí lo hace la carga; el *enmascarado* es lo que
-  varía por rol, no el acceso al endpoint).
-- [ ] `200` con `{documentId, hash (completo o enmascarado según rol), status, ...}`;
-  `404` si `GetDocument` del chaincode dice que no existe (HU‑010‑CA‑02).
-- [ ] Enmascarado server-side (no confiar en que el frontend lo oculte) — mismo criterio
-  de enmascarado que ya usa `maskHash` en frontend, ahora también en backend.
+- [x] `GET /documents/:id`, `requireAuth()` sin roles (cualquier rol autenticado puede
+  consultar — RF‑25/26 no restringen por rol como sí lo hace la carga; el *enmascarado*
+  es lo que varía por rol, no el acceso al endpoint).
+- [x] `200` con `{documentId, name?, responsibleUser?, registeredAt?, hash, status}`
+  (`hash` completo o enmascarado según rol); `404` si `GetDocument` del chaincode dice
+  que no existe (HU‑010‑CA‑02); `502` si la consulta al chaincode falla por otro motivo.
+- [x] Enmascarado server-side (`maskHash`, mismo algoritmo que ya usa el frontend,
+  copiado — no importado, son paquetes npm distintos sin un módulo compartido todavía) —
+  no se confía en que el frontend lo oculte.
+- [x] No se necesitó ningún wrapper nuevo en `gateway.ts` — `queryChaincode(fcn, ...args)`
+  ya era genérico desde Sprint 2 (T5 lo usaba para `GetMetadata`), alcanza tal cual para
+  `GetDocument`.
+- [x] `findDocumentById` nuevo en `documentRepository.ts` (Mongo da nombre/usuario/fecha;
+  el ledger sigue siendo la autoridad para `hash`/`status`, `SPEC.md` §4.1) — si el
+  documento existe en el ledger pero no en Mongo (inconsistencia real, ya logueada en
+  `registerDocument` si ocurrió ahí), se responde `200` igual con lo que el ledger sí
+  tiene, en vez de un `404` falso.
 
 **Verificación:**
-- [ ] Manual contra la red real: un documento ya registrado (de Sprint 2) consultado
-  como Verificador → hash completo; como Empleado (no el dueño) → hash enmascarado; un
-  id inexistente → `404`.
-- [ ] Tests: `backend/tests/documents.test.ts` (o un archivo nuevo si crece mucho) cubre
-  los 3 casos de arriba.
-- [ ] Build/test/lint del backend en verde.
-- [ ] Ronda de `code-reviewer`.
+- [x] Manual contra la red real: login Empleado → `POST /documents` con un PDF real →
+  `GET /documents/:id` como el mismo Empleado → hash enmascarado (`6a0fe4fc•••...•••695e82df`);
+  login Verificador → mismo `GET` → hash completo idéntico en el prefijo/sufijo
+  (`6a0fe4fc1d2818ed...695e82df`); un id inexistente → `404`; sin token → `401`. Sin
+  regresión: `bash docker/smoke-test.sh` → `PASS`.
+- [x] Tests: 7 casos nuevos en `backend/tests/documents.test.ts` (Verificador/Administrador
+  con hash completo, Empleado con hash enmascarado, 404, 502, 401, ledger-sin-Mongo) — 70/70
+  tests del backend en verde.
+- [x] Build/lint del backend en 0 errores/warnings.
+- [x] Ronda de `code-reviewer` (verdict: **REQUEST CHANGES** → aplicado, 2 Required): el
+  chequeo de "no encontrado" (`describeFabricError(err).includes("not found")`) era
+  correcto para el chaincode (confirmado: ese substring literal aparece en un único
+  lugar de `smartcontract.go`), pero demasiado frágil un nivel más arriba — un error de
+  **transporte** (peer caído, canal/chaincode mal configurado, timeout) nunca trae
+  `.details` poblado, pero si su mensaje genérico mencionara "not found" por coincidencia,
+  se habría disfrazado de un `404` de negocio en vez de un `502` de infraestructura.
+  Corregido: nuevo `isDocumentNotFoundError()` que exige `.details` poblado (prueba real
+  de que el error vino del peer) antes de mirar el texto — un error de transporte nunca
+  puede pasar ese chequeo. Agregado un test nuevo que prueba exactamente ese caso
+  (mensaje con "not found" pero sin `.details` → `502`, no `404`). También encontró que
+  el comentario "el ledger es la autoridad para hash/status" citaba `SPEC.md` §4.1 sin
+  que el documento dijera eso realmente — la tabla original (de antes de Sprint 3) solo
+  tenía a MongoDB como dueño de `status`, correcto hasta que `RecordVerification` (T1 de
+  este sprint) empezó a mutarlo on-chain. Corregido `SPEC.md` con nota de cambio. Hallazgo
+  Optional aplicado: la exposición sin enmascarar de `responsibleUser` a cualquier rol
+  quedó documentada como decisión consciente (D5b del plan), no implícita. Re-verificado
+  tras los fixes: 17/17 tests (incluye el nuevo), build/lint limpios, y el `404` real
+  sigue funcionando contra la red (rebuild del contenedor `backend` + prueba en vivo).
 
 **Dependencias:** T2.
 
-**Archivos:** `backend/src/routes/documents.ts` (o un archivo nuevo si la ruta crece),
-`backend/src/services/documentService.ts`, `backend/src/fabric/gateway.ts` (si hace
-falta un wrapper nuevo para `GetDocument`), tests.
+**Archivos:** `backend/src/routes/documents.ts` (`GET /documents/:id`),
+`backend/src/services/documentService.ts` (`getDocument`, `maskHash`),
+`backend/src/repositories/documentRepository.ts` (`findDocumentById`),
+`backend/tests/documents.test.ts`.
 
 **Alcance:** M.
 
@@ -226,6 +257,11 @@ los endpoints reales.
   `verifyDocument(token, documentId, file)`.
 - [ ] `VerificarIntegridadPage` deja de usar `useAppData().verifyDocument` (el mock) para
   la llamada real; error de validación o de comparación se muestra en la UI existente.
+- [ ] **Contrato a tener en cuenta (hallazgo del review de T3):** `GET /documents/:id`
+  puede responder `name`/`responsibleUser`/`registeredAt` ausentes (`undefined`) si el
+  documento existe en el ledger pero no en Mongo (inconsistencia real, poco común) — la
+  UI tiene que mostrar un placeholder razonable en ese caso, no asumir que esos campos
+  siempre vienen.
 - [ ] `npm run build`/`npm run lint` pasan. El chequeo de "sin infraestructura directa"
   sigue sin encontrar nada.
 

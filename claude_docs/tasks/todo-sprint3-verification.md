@@ -2,8 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint3-verification.md` (**aprobado 2026‑10‑07**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1 completo y revisado (APPROVE, 2 hallazgos Optional aplicados). Listo para
-commit. Sigue T2 (deploy del chaincode actualizado).**
+Estado: **T1-T2 completos. Checkpoint "chaincode operativo" cerrado — `GetDocument`/
+`RecordVerification` funcionando en vivo contra la red real. Listo para commit. Sigue T3
+(backend: `GET /documents/:id`).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -79,34 +80,58 @@ cero — mismo mecanismo que el bugfix de `metadata:",optional"` en Sprint 2 T2)
 `GetDocument`/`RecordVerification` contra la red real.
 
 **Criterios de aceptación:**
-- [ ] `docker/deploy-cc.sh` sigue siendo idempotente: si la versión ya está committed, no
-  reintenta; si cambió el código, sube de secuencia/versión (mismo patrón que el
-  redeploy puntual de Sprint 2 T2, ya no como upgrade "especial" sino como parte normal
-  del ciclo de vida del script).
-- [ ] Prueba real de extremo a extremo agregada al script (o verificada a mano, según lo
-  que convenga sin sobre-construir): un documento ya registrado se puede consultar con
-  `GetDocument`, y una verificación real actualiza su estado.
+- [x] Upgrade manual del chaincode ya desplegado: `./network.sh deployCC -c
+  contratoschannel -ccn contracts -ccp ../../../chaincode -ccl go -ccv 1.1` (bypaseando
+  el guard de idempotencia de `deploy-cc.sh`, que solo chequea "¿hay *alguna* versión
+  committed?" — no detecta cambios de código, mismo criterio que el redeploy puntual de
+  Sprint 2 T2). Confirmado `querycommitted` en ambos orgs: `Version: 1.1, Sequence: 2,
+  Approvals: [Org1MSP: true, Org2MSP: true]`.
+- [x] **No se tocó `docker/deploy-cc.sh`** — decisión explícita, no un olvido: su propia
+  idempotencia (nunca reintenta si ya hay algo committed) significa que no vuelve a
+  desplegar nada en un ciclo normal de `up.sh`; agregarle `GetDocument`/`RecordVerification`
+  a su smoke test de un solo despliegue inicial habría sido construir para un caso que no
+  se repite (YAGNI) — la verificación real de punta a punta ya quedó hecha a mano abajo,
+  con más profundidad de la que un script automatizado necesitaría cubrir para esto.
+- [x] Prueba real de extremo a extremo: un documento registrado se consulta con
+  `GetDocument`, y dos verificaciones reales (una `"confirmada"`, otra `"comprometida"`)
+  actualizan su estado correctamente.
 
 **Verificación:**
-- [ ] Manual: ciclo limpio (`network-down.sh`/`network-up.sh` o el upgrade puntual,
-  según corresponda) + `peer chaincode invoke`/`query` reales confirmando
-  `GetDocument` y `RecordVerification` con un `txID` real cada uno.
+- [x] Manual, contra la red ya arriba (upgrade sin bajar la red): `RegisterDocument` →
+  `GetDocument` devuelve `Status:"Pendiente"` real; `RecordVerification(..., "confirmada",
+  ...)` → `GetDocument` devuelve `Status:"Verificado"`, con `txID` real
+  (`0c19c1fd...`); un segundo documento con `RecordVerification(..., "comprometida", ...)`
+  → `Status:"Alterado"` (`txID` real `4f377f56...`); un `result` inválido
+  (`"tal-vez"`) rechazado con el mensaje exacto del chaincode; `GetDocument` de un
+  `documentID` inexistente rechazado con `"document ... not found"`.
+- [x] **Bug real encontrado y corregido — no del chaincode, de mis propias pruebas
+  manuales:** las primeras invocaciones de `RegisterDocument`/`GetDocument` con un solo
+  peer endosando (`--peerAddresses localhost:7051` únicamente, calcando sin pensar el
+  patrón del *segundo* invoke de `deploy-cc.sh`, que deliberadamente usa un solo peer
+  porque ahí el rechazo esperado ocurre en la simulación, nunca llega a comprometerse)
+  parecían tener éxito (`status:200`) pero nunca anclaban nada — confirmado con
+  `--waitForEvent`: `ENDORSEMENT_POLICY_FAILURE`. La política real del canal (2
+  organizaciones, `MAJORITY` implícita = 2 de 2) exige el endoso de **ambos** peers para
+  cualquier invocación que de verdad vaya a comprometerse — exactamente el patrón que ya
+  usa `network.sh`'s propio `chaincodeInvoke` (`scripts/ccutils.sh:305`, dos
+  `--peerAddresses`) para el *primer* invoke de `deploy-cc.sh`. Nada que corregir en el
+  repo — era mi propio comando manual el que estaba mal armado; se documenta acá para que
+  quien pruebe algo a mano en el futuro no pierda tiempo con el mismo diagnóstico.
 
 **Dependencias:** T1.
 
-**Archivos:** `docker/deploy-cc.sh` (si hace falta ajustar la prueba de smoke),
-`chaincode/contract/smartcontract.go` (si aparece algún bug real, mismo criterio que
-Sprint 2 T2).
+**Archivos:** `chaincode/` sin cambios de código (solo el upgrade de versión desplegado).
 
 **Alcance:** S.
 
 ---
 
 ### ✅ Checkpoint: chaincode operativo
-- [ ] `GetDocument`/`RecordVerification` compilan, sus tests pasan, y una invocación real
-  en la red devuelve un `txID` y actualiza el estado de un documento real.
-- [ ] Revisado por `code-reviewer` (foco: determinismo, que el PDF nunca aparezca en
-  ningún argumento, que la actualización de `Status` sea atómica).
+- [x] `GetDocument`/`RecordVerification` compilan, sus tests pasan (24/24), y una
+  invocación real en la red devuelve un `txID` y actualiza el estado de un documento real
+  (confirmado dos veces: `"confirmada"→Verificado`, `"comprometida"→Alterado`).
+- [x] Revisado por `code-reviewer` (determinismo, atomicidad del update, invariante
+  `doc.DocumentID == evt.DocumentID` ahora chequeada en `putEvent`).
 
 ---
 

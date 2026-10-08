@@ -46,3 +46,31 @@ export async function listDocuments(responsibleUser?: string): Promise<DocumentD
   const filter = responsibleUser ? { responsibleUser } : {};
   return documentsCollection().find(filter).sort({ registeredAt: -1 }).limit(100).toArray();
 }
+
+export interface DocumentCounts {
+  total: number;
+  pendiente: number;
+  verificado: number;
+  alterado: number;
+}
+
+// RF-41/42 (panel del Administrador): totales reales por estado, vía un
+// aggregate agrupado — a propósito NO reutiliza `listDocuments` (que tiene un
+// límite de 100 sin paginación, D8 de Sprint 3): un panel con totales mal
+// contados por ese límite sería peor que no tener panel (D6 del plan de
+// Sprint 4).
+export async function countDocumentsByStatus(): Promise<DocumentCounts> {
+  const results = await documentsCollection()
+    .aggregate<{ _id: DocumentStatus; count: number }>([{ $group: { _id: "$status", count: { $sum: 1 } } }])
+    .toArray();
+
+  const counts = { Pendiente: 0, Verificado: 0, Alterado: 0 };
+  for (const r of results) counts[r._id] = r.count;
+
+  return {
+    total: counts.Pendiente + counts.Verificado + counts.Alterado,
+    pendiente: counts.Pendiente,
+    verificado: counts.Verificado,
+    alterado: counts.Alterado,
+  };
+}

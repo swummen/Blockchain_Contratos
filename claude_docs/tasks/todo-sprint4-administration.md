@@ -2,8 +2,8 @@
 
 Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10‑08**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T3 completos y revisados (T3: APPROVE, 2 Optional aplicados). Listo para
-commit. Sigue T4 (`GET /events` trazabilidad general + `GET /documents/summary`).**
+Estado: **T1-T4 completos y revisados (T4: REQUEST CHANGES → aplicado). Listo para
+commit. Sigue T5 (backend: gestión de usuarios).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -167,29 +167,80 @@ ledger, no Mongo), `backend/src/repositories/documentRepository.ts` (filtro por
 Administrador).
 
 **Criterios de aceptación:**
-- [ ] `GET /events`, `requireAuth("Verificador", "Administrador")` — llama a
-  `GetAllEvents`, ordena por `timestamp` (D2), responde
-  `[{documentId, action, user, txId, timestamp, result?}, ...]`. Mismo nivel de detalle
-  para los dos roles (D5/HU‑020‑CA‑02).
-- [ ] `GET /documents/summary`, `requireAuth("Administrador")` — totales por `status`
-  vía Mongo (`countDocuments` x4 o un `aggregate` agrupado, lo que sea más simple de
-  escribir correctamente) — `{total, pendiente, verificado, alterado}` (D6, nunca
-  limitado a los 100 de `GET /documents`).
+- [x] `GET /events` (ruta nueva, archivo nuevo `backend/src/routes/events.ts` — no tenía
+  sentido meterlo en `documents.ts`, no es un recurso anidado bajo `/documents`),
+  `requireAuth("Verificador", "Administrador")` — llama a `GetAllEvents`, ordena por
+  `timestamp` (D2), responde `[{documentId, action, user, txId, timestamp, result?},
+  ...]`. Mismo nivel de detalle para los dos roles (D5/HU‑020‑CA‑02) — una sola
+  respuesta, no una versión recortada.
+- [x] `GET /documents/summary`, `requireAuth("Administrador")` — totales por `status`
+  vía un `aggregate` de Mongo agrupado (`$group` por `status`) — `{total, pendiente,
+  verificado, alterado}` (D6, nunca limitado a los 100 de `GET /documents`). Registrada
+  **antes** de `GET /documents/:id` en el router (si no, Express la tomaría como
+  `id="summary"`) — hay un test dedicado a confirmar justo esto.
+- [x] **Hallazgo real durante esta tarea, fuera del AC original pero imposible de no
+  arreglar**: el CORS de `/documents` en `server.ts` nunca se actualizó desde Sprint 2
+  (seguía en `"POST, OPTIONS"`) — un preflight real confirmó que el navegador habría
+  bloqueado cualquier `GET` desde que Sprint 3 agregó el primero. Corregido a `"GET,
+  POST, OPTIONS"`, y agregado un bloque de CORS nuevo para `/events` (antes no existía
+  ningún `GET` bajo ese prefijo).
 
 **Verificación:**
-- [ ] Manual contra la red real: con documentos en distintos estados, `GET /events`
-  devuelve todos los eventos reales en orden cronológico; `GET /documents/summary` da
-  totales que coinciden con un conteo manual en Mongo.
-- [ ] Tests: `GET /events` éxito, orden cronológico confirmado con eventos
-  deliberadamente desordenados en el mock, 403 Empleado, 401; `GET /documents/summary`
-  éxito con números exactos, 403 no-Administrador.
-- [ ] Build/test/lint del backend en verde.
-- [ ] Ronda de `code-reviewer`.
+- [x] Manual contra la red real: `GET /events` como Verificador devuelve 8 eventos
+  reales ya ordenados cronológicamente; `GET /documents/summary` como Administrador da
+  `{total:3, pendiente:2, verificado:0, alterado:1}`, confirmado idéntico contra un
+  `aggregate` manual directo en Mongo; `GET /events`/`GET /documents/summary` con el rol
+  equivocado → `403` real en los dos. Preflight real de `/documents` y `/events`
+  confirmado con `Access-Control-Allow-Methods` incluyendo `GET` después del fix. Sin
+  regresión: `bash docker/smoke-test.sh` → `PASS`.
+- [x] Tests: 9 casos nuevos — `GET /events` éxito con orden cronológico confirmado
+  (eventos deliberadamente desordenados en el mock), Administrador (mismo detalle),
+  Empleado 403, falla del chaincode 502, sin JWT 401; `GET /documents/summary` éxito con
+  números exactos, Verificador 403, sin JWT 401, y un test dedicado a que la ruta no
+  quede atrapada por `/documents/:id`. 100/100 tests del backend en verde.
+- [x] Build/lint del backend en 0 errores/warnings.
+- [x] Ronda de `code-reviewer` (verdict: **REQUEST CHANGES** → aplicado, 2 Required):
+  1. **La narrativa del hallazgo de CORS estaba mal.** Dije que "un preflight real
+     confirmó que el navegador lo habría bloqueado" — falso: `curl` no aplica ninguna
+     política de CORS, solo muestra los headers de la respuesta. El reviewer señaló (y
+     confirmó contra la spec de Fetch, no de memoria) que `GET` es un "CORS-safelisted
+     method" — el chequeo de método del preflight pasa igual aunque
+     `Access-Control-Allow-Methods` no lo liste, así que ningún navegador real rechazó
+     esto nunca por este motivo específico. El valor seguía estando mal (y el fix sigue
+     siendo correcto), pero por una razón distinta: el riesgo real es que un método que
+     **no** esté en esa lista de excepción (`PUT`/`DELETE`/`PATCH`) agregado más adelante
+     sin actualizar esto sí quedaría bloqueado, sin excepción, por cualquier navegador.
+     Corregido el comentario en `server.ts` para contar la historia real, no la
+     inventada — esto estaba a punto de quedar mal explicado en `SPEC.md`/
+     `backend/README.md` cuando llegue T10.
+  2. **`getAllEvents()` no tenía ningún límite, a diferencia de `listDocuments` (100,
+     D8) y sin ninguna nota explicando por qué no** — inconsistente con la postura
+     explícita que el resto del archivo ya tiene sobre su propio crecimiento. El ledger
+     de eventos es estrictamente de solo-anexado (cada documento deja mínimo 1 evento, y
+     HU‑014‑CA‑02 permite re-verificar sin límite) — crece para siempre, en cada reuso
+     del mismo entorno de pruebas. Agregado el mismo tipo de límite defensivo (200 más
+     recientes, `.slice(-200)` después de ordenar) con el mismo criterio ya documentado
+     para `listDocuments`.
+  Aplicado también el hallazgo Optional barato: test de `Empleado: 403` agregado a la
+  suite de `GET /documents/summary` (ya existía el equivalente para `GET /events`).
+  Quedaron anotados, no aplicados (Optional, no bloqueantes): la inconsistencia real
+  entre el total del panel y el listado truncado si algún día hay más de 100
+  documentos (nota para T8/SPEC), y una constricción de forma UUID sobre el parámetro
+  `:id` como alternativa más robusta que "comentario + test" para el riesgo de orden de
+  rutas (no aplicada ahora — Express 5 cambió la sintaxis de `path-to-regexp` para
+  constricciones inline y no quise arriesgar una ruta mal armada por adivinarla sin
+  confirmar la sintaxis exacta de la v8). Re-verificado tras los 2 fixes: 101/101 tests,
+  build/lint limpios, contenedor `backend` reconstruido, `bash docker/smoke-test.sh` →
+  `PASS` de nuevo.
 
 **Dependencias:** T2.
 
-**Archivos:** `backend/src/routes/documents.ts` (o un archivo nuevo si crece — considerar
-`backend/src/routes/events.ts`), `backend/src/services/documentService.ts`, tests.
+**Archivos:** `backend/src/routes/events.ts` (nuevo), `backend/src/routes/documents.ts`
+(`GET /documents/summary`), `backend/src/services/documentService.ts` (`getAllEvents`,
+`getDocumentsSummary`), `backend/src/repositories/documentRepository.ts`
+(`countDocumentsByStatus`), `backend/src/server.ts` (CORS de `/documents` corregido +
+bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.test.ts`
+(nuevo), `backend/tests/documents.test.ts`.
 
 **Alcance:** M.
 

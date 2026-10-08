@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { queryChaincode, submitChaincodeTransaction } from "../fabric/gateway";
 import {
+  countDocumentsByStatus,
+  DocumentCounts,
   DocumentStatus,
   findDocumentById,
   insertDocument,
@@ -384,4 +386,45 @@ export async function getDocumentEvents(
   }
 
   return { ok: true, events };
+}
+
+export type GetAllEventsResult =
+  | { ok: true; events: EventView[] }
+  | { ok: false; status: number; message: string };
+
+// Límite defensivo (hallazgo del review de T4): a diferencia de `documents`
+// en Mongo (una población real, aunque creciente), el ledger es estrictamente
+// de solo-anexado — cada documento deja como mínimo 1 evento y HU-014-CA-02
+// permite re-verificar sin límite, así que esto crece para siempre, no solo
+// mientras el proyecto esté vivo sino en cada reuso del mismo entorno de
+// pruebas. `listDocuments` (D8, Sprint 3) ya tiene el mismo tipo de límite
+// por la misma razón — acá, no reusarlo habría sido la única consulta de
+// esta capa sin ninguna postura escrita sobre su propio crecimiento.
+const MAX_EVENTS = 200;
+
+// RF-39/40 (Verificador) y RF-50/51 (Administrador), HU-016/020: trazabilidad
+// general, todos los documentos, mismo nivel de detalle para los dos roles
+// (D5 del plan — una sola respuesta, no una "recortada" para Verificador).
+// Sin chequeo de propiedad: a diferencia de getDocumentEvents, nadie acá
+// consulta solo lo suyo.
+export async function getAllEvents(): Promise<GetAllEventsResult> {
+  let raw: string;
+  try {
+    raw = await queryChaincode("GetAllEvents");
+  } catch (err) {
+    console.error("No se pudo consultar la trazabilidad general en la blockchain:", describeFabricError(err));
+    return { ok: false, status: 502, message: "No se pudo consultar la trazabilidad. Intenta de nuevo." };
+  }
+
+  const events = (JSON.parse(raw) as LedgerEvent[]).map(toEventView);
+  // .slice(-N) después de ordenar ascendente: se queda con los N más
+  // recientes, no los N primeros que trajo el ledger (sin orden garantizado).
+  return { ok: true, events: sortByTimestamp(events).slice(-MAX_EVENTS) };
+}
+
+// RF-41/42 (HU-017): panel del Administrador. Puro paso a través del
+// repositorio — no hay ninguna lógica de negocio propia que justifique más
+// que esto (D6 del plan: "Should", no "Must", alcance chico a propósito).
+export async function getDocumentsSummary(): Promise<DocumentCounts> {
+  return countDocumentsByStatus();
 }

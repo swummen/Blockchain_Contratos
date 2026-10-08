@@ -35,10 +35,12 @@ jest.mock("../src/repositories/documentRepository", () => ({
   findDocumentById: jest.fn(),
   updateDocumentStatus: jest.fn(),
   listDocuments: jest.fn(),
+  countDocumentsByStatus: jest.fn(),
 }));
 
 import { queryChaincode, submitChaincodeTransaction } from "../src/fabric/gateway";
 import {
+  countDocumentsByStatus,
   findDocumentById,
   insertDocument,
   listDocuments,
@@ -640,5 +642,65 @@ describe("GET /documents/:id/events", () => {
 
     expect(res.status).toBe(401);
     expect(queryChaincode).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /documents/summary", () => {
+  it("Administrador: 200 con los totales reales", async () => {
+    (countDocumentsByStatus as jest.Mock).mockResolvedValue({
+      total: 5,
+      pendiente: 2,
+      verificado: 2,
+      alterado: 1,
+    });
+
+    const res = await request(createApp())
+      .get("/documents/summary")
+      .set("Authorization", `Bearer ${token("Administrador")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ total: 5, pendiente: 2, verificado: 2, alterado: 1 });
+  });
+
+  it("Verificador: 403, el panel es solo del Administrador", async () => {
+    const res = await request(createApp())
+      .get("/documents/summary")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(403);
+    expect(countDocumentsByStatus).not.toHaveBeenCalled();
+  });
+
+  it("Empleado: 403", async () => {
+    const res = await request(createApp())
+      .get("/documents/summary")
+      .set("Authorization", `Bearer ${token("Empleado")}`);
+
+    expect(res.status).toBe(403);
+    expect(countDocumentsByStatus).not.toHaveBeenCalled();
+  });
+
+  it("sin JWT: 401", async () => {
+    const res = await request(createApp()).get("/documents/summary");
+
+    expect(res.status).toBe(401);
+  });
+
+  it("no lo confunde con GET /documents/:id (la ruta /summary va antes en el router)", async () => {
+    (countDocumentsByStatus as jest.Mock).mockResolvedValue({
+      total: 0,
+      pendiente: 0,
+      verificado: 0,
+      alterado: 0,
+    });
+
+    const res = await request(createApp())
+      .get("/documents/summary")
+      .set("Authorization", `Bearer ${token("Administrador")}`);
+
+    // Si ":id" se hubiera comido "summary", esto habría intentado consultar
+    // el chaincode (GetDocument) en vez de Mongo.
+    expect(queryChaincode).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
   });
 });

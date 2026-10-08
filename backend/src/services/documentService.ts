@@ -1,6 +1,11 @@
 import crypto from "node:crypto";
 import { queryChaincode, submitChaincodeTransaction } from "../fabric/gateway";
-import { DocumentStatus, findDocumentById, insertDocument } from "../repositories/documentRepository";
+import {
+  DocumentStatus,
+  findDocumentById,
+  insertDocument,
+  updateDocumentStatus,
+} from "../repositories/documentRepository";
 import { Role } from "../repositories/userRepository";
 
 export type RegisterDocumentResult =
@@ -18,6 +23,17 @@ export interface DocumentView {
 
 export type GetDocumentResult =
   | { ok: true; document: DocumentView }
+  | { ok: false; status: number; message: string };
+
+export interface VerificationResult {
+  status: DocumentStatus;
+  matches: boolean;
+  registeredHash: string;
+  computedHash: string;
+}
+
+export type VerifyDocumentResult =
+  | { ok: true; result: VerificationResult }
   | { ok: false; status: number; message: string };
 
 interface UploadedFile {
@@ -134,7 +150,19 @@ export function maskHash(hash: string): string {
   return `${head}${"•".repeat(dotCount)}${tail}`;
 }
 
-export async function getDocument(documentId: string, role: Role): Promise<GetDocumentResult> {
+interface LedgerDocument {
+  Sha256Hex: string;
+  Status: DocumentStatus;
+}
+
+type LedgerDocumentResult =
+  | { ok: true; doc: LedgerDocument }
+  | { ok: false; status: number; message: string };
+
+// Compartido por getDocument (T3) y verifyDocument (T4) — ambos necesitan la
+// misma consulta al ledger y la misma clasificación 404 (chaincode, documento
+// inexistente) vs. 502 (transporte/config) de isDocumentNotFoundError.
+async function queryLedgerDocument(documentId: string): Promise<LedgerDocumentResult> {
   let raw: string;
   try {
     raw = await queryChaincode("GetDocument", documentId);
@@ -145,14 +173,21 @@ export async function getDocument(documentId: string, role: Role): Promise<GetDo
     console.error("No se pudo consultar el documento en la blockchain:", describeFabricError(err));
     return { ok: false, status: 502, message: "No se pudo consultar el documento. Intenta de nuevo." };
   }
+  return { ok: true, doc: JSON.parse(raw) as LedgerDocument };
+}
 
-  const ledgerDoc = JSON.parse(raw) as { Sha256Hex: string; Status: DocumentStatus };
+export async function getDocument(documentId: string, role: Role): Promise<GetDocumentResult> {
+  const ledgerResult = await queryLedgerDocument(documentId);
+  if (!ledgerResult.ok) return ledgerResult;
+
   const metadata = await findDocumentById(documentId);
   // El ledger es la autoridad para hash/status (SPEC.md §4.1); si Mongo no
   // tiene el resto de los metadatos (inconsistencia real, ya logueada en
   // registerDocument si ocurrió ahí), igual se responde con lo que el ledger
   // sí tiene en vez de un 404 falso — el documento SÍ existe.
-  const hash = ROLES_WITH_FULL_HASH.includes(role) ? ledgerDoc.Sha256Hex : maskHash(ledgerDoc.Sha256Hex);
+  const hash = ROLES_WITH_FULL_HASH.includes(role)
+    ? ledgerResult.doc.Sha256Hex
+    : maskHash(ledgerResult.doc.Sha256Hex);
 
   return {
     ok: true,
@@ -162,7 +197,78 @@ export async function getDocument(documentId: string, role: Role): Promise<GetDo
       responsibleUser: metadata?.responsibleUser,
       registeredAt: metadata?.registeredAt.toISOString(),
       hash,
-      status: ledgerDoc.Status,
+      status: ledgerResult.doc.Status,
+    },
+  };
+}
+
+export async function verifyDocument(
+  documentId: string,
+  file: UploadedFile,
+  userId: string,
+): Promise<VerifyDocumentResult> {
+  if (!isPdfSignature(file.buffer)) {
+    return { ok: false, status: 400, message: "El archivo no es un PDF válido." };
+  }
+
+  const ledgerResult = await queryLedgerDocument(documentId);
+  if (!ledgerResult.ok) return ledgerResult;
+
+  // RF-30/RNF-10: mismo algoritmo determinista que registerDocument.
+  const computedHash = crypto.createHash("sha256").update(file.buffer).digest("hex");
+  const matches = computedHash === ledgerResult.doc.Sha256Hex;
+  // RF-34: nunca manual — el resultado de comparar los hashes es lo único
+  // que decide el estado nuevo.
+  const result = matches ? "confirmada" : "comprometida";
+  const newStatus: DocumentStatus = matches ? "Verificado" : "Alterado";
+
+  try {
+    // submitChaincodeTransaction espera el commit real (nunca "éxito" solo a
+    // nivel de endoso) — si esto resuelve, el evento ya quedó anclado. Un
+    // reintento del cliente justo si el proceso se cae entre esta línea y el
+    // updateDocumentStatus de abajo es seguro (RecordVerification no tiene
+    // ningún guard de "ya verificado", HU-014-CA-02 lo permite a propósito),
+    // pero deja dos eventos reales de verificación en el ledger para lo que
+    // el humano percibe como una sola acción — consecuencia ya aceptada en
+    // D13 de Sprint 2 (sin saga/outbox para un MVP de tesis), no un bug.
+    await submitChaincodeTransaction("RecordVerification", documentId, result, userId);
+  } catch (err) {
+    // Mismo criterio que registerDocument (D13 de Sprint 2): si el ledger no
+    // registra la verificación, nunca se actualiza Mongo ni se muestra éxito.
+    console.error("No se pudo registrar la verificación en la blockchain:", describeFabricError(err));
+    return {
+      ok: false,
+      status: 502,
+      message: "No se pudo registrar la verificación en la blockchain. Intenta de nuevo.",
+    };
+  }
+
+  try {
+    await updateDocumentStatus(documentId, newStatus);
+  } catch (err) {
+    // Misma inconsistencia posible que registerDocument: la verificación ya
+    // quedó anclada e inmutable en el ledger (RNF-05), pero Mongo no se pudo
+    // actualizar. Se loguea para reconciliar a mano, no se revierte nada.
+    console.error(
+      `INCONSISTENCIA Mongo↔ledger: documentId=${documentId} quedó verificado en la blockchain pero no se pudo actualizar en Mongo:`,
+      err,
+    );
+    return {
+      ok: false,
+      status: 500,
+      message: "No se pudo completar la verificación. Contacta a soporte.",
+    };
+  }
+
+  return {
+    ok: true,
+    result: {
+      status: newStatus,
+      matches,
+      // Hash completo en los dos: quien llega hasta acá ya es Verificador
+      // (requireAuth("Verificador") en la ruta) — no hay nada que enmascarar.
+      registeredHash: ledgerResult.doc.Sha256Hex,
+      computedHash,
     },
   };
 }

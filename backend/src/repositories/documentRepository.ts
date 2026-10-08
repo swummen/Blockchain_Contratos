@@ -25,3 +25,9 @@ export async function insertDocument(doc: DocumentDoc): Promise<void> {
 export async function findDocumentById(documentId: string): Promise<DocumentDoc | null> {
   return documentsCollection().findOne({ _id: documentId });
 }
+
+// Único lugar que cambia `status` después de la inserción inicial (RF-34:
+// nunca manual, solo tras comparar huellas en verifyDocument).
+export async function updateDocumentStatus(documentId: string, status: DocumentStatus): Promise<void> {
+  await documentsCollection().updateOne({ _id: documentId }, { $set: { status } });
+}

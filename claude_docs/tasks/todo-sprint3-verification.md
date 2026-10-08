@@ -2,8 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint3-verification.md` (**aprobado 2026‑10‑07**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T3 completos y revisados (T3: REQUEST CHANGES → aplicado). Listo para
-commit. Sigue T4 (`POST /documents/:id/verifications`, el slice de mayor riesgo).**
+Estado: **T1-T4 completos y revisados (T4: APPROVE). Checkpoint "backend↔ledger real
+(verificación)" cerrado. Listo para commit. Sigue T5 (frontend:
+`VerificarIntegridadPage`).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -209,39 +210,70 @@ compara contra el registrado, llama `RecordVerification` y actualiza Mongo — s
 mayor riesgo del sprint (HU‑012/013/014 completas).
 
 **Criterios de aceptación:**
-- [ ] `POST /documents/:id/verifications`, `requireAuth("Verificador")`.
-- [ ] Valida el PDF a comparar igual que `POST /documents` (firma real, 20MB, un archivo).
-- [ ] Calcula el hash, pide el documento registrado, compara; llama
-  `RecordVerification(documentId, "confirmada"|"comprometida", userId)`.
-- [ ] Mismo criterio ledger-primero-Mongo-después que D13 de Sprint 2: si
-  `RecordVerification` falla, no se actualiza el `status` en Mongo ni se muestra éxito.
-- [ ] Responde `{status: "Verificado"|"Alterado", registeredHash, computedHash}` (hash
-  completo porque quien pregunta ya es Verificador).
+- [x] `POST /documents/:id/verifications`, `requireAuth("Verificador")`.
+- [x] Valida el PDF a comparar igual que `POST /documents` (firma real, 20MB, un archivo)
+  — el multer de ambas rutas se factorizó en `handleUpload()` compartido, no copy-paste.
+- [x] Calcula el hash, pide el documento registrado (`queryLedgerDocument`, el mismo
+  helper interno que ya usaba `getDocument` de T3 — mismo chequeo 404/502), compara;
+  llama `RecordVerification(documentId, "confirmada"|"comprometida", userId)`.
+- [x] Mismo criterio ledger-primero-Mongo-después que D13 de Sprint 2: si
+  `RecordVerification` falla, no se actualiza el `status` en Mongo (`updateDocumentStatus`,
+  nuevo en `documentRepository.ts`) ni se muestra éxito. Si el ledger tiene éxito pero
+  Mongo falla después, se loguea como inconsistencia y se responde `500` (mismo patrón
+  que `registerDocument`).
+- [x] Responde `{status: "Verificado"|"Alterado", matches, registeredHash, computedHash}`
+  (hash completo en los dos porque quien pregunta ya es Verificador — `requireAuth` ya
+  lo garantiza, no hace falta enmascarar nada acá).
 
 **Verificación:**
-- [ ] Manual contra la red real: verificar con el mismo PDF ya registrado → `Verificado`;
-  con uno distinto → `Alterado`; ambos casos confirmados con un evento real
-  (`GetDocument`/consulta directa del ledger) con su propio `txID`.
-- [ ] Tests: éxito (coincide), éxito (no coincide), PDF inválido, documento inexistente,
-  rol distinto de Verificador, fallo del chaincode (no debe tocar Mongo).
-- [ ] Build/test/lint del backend en verde.
-- [ ] Ronda de `code-reviewer` (foco: mismo nivel de rigor que T4 de Sprint 2 — ningún
-  camino de éxito a medias).
+- [x] Manual contra la red real: login Empleado → registrar un PDF real → login
+  Verificador → verificar con el **mismo** PDF → `200 {status:"Verificado", matches:true,
+  ...}` con hashes idénticos; verificar el mismo documento con un PDF **distinto** →
+  `200 {status:"Alterado", matches:false, ...}`; `GetDocument` después confirma
+  `status:"Alterado"` reflejado en el ledger; un `documentId` inexistente → `404`; un
+  Empleado intentando verificar → `403`; sin token → `401`. Sin regresión:
+  `bash docker/smoke-test.sh` → `PASS`.
+- [x] Tests: 7 casos nuevos (coincide/Verificado, no coincide/Alterado, PDF inválido,
+  documento inexistente, rol distinto de Verificador, fallo de `RecordVerification` —
+  confirma que `updateDocumentStatus` nunca se llama —, Mongo falla después del éxito en
+  el ledger) — 78/78 tests del backend en verde.
+- [x] Build/lint del backend en 0 errores/warnings.
+- [x] Ronda de `code-reviewer` (verdict: **APPROVE**, sin Required): confirmó con `git
+  diff` que el refactor de `queryLedgerDocument` no cambió el comportamiento de
+  `getDocument` (T3) — solo renombró `ledgerDoc` a `ledgerResult.doc`, línea por línea
+  igual. Confirmó revisando `RecordVerification` (T1) que un reintento tras un crash del
+  backend entre el commit al ledger y el `updateDocumentStatus` es seguro (sin guard de
+  "ya verificado", cada evento tiene su propio `TxID` en su propia clave compuesta — no
+  hay colisión ni duplicado silencioso), aunque sí deja dos eventos reales de verificación
+  para lo que el humano percibe como una sola acción — consecuencia ya aceptada en D13 de
+  Sprint 2, no un bug nuevo. Aplicado el único hallazgo Optional: comentario agregado
+  junto al `submitChaincodeTransaction("RecordVerification", ...)` dejando esa
+  consecuencia explícita en vez de implícita. Confirmó además que el hash siempre
+  completo en la respuesta es correcto (RF‑23…40 son exclusivamente "Rol Verificador",
+  ninguna HU de verificación incluye a Administrador — si eso cambia algún día,
+  `requireAuth("Verificador","Administrador")` es un cambio de una línea), y que validar
+  el PDF antes de consultar el ledger tiene una ventaja real (evita un round-trip a
+  Fabric para un archivo que de todas formas termina en `400`, confirmado por el test que
+  verifica que `queryChaincode` nunca se llama en ese caso). Re-verificado: build/lint
+  limpios (el cambio es solo un comentario, no hizo falta rebuild del contenedor).
 
 **Dependencias:** T3.
 
-**Archivos:** `backend/src/routes/documents.ts`, `backend/src/services/documentService.ts`
-(o un `verificationService.ts` nuevo si la lógica no calza bien en el mismo archivo),
-tests.
+**Archivos:** `backend/src/routes/documents.ts` (`POST /documents/:id/verifications`,
+`handleUpload` factorizado), `backend/src/services/documentService.ts`
+(`verifyDocument`, `queryLedgerDocument` compartido con `getDocument`),
+`backend/src/repositories/documentRepository.ts` (`updateDocumentStatus`),
+`backend/tests/documents.test.ts`.
 
 **Alcance:** M.
 
 ---
 
 ### ✅ Checkpoint: backend↔ledger real (verificación)
-- [ ] `GET /documents/:id` y `POST /documents/:id/verifications` de punta a punta contra
-  la red real, con y sin fallas forzadas.
-- [ ] Revisado por `code-reviewer`.
+- [x] `GET /documents/:id` y `POST /documents/:id/verifications` de punta a punta contra
+  la red real, con y sin fallas forzadas (PDF inválido, documento inexistente, rol
+  equivocado — todas verificadas en vivo).
+- [x] Revisado por `code-reviewer` (T3: REQUEST CHANGES → aplicado; T4: APPROVE).
 
 ---
 

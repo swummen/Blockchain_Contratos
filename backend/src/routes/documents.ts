@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { requireAuth } from "../middlewares/auth";
-import { registerDocument } from "../services/documentService";
+import { getDocument, registerDocument } from "../services/documentService";
 
 export const documentsRouter = Router();
 
@@ -51,5 +51,21 @@ documentsRouter.post(
       return;
     }
     res.status(201).json({ documentId: result.documentId });
+  },
+);
+
+documentsRouter.get(
+  "/documents/:id",
+  requireAuth(), // RF-25/26: cualquier rol autenticado puede consultar; lo que varía por rol es el enmascarado del hash (D5 del plan de Sprint 3), no el acceso.
+  async (req, res) => {
+    // :id es un segmento fijo (no un wildcard), así que Express siempre lo
+    // resuelve a un solo string — el tipo más ancho (string | string[]) de
+    // Express 5 es por los wildcards (ej. :id*), que no aplican acá.
+    const result = await getDocument(req.params.id as string, req.user!.role);
+    if (!result.ok) {
+      res.status(result.status).json({ message: result.message });
+      return;
+    }
+    res.status(200).json(result.document);
   },
 );

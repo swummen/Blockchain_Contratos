@@ -21,3 +21,7 @@ function documentsCollection(): Collection<DocumentDoc> {
 export async function insertDocument(doc: DocumentDoc): Promise<void> {
   await documentsCollection().insertOne(doc);
 }
+
+export async function findDocumentById(documentId: string): Promise<DocumentDoc | null> {
+  return documentsCollection().findOne({ _id: documentId });
+}

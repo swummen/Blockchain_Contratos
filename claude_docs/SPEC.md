@@ -186,7 +186,7 @@ frontend (React)  ──HTTP/REST──>  backend (Node + Express + Fabric Gatew
 | `documentId` | MongoDB + ledger | identificador único generado al registrar (RF‑13) |
 | `name`, `responsibleUser`, `registeredAt` | MongoDB | metadatos mínimos (RF‑13, RF‑19) |
 | `hash` (SHA‑256) | ledger (autoridad) + copia en MongoDB | generado sobre el contenido binario completo (RF‑14) |
-| `status` | MongoDB | `Pendiente` \| `Verificado` \| `Alterado` (RF‑20); solo lo cambia RF‑34, nunca manual |
+| `status` | ledger (autoridad) + copia en MongoDB | `Pendiente` \| `Verificado` \| `Alterado` (RF‑20); solo lo cambia RF‑34, nunca manual (nota de cambio, Sprint 3 T3: la fila original solo decía "MongoDB" — correcto hasta Sprint 2, donde nada lo mutaba todavía; `RecordVerification` del chaincode (Sprint 3 T1) ya lo actualiza on-chain, igual que `hash`, así que el ledger es la autoridad real para ambos) |
 
 **Evento de trazabilidad (en el ledger)**
 

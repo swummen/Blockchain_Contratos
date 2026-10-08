@@ -153,8 +153,13 @@ export async function registerDocument(
 // desactualizado frente al ledger si algo falló a mitad de camino en
 // verifyDocument, pero `GetDocument` (al elegir un documento puntual) sigue
 // siendo la fuente real para hash/status antes de verificar nada.
-export async function listDocuments(): Promise<DocumentSummary[]> {
-  const docs = await listDocumentsFromMongo();
+//
+// Acotado por rol desde Sprint 4 (D3): un Empleado solo ve los documentos
+// donde él es `responsibleUser` (RF-18, "Mis documentos") — mismo endpoint
+// que `GET /documents/:id` usa para el hash: el comportamiento varía por
+// rol, no la ruta.
+export async function listDocuments(role: Role, userId: string): Promise<DocumentSummary[]> {
+  const docs = await listDocumentsFromMongo(role === "Empleado" ? userId : undefined);
   return docs.map((doc) => ({
     documentId: doc._id,
     name: doc.name,
@@ -299,4 +304,84 @@ export async function verifyDocument(
       computedHash,
     },
   };
+}
+
+export interface EventView {
+  documentId: string;
+  action: string;
+  user: string;
+  txId: string;
+  timestamp: string;
+  result?: string;
+}
+
+interface LedgerEvent {
+  Action: string;
+  DocumentID: string;
+  Result?: string;
+  Timestamp: string;
+  TxID: string;
+  User: string;
+}
+
+function toEventView(evt: LedgerEvent): EventView {
+  return {
+    documentId: evt.DocumentID,
+    action: evt.Action,
+    user: evt.User,
+    txId: evt.TxID,
+    timestamp: evt.Timestamp,
+    result: evt.Result,
+  };
+}
+
+// El ledger no garantiza ningún orden entre TxID (son hashes, no un contador
+// — ni siquiera dentro de UN documento el orden de iteración coincide con el
+// cronológico, D2 del plan de Sprint 4) — Timestamp es un string RFC3339 en
+// UTC siempre con el mismo formato (`ts.AsTime().UTC().Format(time.RFC3339)`
+// en el chaincode), así que la comparación lexicográfica ya alcanza, sin
+// parsear a `Date`.
+function sortByTimestamp(events: EventView[]): EventView[] {
+  return [...events].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+}
+
+export type GetDocumentEventsResult =
+  | { ok: true; events: EventView[] }
+  | { ok: false; status: number; message: string };
+
+// RF-21/22 (HU-009): trazabilidad de un documento. Un Empleado solo puede
+// verla si es el dueño (RF-21-CA-02, "el sistema le deniega el acceso") —
+// Verificador/Administrador, sin esa restricción (mismo criterio que ya usan
+// para el hash completo, RF-27).
+export async function getDocumentEvents(
+  documentId: string,
+  role: Role,
+  userId: string,
+): Promise<GetDocumentEventsResult> {
+  const ledgerResult = await queryLedgerDocument(documentId);
+  if (!ledgerResult.ok) return ledgerResult;
+
+  let raw: string;
+  try {
+    raw = await queryChaincode("GetDocumentEvents", documentId);
+  } catch (err) {
+    console.error("No se pudo consultar la trazabilidad en la blockchain:", describeFabricError(err));
+    return { ok: false, status: 502, message: "No se pudo consultar la trazabilidad. Intenta de nuevo." };
+  }
+
+  const events = sortByTimestamp((JSON.parse(raw) as LedgerEvent[]).map(toEventView));
+
+  if (role === "Empleado") {
+    // El dueño es el `User` del evento "registro" — del propio ledger, no de
+    // Mongo (hallazgo del review de T3: así nunca puede quedar desincronizado
+    // con la fuente real, a diferencia de consultar `findDocumentById`).
+    // Fail closed si por algún motivo no hay evento de registro (no debería
+    // pasar — RegisterDocument siempre lo planta primero).
+    const registro = events.find((evt) => evt.action === "registro");
+    if (registro?.user !== userId) {
+      return { ok: false, status: 403, message: "No tenés permiso para esta acción." };
+    }
+  }
+
+  return { ok: true, events };
 }

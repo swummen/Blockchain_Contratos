@@ -493,13 +493,25 @@ describe("GET /documents", () => {
     expect(res.body).toEqual([]);
   });
 
-  it("Empleado: 403 — este listado enumera documentos de todos los usuarios, no solo los propios (RF-18 es un endpoint distinto, Sprint 4)", async () => {
+  it("Empleado: 200, acotado a sus propios documentos (RF-18, Sprint 4 D3)", async () => {
+    (listDocuments as jest.Mock).mockResolvedValue([]);
+
     const res = await request(createApp())
       .get("/documents")
       .set("Authorization", `Bearer ${token("Empleado")}`);
 
-    expect(res.status).toBe(403);
-    expect(listDocuments).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    // token() firma siempre sub="U001" — confirma que el filtro llega con
+    // el id del usuario autenticado, no sin filtro como para los otros roles.
+    expect(listDocuments).toHaveBeenCalledWith("U001");
+  });
+
+  it("Verificador: sin filtro (ve todos los documentos, no solo los de un usuario)", async () => {
+    (listDocuments as jest.Mock).mockResolvedValue([]);
+
+    await request(createApp()).get("/documents").set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(listDocuments).toHaveBeenCalledWith(undefined);
   });
 
   it("sin JWT: 401, no llega a consultar Mongo", async () => {
@@ -507,5 +519,126 @@ describe("GET /documents", () => {
 
     expect(res.status).toBe(401);
     expect(listDocuments).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /documents/:id/events", () => {
+  const ledgerEventsUnordered = [
+    { Action: "verificacion", DocumentID: "doc1", Result: "confirmada", Timestamp: "2026-10-02T00:00:00Z", TxID: "tx2", User: "U003" },
+    { Action: "registro", DocumentID: "doc1", Timestamp: "2026-10-01T00:00:00Z", TxID: "tx1", User: "U001" },
+  ];
+
+  beforeEach(() => {
+    (queryChaincode as jest.Mock).mockImplementation((fcn: string) => {
+      if (fcn === "GetDocument") {
+        return Promise.resolve(JSON.stringify({ Sha256Hex: FULL_HASH, Status: "Verificado" }));
+      }
+      if (fcn === "GetDocumentEvents") {
+        return Promise.resolve(JSON.stringify(ledgerEventsUnordered));
+      }
+      throw new Error(`unexpected fcn in test: ${fcn}`);
+    });
+  });
+
+  it("Verificador: 200, eventos ordenados por fecha (no por el orden que devuelve el ledger)", async () => {
+    const res = await request(createApp())
+      .get("/documents/doc1/events")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      { documentId: "doc1", action: "registro", user: "U001", txId: "tx1", timestamp: "2026-10-01T00:00:00Z" },
+      {
+        documentId: "doc1",
+        action: "verificacion",
+        user: "U003",
+        txId: "tx2",
+        timestamp: "2026-10-02T00:00:00Z",
+        result: "confirmada",
+      },
+    ]);
+    expect(queryChaincode).toHaveBeenCalledWith("GetDocumentEvents", "doc1");
+  });
+
+  it("Empleado dueño del documento: 200", async () => {
+    const res = await request(createApp())
+      .get("/documents/doc1/events")
+      .set("Authorization", `Bearer ${token("Empleado")}`); // token() firma sub="U001", igual que responsibleUser del mock
+
+    expect(res.status).toBe(200);
+  });
+
+  it("Empleado que NO es el dueño: 403 (el dueño es el User del evento 'registro' del propio ledger, no Mongo)", async () => {
+    (queryChaincode as jest.Mock).mockImplementation((fcn: string) => {
+      if (fcn === "GetDocument") {
+        return Promise.resolve(JSON.stringify({ Sha256Hex: FULL_HASH, Status: "Verificado" }));
+      }
+      if (fcn === "GetDocumentEvents") {
+        return Promise.resolve(
+          JSON.stringify([{ Action: "registro", DocumentID: "doc1", Timestamp: "2026-10-01T00:00:00Z", TxID: "tx1", User: "otro-usuario" }]),
+        );
+      }
+      throw new Error(`unexpected fcn in test: ${fcn}`);
+    });
+
+    const res = await request(createApp())
+      .get("/documents/doc1/events")
+      .set("Authorization", `Bearer ${token("Empleado")}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("Empleado, sin evento 'registro' en la respuesta (no debería pasar en la práctica): 403 fail closed", async () => {
+    (queryChaincode as jest.Mock).mockImplementation((fcn: string) => {
+      if (fcn === "GetDocument") {
+        return Promise.resolve(JSON.stringify({ Sha256Hex: FULL_HASH, Status: "Verificado" }));
+      }
+      if (fcn === "GetDocumentEvents") {
+        return Promise.resolve(JSON.stringify([]));
+      }
+      throw new Error(`unexpected fcn in test: ${fcn}`);
+    });
+
+    const res = await request(createApp())
+      .get("/documents/doc1/events")
+      .set("Authorization", `Bearer ${token("Empleado")}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("documento inexistente: 404", async () => {
+    (queryChaincode as jest.Mock).mockImplementation(() =>
+      Promise.reject(Object.assign(new Error("endorsement failure"), {
+        details: [{ message: "document doc1 not found" }],
+      })),
+    );
+
+    const res = await request(createApp())
+      .get("/documents/doc1/events")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("falla la consulta de eventos por otro motivo: 502", async () => {
+    (queryChaincode as jest.Mock).mockImplementation((fcn: string) => {
+      if (fcn === "GetDocument") {
+        return Promise.resolve(JSON.stringify({ Sha256Hex: FULL_HASH, Status: "Verificado" }));
+      }
+      return Promise.reject(new Error("peer no disponible"));
+    });
+
+    const res = await request(createApp())
+      .get("/documents/doc1/events")
+      .set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(502);
+  });
+
+  it("sin JWT: 401", async () => {
+    const res = await request(createApp()).get("/documents/doc1/events");
+
+    expect(res.status).toBe(401);
+    expect(queryChaincode).not.toHaveBeenCalled();
   });
 });

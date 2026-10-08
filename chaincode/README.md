@@ -42,7 +42,20 @@ PDF** (RNF‑04) — solo la huella que el backend ya calculó off-chain.
 | Tipo | Clave | Campos | Notas |
 |---|---|---|---|
 | `Document` | `documentID` | `DocumentID`, `Sha256Hex`, `Status` | Un registro por documento. `Status` empieza en `"Pendiente"` al registrarse y pasa a `"Verificado"`/`"Alterado"` solo vía `RecordVerification` (Sprint 3) — ningún otro camino lo cambia. |
-| `Event` | clave compuesta `CreateCompositeKey("event", [documentID, TxID])` | `Action`, `DocumentID`, `Result` (opcional), `Timestamp`, `TxID`, `User` | Nunca se sobreescribe — cada acción es un evento nuevo, lo que permite reconstruir el historial completo con `GetStateByPartialCompositeKey("event", [documentID])` cuando exista esa consulta (todavía no existe — Sprint 4). `Action` ∈ `"registro"` \| `"verificacion"` (Sprint 3); `Result` solo viene poblado en los eventos de `"verificacion"`. |
+| `Event` | clave compuesta `CreateCompositeKey("event", [documentID, TxID])` | `Action`, `DocumentID`, `Result` (opcional), `Timestamp`, `TxID`, `User` | Nunca se sobreescribe — cada acción es un evento nuevo. `Action` ∈ `"registro"` \| `"verificacion"` (Sprint 3); `Result` solo viene poblado en los eventos de `"verificacion"`. |
+
+`GetDocumentEvents(ctx, documentID)` (Sprint 4, T1) recupera el historial completo de
+**un** documento vía `GetStateByPartialCompositeKey("event", [documentID])`.
+`GetAllEvents(ctx)` recupera el de **todos** los documentos con la misma clave
+compuesta pero sin ningún atributo (`GetStateByPartialCompositeKey("event", [])` —
+exactamente `[]string{}`, no `[""]`: un string vacío *dentro* del slice busca
+`documentID == ""`, que nunca existe, no "todos"). Ninguna de las dos garantiza orden
+cronológico — la clave agrupa por `(documentID, TxID)`, no por `Timestamp` entre
+documentos distintos; el orden cronológico que pide el Gherkin de HU‑016 lo resuelve el
+backend, ordenando después de traer los eventos (D2 del plan de Sprint 4). Tampoco
+verifican que el documento exista — esa validación la hace el backend con `GetDocument`
+antes de llamar a esto (un `documentID` con un typo da una lista vacía, no un error; es
+intencional, no un descuido — ver D1 del plan de Sprint 4).
 
 `Event.Result` lleva `metadata:",optional"` (no alcanza con `json:",omitempty"`):
 `contractapi` genera el JSON Schema de la respuesta por reflection y marca todo campo
@@ -92,6 +105,7 @@ ya corregidos: `docker/README.md`.
 
 ## Qué no hace todavía
 
-Ninguna función que **liste** documentos o el historial completo de eventos — es
-Sprint 4 (RF‑37…40, ver el mapa de capacidades de `claude_docs/SPEC.md` §3; el listado
-mínimo que existe desde Sprint 3 vive en MongoDB, vía el backend, no en este chaincode).
+Ninguna función que **liste documentos** (distinto de sus eventos) — el listado mínimo
+que existe desde Sprint 3 vive en MongoDB, vía el backend, no en este chaincode (D8 del
+plan de Sprint 3; ver `backend/README.md`). `GetAllEvents` (Sprint 4, arriba) sí cubre el
+listado de **eventos**.

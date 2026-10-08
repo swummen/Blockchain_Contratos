@@ -241,3 +241,58 @@ func (c *ContractsContract) RecordVerification(
 
 	return &evt, nil
 }
+
+// getEventsByPartialKey iterates every event whose composite key starts with
+// the given attributes — []string{documentID} for one document's history, or
+// []string{} for every event of every document (D1/D2 of Sprint 4). Only
+// those two shapes are valid for this schema: []string{""} is NOT the same
+// as []string{} (it matches documentID=="", which never exists — silently
+// zero results, not "everything"), and a second element would be read as
+// TxID, not a second documentID. Both current callers below pass hardcoded
+// literals; a future caller building `keys` dynamically must preserve this.
+// Always closes the iterator, even if unmarshaling a result fails midway. No
+// particular order is guaranteed — composite-key order groups by documentID,
+// not by Timestamp across different documents (D2: chronological ordering
+// across documents is the backend's job).
+func (c *ContractsContract) getEventsByPartialKey(
+	ctx contractapi.TransactionContextInterface,
+	keys []string,
+) ([]*Event, error) {
+	iterator, err := ctx.GetStub().GetStateByPartialCompositeKey(eventKeyType, keys)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query events: %w", err)
+	}
+	defer iterator.Close()
+
+	events := []*Event{}
+	for iterator.HasNext() {
+		kv, err := iterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate events: %w", err)
+		}
+		var evt Event
+		if err := json.Unmarshal(kv.Value, &evt); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event: %w", err)
+		}
+		events = append(events, &evt)
+	}
+	return events, nil
+}
+
+// GetDocumentEvents returns every traceability event for one document (RF-21/22).
+func (c *ContractsContract) GetDocumentEvents(
+	ctx contractapi.TransactionContextInterface,
+	documentID string,
+) ([]*Event, error) {
+	if documentID == "" {
+		return nil, fmt.Errorf("documentID is required")
+	}
+	return c.getEventsByPartialKey(ctx, []string{documentID})
+}
+
+// GetAllEvents returns every traceability event for every document (RF-39/40, RF-50/51).
+func (c *ContractsContract) GetAllEvents(
+	ctx contractapi.TransactionContextInterface,
+) ([]*Event, error) {
+	return c.getEventsByPartialKey(ctx, []string{})
+}

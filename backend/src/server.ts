@@ -10,6 +10,7 @@ import { documentsRouter } from "./routes/documents";
 import { eventsRouter } from "./routes/events";
 import { fabricRouter } from "./routes/fabric";
 import { healthRouter } from "./routes/health";
+import { usersRouter } from "./routes/users";
 
 export function createApp() {
   const app = express();
@@ -80,6 +81,18 @@ export function createApp() {
     }
     next();
   });
+  // /users (Sprint 4, T5): mismo criterio D8 — GET/POST/PUT, body JSON (a
+  // diferencia de /documents, acá nunca se sube un archivo).
+  app.use("/users", (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", authConfig.frontendOrigin);
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
   app.use(express.json());
   // express.json() rechaza un body malformado con un SyntaxError; sin este
   // handler, Express responde con su página de error HTML por defecto en
@@ -97,6 +110,7 @@ export function createApp() {
   app.use(authRouter);
   app.use(documentsRouter);
   app.use(eventsRouter);
+  app.use(usersRouter);
   // Catch-all al final (T4: primera vez que una ruta protegida hace un
   // await a Mongo en pleno camino de la request — findSessionByJti). Sin
   // esto, una excepción ahí (Mongo caído a mitad de request) cae en la

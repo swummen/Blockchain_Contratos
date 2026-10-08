@@ -38,3 +38,11 @@ export async function findSessionByJti(jti: string): Promise<SessionDoc | null> 
 export async function deleteSession(jti: string): Promise<void> {
   await sessionsCollection().deleteOne({ _id: jti });
 }
+
+// Sprint 4 T5 (hallazgo de review): sin esto, desactivar a un usuario no le
+// revoca las sesiones ya abiertas — requireAuth solo valida que el jti exista
+// acá, nunca relee `status`, así que seguiría con acceso hasta que su JWT
+// expire por su cuenta (hasta jwtExpiresMinutes).
+export async function deleteSessionsByUserId(userId: string): Promise<void> {
+  await sessionsCollection().deleteMany({ userId });
+}

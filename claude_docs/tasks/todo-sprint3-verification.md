@@ -2,9 +2,10 @@
 
 Plan: `claude_docs/tasks/plan-sprint3-verification.md` (**aprobado 2026‑10‑07**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T5 completos y revisados (T5: REQUEST CHANGES → aplicado). Listo para
-commit. Pendiente confirmación de Sofia en el navegador antes de cerrar el checkpoint
-de HU‑010…014. Sigue T6 (documentación y cierre).**
+Estado: **T1-T5 completos y revisados, incluida la ampliación de alcance de T5
+(`GET /documents`, pedida por Sofia; 2 rondas de `code-reviewer`, ambas con fixes
+aplicados). Listo para commit. Pendiente confirmación de Sofia en el navegador antes de
+cerrar el checkpoint de HU‑010…014. Sigue T6 (documentación y cierre).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -350,13 +351,54 @@ los endpoints reales.
   limpiezas importarían). Re-verificado tras los 3 fixes: build/lint limpios, contenedor
   `frontend` reconstruido, `bash docker/smoke-test.sh` → `PASS` de nuevo.
 
+**Ampliación de alcance (pedida por Sofia al probar el flujo a mano, D8 del plan):**
+mientras probaba manualmente se encontraron dos huecos reales de UX que bloqueaban la
+prueba en sí, no solo "se vería mejor":
+- `CargarDocumentoPage` (Sprint 2 T6) nunca mostraba el `documentId` generado — solo el
+  hash y la fecha. Sin eso, el Empleado no tenía ninguna forma de pasarle el id al
+  Verificador. Agregado: el id visible con un botón de copiar (`navigator.clipboard`).
+- No había ninguna manera de ver qué documentos existen sin memorizar/transcribir un
+  UUID de 36 caracteres a mano. Agregado `GET /documents` (backend, nuevo — lee de
+  MongoDB, nunca del chaincode, D6 intacto): devuelve `{documentId, name,
+  responsibleUser, registeredAt, status}` de los últimos 100 documentos, **nunca el
+  hash**. `VerificarIntegridadPage` lo usa para poblar un `<Select>` como alternativa a
+  escribir el id — elegirlo de la lista dispara la misma consulta real (`GetDocument`)
+  que ya hacía la búsqueda manual, la lista nunca es la fuente de la verdad. Deliberadamente
+  mínimo (sin paginación/filtros/buscador) para no adelantar todo RF‑37…40 de Sprint 4.
+- Tests nuevos: 3 casos de `GET /documents` (resumen sin hash, lista vacía, sin JWT) — 81/81
+  tests del backend en verde. Verificado en vivo: el listado real devuelve los documentos
+  ya registrados en esta misma sesión de pruebas, ordenados por más reciente.
+- Nota de cambio actualizada en `SPEC.md` RF‑24 (ya no dice "sin listado hasta Sprint 4" —
+  ahora hay uno mínimo; RF‑37…40 sigue siendo el alcance completo con filtros/búsqueda).
+- [x] Ronda de `code-reviewer` para esta ampliación (verdict: **REQUEST CHANGES** →
+  aplicado, 2 Required): encontró que `GET /documents` con `requireAuth()` sin roles
+  dejaba que **cualquier Empleado** enumerara los documentos de **todos** los usuarios
+  (incluido `responsibleUser`) — exactamente el escenario que la propia decisión D5b de
+  este plan ya había marcado como "revisar si una consulta general permite enumerar
+  documentos". Corregido a `requireAuth("Verificador", "Administrador")` (RF‑37 ya lo
+  nombra como del Verificador; Administrador entra por el mismo criterio que el hash
+  completo, RF‑27) — un Empleado hoy no lo necesita, y RF‑18 (Sprint 4) le va a dar su
+  propio listado acotado a sus documentos, más angosto que esto. Agregado un test de
+  `403` para Empleado y uno de `200` para Administrador. También encontró que el texto
+  nuevo de `CargarDocumentoPage` decía "el listado llega en un sprint posterior" — falso
+  en el momento de escribirlo, porque esta misma ampliación ya lo trae. Corregido el
+  texto. Re-verificado tras los 2 fixes: 83/83 tests del backend, build/lint limpios en
+  los dos lados, contenedores `backend`/`frontend` reconstruidos, confirmado en vivo que
+  un Empleado real recibe `403` y un Verificador real sigue viendo el listado,
+  `bash docker/smoke-test.sh` → `PASS`.
+
 **Dependencias:** T4.
 
-**Archivos:** `frontend/src/lib/api.ts` (`getDocument`, `verifyDocument`,
+**Archivos:** `frontend/src/lib/api.ts` (`getDocument`, `verifyDocument`, `listDocuments`,
 `parseJsonResponse` compartido), `frontend/src/pages/verificador/VerificarIntegridadPage.tsx`
-(reescrita — ya no usa `AppDataContext`).
+(reescrita — ya no usa `AppDataContext`; `<Select>` de documentos agregado),
+`frontend/src/pages/empleado/CargarDocumentoPage.tsx` (botón de copiar el `documentId`),
+`backend/src/routes/documents.ts` (`GET /documents`),
+`backend/src/services/documentService.ts` (`listDocuments`),
+`backend/src/repositories/documentRepository.ts` (`listDocuments`),
+`backend/tests/documents.test.ts`, `claude_docs/SPEC.md` (RF‑24).
 
-**Alcance:** M.
+**Alcance:** M (original) + ampliación chica pedida en el camino.
 
 ---
 

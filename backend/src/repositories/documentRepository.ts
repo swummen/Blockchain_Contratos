@@ -31,3 +31,14 @@ export async function findDocumentById(documentId: string): Promise<DocumentDoc 
 export async function updateDocumentStatus(documentId: string, status: DocumentStatus): Promise<void> {
   await documentsCollection().updateOne({ _id: documentId }, { $set: { status } });
 }
+
+// Listado mínimo (ampliación de alcance de Sprint 3 T5, pedida por Sofia):
+// Mongo es el único índice de "qué se registró" que existe hoy — el
+// chaincode no tiene ninguna función de listado (D6, Sprint 2) y agregarle
+// una sería de verdad el alcance completo de RF-37/48 (Sprint 4), no esto.
+// Ordenado por más reciente primero; límite defensivo de 100 (no hay
+// paginación todavía, no hace falta para un MVP de tesis con pocos
+// documentos de prueba).
+export async function listDocuments(): Promise<DocumentDoc[]> {
+  return documentsCollection().find().sort({ registeredAt: -1 }).limit(100).toArray();
+}

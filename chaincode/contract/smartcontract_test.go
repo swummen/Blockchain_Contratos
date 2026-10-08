@@ -1,6 +1,7 @@
 package contract_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/contratos/chaincode/contract/mocks"
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
+	"github.com/hyperledger/fabric-protos-go-apiv2/ledger/queryresult"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -328,4 +330,127 @@ func TestRecordVerification_CreateCompositeKeyFails(t *testing.T) {
 
 	require.EqualError(t, err, "failed to build event composite key: bad key")
 	require.Equal(t, 1, stub.PutStateCallCount())
+}
+
+func eventKV(evt contract.Event) *queryresult.KV {
+	value, err := json.Marshal(evt)
+	if err != nil {
+		panic(err)
+	}
+	return &queryresult.KV{Value: value}
+}
+
+// newIterator builds a mocks.StateQueryIterator that yields the given events
+// in order and reports Close() was called exactly once (asserted by the
+// caller via CloseCallCount()).
+func newIterator(events ...contract.Event) *mocks.StateQueryIterator {
+	iter := &mocks.StateQueryIterator{}
+	for i, evt := range events {
+		iter.HasNextReturnsOnCall(i, true)
+		iter.NextReturnsOnCall(i, eventKV(evt), nil)
+	}
+	iter.HasNextReturnsOnCall(len(events), false)
+	return iter
+}
+
+func TestGetDocumentEvents_Success(t *testing.T) {
+	c, stub, ctx := newContext()
+	registro := contract.Event{Action: "registro", DocumentID: "doc1", TxID: "tx1", User: "U001"}
+	verificacion := contract.Event{Action: "verificacion", DocumentID: "doc1", Result: "confirmada", TxID: "tx2", User: "U003"}
+	iter := newIterator(registro, verificacion)
+	stub.GetStateByPartialCompositeKeyReturns(iter, nil)
+
+	events, err := c.GetDocumentEvents(ctx, "doc1")
+
+	require.NoError(t, err)
+	require.Len(t, events, 2)
+	require.Equal(t, "registro", events[0].Action)
+	require.Equal(t, "verificacion", events[1].Action)
+	require.Equal(t, "confirmada", events[1].Result)
+	objType, attrs := stub.GetStateByPartialCompositeKeyArgsForCall(0)
+	require.Equal(t, "event", objType)
+	require.Equal(t, []string{"doc1"}, attrs)
+	require.Equal(t, 1, iter.CloseCallCount())
+}
+
+func TestGetDocumentEvents_Empty(t *testing.T) {
+	c, stub, ctx := newContext()
+	stub.GetStateByPartialCompositeKeyReturns(newIterator(), nil)
+
+	events, err := c.GetDocumentEvents(ctx, "doc1")
+
+	require.NoError(t, err)
+	require.Empty(t, events)
+}
+
+func TestGetDocumentEvents_MissingDocumentID(t *testing.T) {
+	c, stub, ctx := newContext()
+
+	_, err := c.GetDocumentEvents(ctx, "")
+
+	require.EqualError(t, err, "documentID is required")
+	require.Equal(t, 0, stub.GetStateByPartialCompositeKeyCallCount())
+}
+
+func TestGetDocumentEvents_QueryFails(t *testing.T) {
+	c, stub, ctx := newContext()
+	stub.GetStateByPartialCompositeKeyReturns(nil, errors.New("world state unavailable"))
+
+	_, err := c.GetDocumentEvents(ctx, "doc1")
+
+	require.EqualError(t, err, "failed to query events: world state unavailable")
+}
+
+func TestGetDocumentEvents_IteratorNextFails(t *testing.T) {
+	c, stub, ctx := newContext()
+	iter := &mocks.StateQueryIterator{}
+	iter.HasNextReturnsOnCall(0, true)
+	iter.NextReturnsOnCall(0, nil, errors.New("iterator broke"))
+	stub.GetStateByPartialCompositeKeyReturns(iter, nil)
+
+	_, err := c.GetDocumentEvents(ctx, "doc1")
+
+	require.EqualError(t, err, "failed to iterate events: iterator broke")
+	require.Equal(t, 1, iter.CloseCallCount())
+}
+
+func TestGetDocumentEvents_UnmarshalFails(t *testing.T) {
+	c, stub, ctx := newContext()
+	iter := &mocks.StateQueryIterator{}
+	iter.HasNextReturnsOnCall(0, true)
+	iter.NextReturnsOnCall(0, &queryresult.KV{Value: []byte("not json")}, nil)
+	stub.GetStateByPartialCompositeKeyReturns(iter, nil)
+
+	_, err := c.GetDocumentEvents(ctx, "doc1")
+
+	require.ErrorContains(t, err, "failed to unmarshal event")
+	require.Equal(t, 1, iter.CloseCallCount())
+}
+
+func TestGetAllEvents_Success(t *testing.T) {
+	c, stub, ctx := newContext()
+	evt1 := contract.Event{Action: "registro", DocumentID: "doc1", TxID: "tx1", User: "U001"}
+	evt2 := contract.Event{Action: "registro", DocumentID: "doc2", TxID: "tx2", User: "U001"}
+	stub.GetStateByPartialCompositeKeyReturns(newIterator(evt1, evt2), nil)
+
+	events, err := c.GetAllEvents(ctx)
+
+	require.NoError(t, err)
+	require.Len(t, events, 2)
+	require.Equal(t, "doc1", events[0].DocumentID)
+	require.Equal(t, "doc2", events[1].DocumentID)
+	// Clave parcial SIN atributos — a diferencia de GetDocumentEvents, que la
+	// pasa con [documentID].
+	objType, attrs := stub.GetStateByPartialCompositeKeyArgsForCall(0)
+	require.Equal(t, "event", objType)
+	require.Equal(t, []string{}, attrs)
+}
+
+func TestGetAllEvents_QueryFails(t *testing.T) {
+	c, stub, ctx := newContext()
+	stub.GetStateByPartialCompositeKeyReturns(nil, errors.New("world state unavailable"))
+
+	_, err := c.GetAllEvents(ctx)
+
+	require.EqualError(t, err, "failed to query events: world state unavailable")
 }

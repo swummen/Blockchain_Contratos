@@ -4,6 +4,7 @@ import { requireAuth } from "../middlewares/auth";
 import {
   getDocument,
   getDocumentEvents,
+  getDocumentsSummary,
   listDocuments,
   registerDocument,
   verifyDocument,
@@ -74,6 +75,17 @@ documentsRouter.get(
   requireAuth(),
   async (req, res) => {
     res.status(200).json(await listDocuments(req.user!.role, req.user!.sub));
+  },
+);
+
+documentsRouter.get(
+  // Tiene que ir ANTES de "/documents/:id" — Express matchea rutas en el
+  // orden en que se registran, así que si esta fuera después, ":id" se
+  // comería "summary" como si fuera un documentId real.
+  "/documents/summary",
+  requireAuth("Administrador"), // RF-41/42: el panel es solo del Administrador.
+  async (_req, res) => {
+    res.status(200).json(await getDocumentsSummary());
   },
 );
 

@@ -2,8 +2,8 @@
 
 Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10‑08**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T4 completos y revisados (T4: REQUEST CHANGES → aplicado). Listo para
-commit. Sigue T5 (backend: gestión de usuarios).**
+Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). Listo
+para commit. Sigue T6 (frontend: Empleado — `MisDocumentosPage` + `MiTrazabilidadPage`).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -251,45 +251,82 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 **Descripción:** RF‑43…47, la porción de `identity` pendiente desde Sprint 1.
 
 **Criterios de aceptación:**
-- [ ] `userRepository.ts` gana `listUsers()`, `insertUser(user)` (creación real,
+- [x] `userRepository.ts` gana `listUsers()`, `insertUser(user)` (creación real,
   password temporal fija — D7b), `updateUser(userId, {name, email, role})`,
   `deactivateUser(userId)` (`status: "Inactivo"`, baja lógica — RF‑47, nunca borra nada).
-- [ ] `GET /users`, `POST /users`, `PUT /users/:id`, `POST /users/:id/deactivate` — los 4,
+- [x] `GET /users`, `POST /users`, `PUT /users/:id`, `POST /users/:id/deactivate` — los 4,
   `requireAuth("Administrador")`. `POST /users` rechaza un correo ya registrado (mismo
   índice único que ya existe, `ensureIndexes`) con un mensaje claro, no un 500 de Mongo
   crudo.
-- [ ] Ninguna ruta expone `passwordHash` (mismo criterio que `toPublicUser`, ya usado en
+- [x] Ninguna ruta expone `passwordHash` (mismo criterio que `toPublicUser`, ya usado en
   `/auth/verify-otp`).
 
 **Verificación:**
-- [ ] Manual contra la red real (bueno, contra Mongo real — esto no toca el chaincode):
-  Administrador crea un usuario nuevo → puede loguearse con la contraseña temporal →
-  cambia su contraseña con `/auth/change-password` (ya existe); edita nombre/correo/rol
-  de un usuario; lo desactiva → ya no puede loguearse (RF‑02‑CA‑02, ya lo valida
-  `authService` desde Sprint 1) pero su trazabilidad histórica sigue intacta.
-- [ ] Tests: los 4 endpoints, éxito y error (correo duplicado, usuario inexistente, rol
-  distinto de Administrador, 401), confirmación de que `passwordHash` nunca viaja en
-  ninguna respuesta.
-- [ ] Build/test/lint del backend en verde.
-- [ ] Ronda de `code-reviewer` (foco: que la contraseña temporal esté bien documentada
-  como decisión deliberada, no un hueco de seguridad sin avisar — D7b).
+- [x] Manual contra la red real (bueno, contra Mongo real — esto no toca el chaincode):
+  Administrador (`admin@empresa.com`) crea un usuario nuevo → el usuario nuevo se loguea
+  con la contraseña temporal `Contratos123!` → Administrador edita su nombre/correo/rol →
+  lo desactiva → ya no puede loguearse (401 "Credenciales inválidas", lo valida
+  `authService` desde Sprint 1) y `GET /users` lo sigue listando con `status: "Inactivo"`.
+  Confirmado también: `Empleado` recibe 403 en los 4 endpoints; sin JWT, 401.
+- [x] Tests: 25 casos — los 4 endpoints, éxito y error (correo duplicado por pre‑chequeo
+  y por carrera contra el índice único, usuario inexistente, rol distinto de
+  Administrador, 401, body inválido), confirmación de que `passwordHash` nunca viaja en
+  ninguna respuesta, normalización de email en la respuesta, revocación de sesión al
+  desactivar, bloqueo de auto‑desactivación.
+- [x] Build/test/lint del backend en verde (126/126 tests, 0 errores de build, 0
+  warnings de lint).
+- [x] Ronda de `code-reviewer` (verdict: **REQUEST CHANGES** → aplicado, 2 Required + 1
+  recomendación de judgment aplicada):
+  - **Required — desactivar no revocaba sesiones ya abiertas.** `requireAuth` solo valida
+    que el `jti` siga existiendo en Mongo; nunca relee `status`. Antes de este fix, un
+    usuario desactivado con una sesión ya abierta conservaba acceso completo hasta que su
+    JWT expirara solo (hasta `jwtExpiresMinutes`, default 60 min) — el primer hueco real
+    de este tipo, porque T5 es la primera feature que cambia `status` de un usuario vivo
+    vía la API. Fix: `sessionRepository.deleteSessionsByUserId(userId)` (un
+    `deleteMany({ userId })`), llamado desde `userService.deactivateUser` justo después
+    de la baja lógica. Verificado en vivo: con una sesión real abierta de un usuario de
+    prueba, `GET /documents` daba 200 antes de desactivarlo y 401 inmediatamente después,
+    sin esperar a que el JWT expirara.
+  - **Required — la respuesta de `POST /users`/`PUT /users/:id` podía mostrar un email
+    con otra capitalización que la persistida.** `normalizeEmail` (`.trim().toLowerCase()`)
+    se aplicaba adentro de `insertUser`/`updateUser` (repositorio), pero el servicio ya
+    había construido el objeto de respuesta con el email crudo del input — un admin que
+    tipeaba `"Foo@Bar.COM"` veía esa forma en la respuesta mientras Mongo guardaba
+    `"foo@bar.com"`. Fix: se exportó `normalizeEmail` desde `userRepository.ts` y el
+    servicio la aplica antes de construir el objeto que se devuelve, en ambos casos.
+  - **Recomendación aplicada — sin guardia de auto‑desactivación.** El reviewer
+    distinguió dos riesgos: "Administrador se desactiva a sí mismo por error" (barato de
+    evitar, un chequeo de una línea) vs. "queda cero Administradores activos" (correcto
+    de resolver requeriría un conteo con las mismas condiciones de carrera que ya se
+    decidió no perseguir para la reactivación, D8 — mismo criterio YAGNI). Se aplicó solo
+    el primero: `POST /users/:id/deactivate` devuelve 400 si `req.user.sub === req.params.id`.
+  - Preguntas de diseño que el reviewer confirmó aceptables tal cual, sin cambios: D7b
+    (contraseña temporal fija, documentada, con `/auth/change-password` como vía de
+    escape — ya existente desde Sprint 1); el manejo de la carrera de email duplicado
+    (chequeo previo + `catch` de `MongoServerError` código 11000, correcto en ambos
+    sentidos — rastreado el interleaving real); la falta de validación de formato de
+    email (la única invariante que importa, unicidad, ya la garantiza el índice único —
+    un email mal formado es, como mucho, una confusión de UX en el primer login del
+    usuario nuevo, no un hueco de seguridad).
 
 **Dependencias:** ninguna (no depende del chaincode).
 
 **Archivos:** `backend/src/repositories/userRepository.ts`,
-`backend/src/services/userService.ts` (nuevo), `backend/src/routes/users.ts` (nuevo),
-`backend/src/server.ts` (wiring), tests.
+`backend/src/repositories/sessionRepository.ts` (nueva función
+`deleteSessionsByUserId`), `backend/src/services/userService.ts` (nuevo),
+`backend/src/routes/users.ts` (nuevo), `backend/src/server.ts` (wiring),
+`backend/tests/users.test.ts` (nuevo, 25 tests).
 
 **Alcance:** M.
 
 ---
 
 ### ✅ Checkpoint: backend↔ledger real (consultas)
-- [ ] Los 5 endpoints nuevos (`GET /documents/:id/events`, `GET /events`,
+- [x] Los 5 endpoints nuevos (`GET /documents/:id/events`, `GET /events`,
   `GET /documents/summary`, `GET /users`, `POST /users`, `PUT /users/:id`,
   `POST /users/:id/deactivate` — y el filtro por rol de `GET /documents`) probados de
   punta a punta contra la red/Mongo real.
-- [ ] Revisado por `code-reviewer`.
+- [x] Revisado por `code-reviewer`.
 
 ---
 

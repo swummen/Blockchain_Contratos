@@ -2,10 +2,8 @@
 
 Plan: `claude_docs/tasks/plan-sprint3-verification.md` (**aprobado 2026‑10‑07**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T5 completos y revisados, incluida la ampliación de alcance de T5
-(`GET /documents`, pedida por Sofia; 2 rondas de `code-reviewer`, ambas con fixes
-aplicados). Listo para commit. Pendiente confirmación de Sofia en el navegador antes de
-cerrar el checkpoint de HU‑010…014. Sigue T6 (documentación y cierre).**
+Estado: **T1-T6 completos. Sprint 3 (`verification`, HU‑010…014) cerrado — confirmado
+por Sofia en navegador real. Listo para commit final.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -432,16 +430,39 @@ sigue siendo idéntica a la huella anclada originalmente, mismo principio que un
 **Descripción:** Mismo cierre que T7 de Sprint 2.
 
 **Criterios de aceptación:**
-- [ ] `chaincode/README.md`: agregar `GetDocument`/`RecordVerification` a la sección de
-  qué hace el contrato.
-- [ ] `backend/README.md`: sección de `verification` con el contrato de los 2 endpoints
-  nuevos (mismo formato de tabla que `documents`/`identity`).
-- [ ] `claude_docs/SPEC.md`: marcar RF‑23…36 y RNF‑05, 08, 10, 14, 23, 24, 27 como
-  implementados junto al mapa de capacidades (§3). Aclarar que RF‑37…40 (consulta
-  general del Verificador) no están — Sprint 4.
+- [x] `chaincode/README.md`: agregadas `GetDocument`/`RecordVerification` a la sección de
+  qué hace el contrato, tabla de modelo de datos actualizada (`Status` ya cambia,
+  `Action` ya tiene los dos valores), conteo de tests actualizado (24), "Qué no hace
+  todavía" corregido (ya cambia `Status`; sigue sin listar nada — eso es MongoDB vía el
+  backend, no el chaincode).
+- [x] `backend/README.md`: sección `verification` nueva con la tabla de los 3 endpoints
+  (`GET /documents`, `GET /documents/:id`, `POST /documents/:id/verifications`), mismo
+  formato que `documents`/`identity`; explica `queryLedgerDocument` compartido, por qué
+  nunca hay éxito a medias, y los 2 huecos conocidos que dejó el review de T4/T5 (el
+  `Event` real descartado, el reintento tras un crash). Intro y Referencias del archivo
+  actualizadas para mencionar Sprint 3.
+- [x] `claude_docs/SPEC.md`: párrafo de "Estado de implementación" (§3) con RF‑23…36 y
+  RNF‑05, 08, 23, 24, 27 marcados como implementados y verificados. **Corrección respecto
+  al AC original** — RNF‑10 y RNF‑14 (los dos benchmarks formales: P95≤3000ms/50
+  peticiones, 100% de detección sobre 20 documentos de validación) NO se marcaron como
+  implementados — son benchmarks reales que nunca se corrieron, solo se verificó
+  funcionalmente que la comparación de hashes detecta alteraciones. RNF‑09/RNF‑11
+  (marcadas parciales en Sprint 2) ahora sí quedan completas — Sprint 3 agregó la
+  consulta y la comparación que les faltaban. Aclarado que RF‑37…40 (consulta general
+  del Verificador) siguen sin su alcance completo, más allá del listado mínimo de D8.
 
 **Verificación:**
-- [ ] Manual: ciclo completo desde cero + smoke test de HU‑010…014.
+- [x] Manual: `docker/down.sh` + `docker/up.sh` desde cero (red Fabric + chaincode real,
+  versión 1.0 fresca con `GetDocument`/`RecordVerification` ya incluidas desde el primer
+  deploy) + `npm run seed` + smoke test completo de HU‑010…014 por `curl`: login Empleado
+  → `POST /documents` real → login Verificador → `GET /documents` (listado real, 1
+  documento) → `GET /documents/:id` (huella completa) → verificar con el mismo PDF →
+  `Verificado` (hashes idénticos) → verificar con un PDF distinto → `Alterado` (hashes
+  distintos) → id inexistente → `404` → Empleado intentando listar/verificar → `403` en
+  los dos casos. `bash docker/smoke-test.sh` (HU‑021, Sprint 0) → `PASS`. Sin regresión.
+- [x] Build/test/lint de los tres: chaincode (`go build`/`vet`/`test`, 24/24, `gofmt`
+  limpio), backend (`npm run build`/`test` 83/83/`lint`, 0 errores), frontend (`npm run
+  build`/`lint`, 0 errores, mismos 4 warnings preexistentes de siempre).
 
 **Dependencias:** T1‑T5.
 
@@ -452,9 +473,13 @@ sigue siendo idéntica a la huella anclada originalmente, mismo principio que un
 ---
 
 ### ✅ Checkpoint: HU‑010…014 terminadas (DoD — SPEC §10.2)
-- [ ] Los 10 escenarios Gherkin de HU‑010…014 (CA‑01/CA‑02, HU‑014 con CA‑01/CA‑02
-  además del "Nueva verificación") en PASS.
-- [ ] RF‑23…36 y RNF‑05, 08, 10, 14, 23, 24, 27 marcados como implementados.
-- [ ] Entorno verificado en Docker Compose.
-- [ ] Commit(s) de cierre con mensaje redactado (sin commit automático).
+- [x] Los 10 escenarios Gherkin de HU‑010…014 (CA‑01/CA‑02, HU‑014 con CA‑01/CA‑02
+  además del "Nueva verificación") en PASS — confirmados a mano por Sofia en el
+  navegador real (login Verificador → buscar/elegir documento → comparar con el mismo
+  PDF → confirmado; comparar con uno distinto → comprometido, evidencia con nombres de
+  archivo visible) y mecánicamente contra el stack real en T3‑T6.
+- [x] RF‑23…36 y RNF‑05, 08, 23, 24, 27 marcados como implementados (RNF‑10/14 quedan
+  explícitamente parciales — son benchmarks formales nunca corridos, no una omisión).
+- [x] Entorno verificado en Docker Compose (ciclo completo desde cero, smoke test PASS).
+- [ ] Commit(s) de cierre con mensaje redactado (sin commit automático) — pendiente.
 - [ ] Aceptación de dirección/codirección registrada.

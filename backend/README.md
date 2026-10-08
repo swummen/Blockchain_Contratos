@@ -9,8 +9,12 @@ Sprint 0 (T4+T5) dejó el *walking skeleton* — Mongo y Fabric probados de punt
 sin lógica de negocio. Sprint 1 (`identity`, T1-T7) agregó la primera lógica de negocio
 real: login con OTP, sesión JWT, RBAC y cambio de contraseña. Sprint 2 (`documents` +
 `ledger`, T1-T6) agregó la primera escritura real al ledger: el Empleado carga un PDF,
-se valida, se registra su huella SHA‑256 en el chaincode real y se guarda en Mongo — ver
-las secciones "`identity`" y "`documents`" más abajo para el contrato completo de cada una.
+se valida, se registra su huella SHA‑256 en el chaincode real y se guarda en Mongo.
+Sprint 3 (`verification`, T1-T6) agregó la primera función de **lectura** del chaincode
+y la comparación real de huellas: el Verificador consulta un documento registrado, sube
+un PDF a comparar, y el sistema determina y registra si la integridad está confirmada o
+comprometida — ver las secciones "`identity`", "`documents`" y "`verification`" más
+abajo para el contrato completo de cada una.
 
 - Express + TypeScript, compilado con `tsc` (CommonJS, no ESM — evita fricción con Jest).
 - `GET /health` — hace un `ping` real a Mongo en cada request (no un flag cacheado de
@@ -182,22 +186,71 @@ El nombre del chaincode (`contracts`) y el canal (`contratoschannel`) están en
 en las rutas. Detalle del contrato Go en sí (qué valida, modelo de datos, cómo
 compilarlo/desplegarlo): `chaincode/README.md`.
 
-### El frontend real ya conecta la carga de documentos
-
-Desde Sprint 1 (T6/T7) el frontend real (rama `Feat/Front`, ya en `main`) habla de verdad
-con este backend para `identity` (login, OTP, sesión, logout, cambio de contraseña). Sprint
-2 (T6) conectó además `CargarDocumentoPage` a este `POST /documents` real
-(`frontend/src/lib/api.ts#uploadDocument`). Las demás pantallas de negocio (listados de
-Verificador/Administrador, "Mis documentos") siguen con datos hardcodeados de
-`src/data/*.ts` — el chaincode todavía no expone ninguna función de lectura (D6 de Sprint
-2), conectarlas es trabajo de Sprint 3/4.
-
 **Dos bugs de Windows + Git Bash** ya aparecieron y están resueltos en los scripts de
 `docker/` (reescritura de rutas por MSYS) — si al scriptear algo similar ven errores raros
 de rutas tipo `C:\Program Files\Git\...` donde no debería haber una ruta de Windows, es ese
 problema. También afecta a `docker exec`/`docker run` con argumentos de ruta corridos desde
 Git Bash (ej. `docker exec backend touch /crypto/x` se mangló solo al probarlo) — el escape
 es `//` al inicio de la ruta (`//crypto/x`). Detalle completo en `docker/README.md`.
+
+## `verification` (Sprint 3, T1-T6 — completo)
+
+El Verificador consulta un documento ya registrado (su huella y estado), sube un PDF a
+comparar, y el sistema calcula su hash, lo compara contra el registrado, ancla el
+resultado real en el ledger (`RecordVerification`, chaincode) y actualiza Mongo.
+Decisiones completas en `claude_docs/tasks/plan-sprint3-verification.md` (D1‑D8); estado
+tarea por tarea en `claude_docs/tasks/todo-sprint3-verification.md`.
+
+### Primera lectura real del chaincode: `queryLedgerDocument`
+
+`backend/src/services/documentService.ts` tiene un helper interno,
+`queryLedgerDocument(documentId)`, compartido por `getDocument` y `verifyDocument`: llama
+a `queryChaincode("GetDocument", documentId)` y clasifica el error — `404` solo si viene
+de una respuesta real del peer (`.details` poblado, con el mensaje exacto "document ...
+not found" del chaincode), `502` para cualquier otro caso (incluidos errores de
+transporte/config, que nunca traen `.details` poblado — así nunca se disfrazan de un 404
+de negocio).
+
+### Contratos de `/documents*` de este sprint
+
+| Ruta | Auth | Body | Respuesta 200 | Errores |
+|---|---|---|---|---|
+| `GET /documents` | sí, `Verificador`/`Administrador` (enumera documentos de **todos** los usuarios — un Empleado no lo necesita, RF‑18 en Sprint 4 le va a dar su propio listado acotado a lo suyo) | — | `[{documentId, name, responsibleUser, registeredAt, status}, ...]` (**nunca** el hash; últimos 100, sin paginación — D8, ver abajo) | `401` sin sesión válida · `403` rol sin permiso |
+| `GET /documents/:id` | sí, cualquier rol (lo que varía por rol es el enmascarado del hash, no el acceso — RF‑27/RNF‑08) | — | `{documentId, name?, responsibleUser?, registeredAt?, hash, status}` (`hash` completo solo para `Verificador`/`Administrador`, enmascarado el resto vía `maskHash` — mismo algoritmo que `frontend/src/lib/mask-hash.ts`, copiado, no importado: son paquetes npm separados) | `401` sin sesión · `404` no existe (HU‑010‑CA‑02) · `502` falla el chaincode |
+| `POST /documents/:id/verifications` | sí, solo `Verificador` (RF‑23) | `multipart/form-data`, campo `document` (el PDF a comparar) | `{status: "Verificado"\|"Alterado", matches, registeredHash, computedHash}` (hash siempre completo — quien pregunta ya es Verificador) | `400` archivo inválido · `401`/`403` · `404` el `documentId` de la URL no existe · `502` falla `RecordVerification` (nunca toca Mongo) · `500` el ledger anotó la verificación pero Mongo falló después |
+
+### Por qué nunca hay un éxito a medias (mismo criterio D13 de Sprint 2)
+
+`verifyDocument` valida el PDF **antes** de consultar el ledger (un archivo inválido nunca
+gasta un round-trip a Fabric) y llama a `RecordVerification` **antes** de tocar Mongo — si
+eso falla, `502` y Mongo queda intacto. Si el ledger tiene éxito pero `updateDocumentStatus`
+falla después, se loguea como inconsistencia y se responde `500`, nunca un `200` falso
+(mismo patrón que `registerDocument`).
+
+**Hueco conocido, sin resolver todavía:** `verifyDocument` descarta el `Event` real que
+devuelve `RecordVerification` (con su `Timestamp`/`TxID` determinista del ledger) — ni el
+backend ni el frontend tienen hoy el momento real de la verificación para mostrar como
+evidencia (RNF‑05/HU‑014), solo una aproximación del reloj del navegador. Si hace falta
+ese dato como evidencia real, `verifyDocument` tiene que capturar y devolver el `Event`.
+
+**También conocido:** un reintento del cliente justo si el proceso se cae entre el commit
+real a la blockchain y el `updateDocumentStatus` de Mongo es seguro (`RecordVerification`
+no tiene ningún guard de "ya verificado", cada evento tiene su propio `TxID` — permite
+re-verificar a propósito, HU‑014‑CA‑02 "Nueva verificación"), pero deja dos eventos reales
+de verificación para lo que el humano percibe como una sola acción. Consecuencia ya
+aceptada del mismo criterio "sin saga/outbox" de D13, no un bug nuevo.
+
+### D8: listado mínimo de documentos (ampliación de alcance, pedida por Sofia)
+
+Probando el flujo a mano, no había ninguna forma de que el Verificador ubicara un
+documento sin que alguien le pasara el `documentId` (un UUID de 36 caracteres) a mano.
+`GET /documents` (arriba) se adelantó desde el alcance completo de RF‑37…40 (Sprint 4,
+con filtros/búsqueda/paginación reales) para resolver justo eso — lee directo de MongoDB
+(`listDocuments`, nuevo en `documentRepository.ts`), nunca del chaincode (que sigue sin
+ninguna función de listado, D6 de Sprint 2 intacto), y nunca incluye el hash (no hace
+falta para elegir cuál consultar). `VerificarIntegridadPage` lo usa para poblar un
+selector; elegir un documento de la lista dispara la misma consulta real (`GetDocument`)
+que ya hacía la búsqueda manual por id — la lista nunca es la fuente de la verdad.
 
 ## Referencias
 
@@ -210,6 +263,9 @@ es `//` al inicio de la ruta (`//crypto/x`). Detalle completo en `docker/README.
 - `claude_docs/tasks/plan-sprint2-documents-ledger.md` / `todo-sprint2-documents-ledger.md`
   — plan, decisiones (D1‑D13) y tareas del sprint de `documents`+`ledger` (carga de PDF,
   huella SHA‑256, chaincode real), completo.
+- `claude_docs/tasks/plan-sprint3-verification.md` / `todo-sprint3-verification.md` —
+  plan, decisiones (D1‑D8) y tareas del sprint de `verification` (consulta de huella,
+  comparación real, listado mínimo de documentos), completo.
 - `chaincode/README.md` — qué hace el contrato Go, modelo de datos, cómo
   compilarlo/testearlo/desplegarlo.
 - `docker/README.md` — cómo levantar la red Fabric y Mongo, puertos, prerrequisitos.

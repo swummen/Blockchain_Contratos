@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import request from "supertest";
 import { authConfig } from "../src/config/auth";
@@ -32,10 +33,15 @@ jest.mock("../src/repositories/sessionRepository", () => ({
 jest.mock("../src/repositories/documentRepository", () => ({
   insertDocument: jest.fn(),
   findDocumentById: jest.fn(),
+  updateDocumentStatus: jest.fn(),
 }));
 
 import { queryChaincode, submitChaincodeTransaction } from "../src/fabric/gateway";
-import { findDocumentById, insertDocument } from "../src/repositories/documentRepository";
+import {
+  findDocumentById,
+  insertDocument,
+  updateDocumentStatus,
+} from "../src/repositories/documentRepository";
 import { findSessionByJti } from "../src/repositories/sessionRepository";
 import { createApp } from "../src/server";
 
@@ -300,5 +306,119 @@ describe("GET /documents/:id", () => {
     expect(res.status).toBe(200);
     expect(res.body.hash).toBe(FULL_HASH);
     expect(res.body.name).toBeUndefined();
+  });
+});
+
+describe("POST /documents/:id/verifications", () => {
+  const registeredHash = crypto.createHash("sha256").update(PDF_BUFFER).digest("hex");
+  const differentFile = Buffer.from("%PDF-1.4\n%contenido distinto");
+
+  beforeEach(() => {
+    (queryChaincode as jest.Mock).mockResolvedValue(
+      JSON.stringify({ DocumentID: "doc1", Sha256Hex: registeredHash, Status: "Pendiente" }),
+    );
+    (submitChaincodeTransaction as jest.Mock).mockResolvedValue(
+      '{"Action":"verificacion","TxID":"tx-verif-1"}',
+    );
+  });
+
+  it("huellas coinciden: 200, Verificado, registra en el ledger y actualiza Mongo", async () => {
+    const res = await request(createApp())
+      .post("/documents/doc1/verifications")
+      .set("Authorization", `Bearer ${token("Verificador")}`)
+      .attach("document", PDF_BUFFER, "contrato.pdf");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      status: "Verificado",
+      matches: true,
+      registeredHash,
+      computedHash: registeredHash,
+    });
+    expect(submitChaincodeTransaction).toHaveBeenCalledWith(
+      "RecordVerification",
+      "doc1",
+      "confirmada",
+      "U001",
+    );
+    expect(updateDocumentStatus).toHaveBeenCalledWith("doc1", "Verificado");
+  });
+
+  it("huellas distintas: 200, Alterado (HU-013-CA-02)", async () => {
+    const res = await request(createApp())
+      .post("/documents/doc1/verifications")
+      .set("Authorization", `Bearer ${token("Verificador")}`)
+      .attach("document", differentFile, "otro.pdf");
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Alterado");
+    expect(res.body.matches).toBe(false);
+    expect(res.body.registeredHash).toBe(registeredHash);
+    expect(res.body.computedHash).not.toBe(registeredHash);
+    expect(submitChaincodeTransaction).toHaveBeenCalledWith(
+      "RecordVerification",
+      "doc1",
+      "comprometida",
+      "U001",
+    );
+    expect(updateDocumentStatus).toHaveBeenCalledWith("doc1", "Alterado");
+  });
+
+  it("archivo que no es un PDF de verdad: 400, no consulta el ledger", async () => {
+    const res = await request(createApp())
+      .post("/documents/doc1/verifications")
+      .set("Authorization", `Bearer ${token("Verificador")}`)
+      .attach("document", NOT_PDF_BUFFER, "falso.pdf");
+
+    expect(res.status).toBe(400);
+    expect(queryChaincode).not.toHaveBeenCalled();
+  });
+
+  it("documento inexistente: 404, no llama a RecordVerification", async () => {
+    const chaincodeError = Object.assign(new Error("endorsement failure"), {
+      details: [{ message: "document doc1 not found" }],
+    });
+    (queryChaincode as jest.Mock).mockRejectedValue(chaincodeError);
+
+    const res = await request(createApp())
+      .post("/documents/doc1/verifications")
+      .set("Authorization", `Bearer ${token("Verificador")}`)
+      .attach("document", PDF_BUFFER, "contrato.pdf");
+
+    expect(res.status).toBe(404);
+    expect(submitChaincodeTransaction).not.toHaveBeenCalled();
+  });
+
+  it("rol distinto de Verificador: 403", async () => {
+    const res = await request(createApp())
+      .post("/documents/doc1/verifications")
+      .set("Authorization", `Bearer ${token("Empleado")}`)
+      .attach("document", PDF_BUFFER, "contrato.pdf");
+
+    expect(res.status).toBe(403);
+    expect(queryChaincode).not.toHaveBeenCalled();
+  });
+
+  it("falla RecordVerification en la blockchain: 502, nunca actualiza Mongo (ningún éxito a medias)", async () => {
+    (submitChaincodeTransaction as jest.Mock).mockRejectedValue(new Error("orderer no disponible"));
+
+    const res = await request(createApp())
+      .post("/documents/doc1/verifications")
+      .set("Authorization", `Bearer ${token("Verificador")}`)
+      .attach("document", PDF_BUFFER, "contrato.pdf");
+
+    expect(res.status).toBe(502);
+    expect(updateDocumentStatus).not.toHaveBeenCalled();
+  });
+
+  it("el ledger registra la verificación pero Mongo falla después: 500 (inconsistencia, no 200 falso)", async () => {
+    (updateDocumentStatus as jest.Mock).mockRejectedValue(new Error("Mongo caído"));
+
+    const res = await request(createApp())
+      .post("/documents/doc1/verifications")
+      .set("Authorization", `Bearer ${token("Verificador")}`)
+      .attach("document", PDF_BUFFER, "contrato.pdf");
+
+    expect(res.status).toBe(500);
   });
 });

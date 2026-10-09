@@ -27,6 +27,7 @@ jest.mock("../src/repositories/sessionRepository", () => ({
   createSession: jest.fn(),
   findSessionByJti: jest.fn(),
   deleteSession: jest.fn(),
+  touchSession: jest.fn(),
 }));
 
 jest.mock("../src/repositories/userRepository", () => {
@@ -34,7 +35,7 @@ jest.mock("../src/repositories/userRepository", () => {
   return { ...actual, findUserByEmail: jest.fn(), findUserById: jest.fn() };
 });
 
-import { findSessionByJti } from "../src/repositories/sessionRepository";
+import { deleteSession, findSessionByJti } from "../src/repositories/sessionRepository";
 import { findUserById } from "../src/repositories/userRepository";
 import { requireAuth } from "../src/middlewares/auth";
 import { createApp } from "../src/server";
@@ -69,6 +70,7 @@ const activeSession = {
   userId: "U001",
   role: "Empleado" as const,
   expiresAt: new Date(Date.now() + 60_000),
+  lastSeenAt: new Date(),
 };
 
 beforeEach(() => {
@@ -165,6 +167,36 @@ describe("requireAuth() — unidad", () => {
       role: "Empleado",
       jti: "jti-1",
     });
+  });
+
+  it("401 con sesión viva pero inactiva más de 15 minutos (RNF-07), y la borra", async () => {
+    (findSessionByJti as jest.Mock).mockResolvedValue({
+      ...activeSession,
+      lastSeenAt: new Date(Date.now() - 16 * 60_000),
+    });
+    const req = fakeReq(`Bearer ${signToken()}`);
+    const res = fakeRes();
+    const next = jest.fn();
+
+    await requireAuth()(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+    expect(deleteSession).toHaveBeenCalledWith("jti-1");
+  });
+
+  it("deja pasar una sesión con actividad reciente, justo debajo del límite de inactividad", async () => {
+    (findSessionByJti as jest.Mock).mockResolvedValue({
+      ...activeSession,
+      lastSeenAt: new Date(Date.now() - 14 * 60_000),
+    });
+    const req = fakeReq(`Bearer ${signToken()}`);
+    const res = fakeRes();
+    const next = jest.fn();
+
+    await requireAuth()(req, res, next);
+
+    expect(next).toHaveBeenCalled();
   });
 
   it("403 si el rol del JWT no está en la lista permitida", async () => {

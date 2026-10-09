@@ -29,6 +29,7 @@ jest.mock("../src/repositories/sessionRepository", () => ({
   findSessionByJti: jest.fn(),
   deleteSession: jest.fn(),
   deleteSessionsByUserId: jest.fn(),
+  touchSession: jest.fn(),
 }));
 
 jest.mock("../src/repositories/documentRepository", () => ({
@@ -68,6 +69,7 @@ const activeSession = {
   userId: "U099",
   role: "Administrador" as const,
   expiresAt: new Date(Date.now() + 60_000),
+  lastSeenAt: new Date(),
 };
 
 function token(role = "Administrador") {

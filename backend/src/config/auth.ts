@@ -40,4 +40,21 @@ export const authConfig = {
   // — de una sola fuente, para que nunca queden desincronizados.
   jwtSecret: requireSecret("JWT_SECRET"),
   jwtExpiresMinutes: parsePositiveInt("JWT_EXPIRES_MINUTES", process.env.JWT_EXPIRES_MINUTES, 60),
+  // RNF-07 (docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md):
+  // cierre automático de sesión tras 15 minutos de inactividad — un tope
+  // aparte del expiry absoluto de arriba (jwtExpiresMinutes); el que se
+  // cumpla primero cierra la sesión.
+  sessionInactivityMinutes: parsePositiveInt(
+    "SESSION_INACTIVITY_MINUTES",
+    process.env.SESSION_INACTIVITY_MINUTES,
+    15,
+  ),
+  // RF-54: bloqueo temporal de la cuenta tras intentos consecutivos
+  // fallidos de autenticación.
+  maxLoginAttempts: parsePositiveInt("MAX_LOGIN_ATTEMPTS", process.env.MAX_LOGIN_ATTEMPTS, 5),
+  loginLockoutMinutes: parsePositiveInt(
+    "LOGIN_LOCKOUT_MINUTES",
+    process.env.LOGIN_LOCKOUT_MINUTES,
+    15,
+  ),
 };

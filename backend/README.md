@@ -103,7 +103,7 @@ error (los mensajes ya están pensados para mostrarse tal cual en la UI).
 
 | Ruta | Auth | Body | Respuesta 200 | Errores |
 |---|---|---|---|---|
-| `POST /auth/login` | no | `{email, password}` | `{message}` (dispara el envío del OTP) | `400` datos faltantes · `401` credenciales inválidas (mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta desactivada — RF‑002 CA‑02) · `502` no se pudo enviar el correo |
+| `POST /auth/login` | no | `{email, password}` | `{message}` (dispara el envío del OTP) | `400` datos faltantes · `401` credenciales inválidas (mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta desactivada — RF‑002 CA‑02) · `423` cuenta bloqueada temporalmente por intentos fallidos (RF‑54) · `502` no se pudo enviar el correo |
 | `POST /auth/verify-otp` | no | `{email, code}` | `{token, user}` (`user` sin `passwordHash`, mismas claves que `frontend/src/types/domain.ts`; el rol viene de la cuenta, ya no se selecciona en el login) | `400` código inválido/vencido/incorrecto/intentos agotados |
 | `GET /auth/me` | sí | — | `{user}` | `401` sin sesión válida |
 | `POST /auth/logout` | sí | — | `204` | `401` sin sesión válida |
@@ -126,6 +126,14 @@ usado todavía, ningún endpoint de Sprint 1 lo necesita).
 - `JWT_SECRET` no tiene default (es un secreto) — el backend falla al arrancar si falta.
   `docker/compose.app.yml` sí trae un default de desarrollo (mismo criterio que
   `MONGO_ROOT_PASSWORD=changeme`), nunca usar eso fuera de local/Docker.
+- RNF‑07: además del vencimiento absoluto de `expiresAt` (`JWT_EXPIRES_MINUTES`,
+  default 60), la sesión se cierra tras `SESSION_INACTIVITY_MINUTES` (default 15) sin
+  ningún request autenticado — `requireAuth()` compara contra `lastSeenAt` en cada
+  request y lo refresca si la sesión sigue viva.
+- RF‑54: `MAX_LOGIN_ATTEMPTS` (default 5) intentos fallidos consecutivos bloquean la
+  cuenta por `LOGIN_LOCKOUT_MINUTES` (default 15) — `POST /auth/login` responde `423`
+  mientras dure el bloqueo, sin comparar la contraseña. El contador vive en el propio
+  usuario (`failedLoginAttempts`/`lockedUntil`) y se reinicia con un login exitoso.
 
 ### Probar sin SMTP real
 

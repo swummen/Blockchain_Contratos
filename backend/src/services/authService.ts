@@ -13,7 +13,10 @@ import { createSession, deleteSession } from "../repositories/sessionRepository"
 import {
   findUserByEmail,
   findUserById,
+  lockUser,
   PublicUser,
+  registerFailedLogin,
+  resetFailedLogin,
   toPublicUser,
   updatePasswordHash,
 } from "../repositories/userRepository";
@@ -50,19 +53,45 @@ function generateOtpCode(): string {
   return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
 
+// RF-54 RN-02: durante el bloqueo no se aceptan intentos aunque las
+// credenciales sean correctas — por eso el mensaje es distinto al 401
+// genérico de abajo (acá sí es intencional avisarle al usuario del
+// bloqueo, tal como pide la ficha de RF-54).
+function lockedMessage(lockedUntil: Date): string {
+  const minutesLeft = Math.max(1, Math.ceil((lockedUntil.getTime() - Date.now()) / 60_000));
+  return `Cuenta bloqueada temporalmente por intentos fallidos. Intenta de nuevo en ${minutesLeft} minuto(s).`;
+}
+
 export async function login(
   email: string,
   password: string,
 ): Promise<LoginResult> {
   const user = await findUserByEmail(email);
+
+  if (user?.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+    return { ok: false, status: 423, message: lockedMessage(user.lockedUntil) };
+  }
+
   const passwordOk = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
 
   // RF-002 CA-02: mismo mensaje genérico sin importar cuál dato falló
   // (usuario inexistente, contraseña incorrecta, o usuario desactivado —
   // RF-47/HU-018: la baja lógica no debe distinguirse de un login inválido).
   if (!user || !passwordOk || user.status === "Inactivo") {
+    // RF-54: solo cuenta para el bloqueo si la cuenta existe de verdad (RN:
+    // "el usuario tiene una cuenta registrada") — un email inexistente no
+    // tiene ningún contador que incrementar.
+    if (user) {
+      const attempts = await registerFailedLogin(user._id);
+      if (attempts >= authConfig.maxLoginAttempts) {
+        await lockUser(user._id, new Date(Date.now() + authConfig.loginLockoutMinutes * 60_000));
+      }
+    }
     return { ok: false, status: 401, message: "Credenciales inválidas." };
   }
+
+  // RN-01 de RF-54: una autenticación exitosa reinicia el contador.
+  await resetFailedLogin(user._id);
 
   const code = generateOtpCode();
   const codeHash = await bcrypt.hash(code, env.bcryptRounds);
@@ -142,9 +171,10 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
   await deleteOtp(user._id);
 
   const jti = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + authConfig.jwtExpiresMinutes * 60_000);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + authConfig.jwtExpiresMinutes * 60_000);
 
-  await createSession({ _id: jti, userId: user._id, role: user.role, expiresAt });
+  await createSession({ _id: jti, userId: user._id, role: user.role, expiresAt, lastSeenAt: now });
 
   const token = jwt.sign({ role: user.role }, authConfig.jwtSecret, {
     subject: user._id,

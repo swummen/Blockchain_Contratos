@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { authConfig } from "../config/auth";
-import { findSessionByJti } from "../repositories/sessionRepository";
+import { deleteSession, findSessionByJti, touchSession } from "../repositories/sessionRepository";
 import { Role, VALID_ROLES } from "../repositories/userRepository";
 
 // Augmenta el Request de Express en vez de un tipo aparte (AuthenticatedRequest):
@@ -65,10 +65,27 @@ export function requireAuth(...allowedRoles: Role[]) {
       return;
     }
 
+    // RNF-07: 15 minutos sin ningún request autenticado cierran la sesión,
+    // aparte del tope absoluto de expiresAt (D4). Se borra el documento acá
+    // mismo (no solo se rechaza el request) para que no quede "viva" en
+    // Mongo esperando a que la limpie el índice TTL de expiresAt, que puede
+    // tardar hasta jwtExpiresMinutes más en llegar.
+    const inactiveMs = Date.now() - session.lastSeenAt.getTime();
+    if (inactiveMs > authConfig.sessionInactivityMinutes * 60_000) {
+      await deleteSession(jti);
+      res.status(401).json({ message: "Sesión inválida o vencida." });
+      return;
+    }
+
     if (allowedRoles.length > 0 && !allowedRoles.includes(role as Role)) {
       res.status(403).json({ message: "No tenés permiso para esta acción." });
       return;
     }
+
+    // No se espera a que termine (best-effort): es solo la marca de
+    // actividad para la próxima verificación de inactividad, no algo que el
+    // request actual tenga que esperar para responder.
+    void touchSession(jti);
 
     req.user = { sub, role: role as Role, jti };
     next();

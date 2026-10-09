@@ -33,6 +33,7 @@ jest.mock("../src/repositories/sessionRepository", () => ({
 jest.mock("../src/repositories/documentRepository", () => ({
   insertDocument: jest.fn(),
   findDocumentById: jest.fn(),
+  findPendingDuplicate: jest.fn(),
   updateDocumentStatus: jest.fn(),
   listDocuments: jest.fn(),
   countDocumentsByStatus: jest.fn(),
@@ -42,6 +43,7 @@ import { queryChaincode, submitChaincodeTransaction } from "../src/fabric/gatewa
 import {
   countDocumentsByStatus,
   findDocumentById,
+  findPendingDuplicate,
   insertDocument,
   listDocuments,
   updateDocumentStatus,
@@ -70,6 +72,7 @@ const NOT_PDF_BUFFER = Buffer.from("esto no es un pdf");
 beforeEach(() => {
   jest.clearAllMocks();
   (findSessionByJti as jest.Mock).mockResolvedValue(activeSession);
+  (findPendingDuplicate as jest.Mock).mockResolvedValue(null);
 });
 
 describe("POST /documents", () => {
@@ -100,6 +103,23 @@ describe("POST /documents", () => {
         status: "Pendiente",
       }),
     );
+  });
+
+  it("ya existe un documento igual pendiente del mismo empleado: 409, no llega a la blockchain", async () => {
+    (findPendingDuplicate as jest.Mock).mockResolvedValue({
+      _id: "doc-ya-pendiente",
+      status: "Pendiente",
+    });
+
+    const res = await request(createApp())
+      .post("/documents")
+      .set("Authorization", `Bearer ${token()}`)
+      .attach("document", PDF_BUFFER, "contrato.pdf");
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toContain("doc-ya-pendiente");
+    expect(submitChaincodeTransaction).not.toHaveBeenCalled();
+    expect(insertDocument).not.toHaveBeenCalled();
   });
 
   it("mismo contenido siempre da el mismo hash (HU-006-CA-02)", async () => {

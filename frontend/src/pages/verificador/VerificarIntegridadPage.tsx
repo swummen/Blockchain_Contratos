@@ -171,7 +171,13 @@ export default function VerificarIntegridadPage() {
                     <SelectContent>
                       {documents.map((doc) => (
                         <SelectItem key={doc.documentId} value={doc.documentId}>
-                          {doc.name} — {doc.status}
+                          {/* Pedido de Sofia: el nombre del archivo solo no
+                              alcanza para distinguir dos documentos (ej. dos
+                              "contrato.pdf" de empleados distintos) —
+                              responsable y fecha son lo que ya trae
+                              DocumentSummary sin pedir nada nuevo al backend. */}
+                          {doc.name} — {doc.responsibleUser} ·{" "}
+                          {formatDateTime(doc.registeredAt)} · {doc.status}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -2,9 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint2-documents-ledger.md` (**aprobado 2026‑09‑20**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T6 completos y revisados (T6: APPROVE). Listos para commit. Pendiente que
-Sofia confirme el flujo real en el navegador antes de cerrar el checkpoint de
-HU‑005…007. Sigue T7 (documentación y cierre).**
+Estado: **T1-T7 completos, revisados y commiteados a `main`. Sprint 2
+(`documents`+`ledger`, HU‑005…007) cerrado — sin PR (excepción documentada en el
+checkpoint de abajo, ver DoD). Solo falta la aceptación de dirección/codirección.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -462,10 +462,9 @@ review).
   la imagen del contenedor `frontend` (`docker compose build frontend`, el bundle se
   hornea en build-time — reiniciar el contenedor no alcanza) y se confirmó que el bundle
   nuevo referencia `documents` y que `/` y `/system-status` siguen en `200`.
-  **Pendiente de Sofia:** click-through real en el navegador (login Empleado → cargar un
-  PDF real → ver el `documentId`/hash en la tarjeta de éxito; cargar un archivo no-PDF →
-  ver el error) — la simulación mecánica prueba el contrato HTTP, no el render ni el
-  estado de React en un navegador real.
+  **Confirmado por Sofia en navegador real:** cargó un PDF real desde la UI y el flujo
+  completo funcionó (login Empleado → carga → éxito) — cierra la brecha que la simulación
+  mecánica no podía cubrir (contrato HTTP sí, render/estado de React no).
 - [x] Ronda de `code-reviewer` (verdict: **APPROVE**, sin Required): confirmó que el hash
   recalculado en cliente no puede divergir del que ancla el backend en el camino de éxito
   (mismos bytes de `File`, ambos lados hashean el mismo buffer — un archivo que engaña la
@@ -503,9 +502,10 @@ review).
 ---
 
 ### ✅ Checkpoint: HU‑005…007 de punta a punta
-- [ ] Flujo completo probado (navegador o mecánico + confirmación de Sofia): login →
+- [x] Flujo completo probado (navegador real, confirmado por Sofia 2026‑10‑07: cargó un
+  PDF real y todo funcionó) + mecánico (contrato HTTP exacto simulado con `curl`) → login →
   cargar documento → confirmación con `documentId` → verificable en Mongo y en el ledger.
-- [ ] `npm run build`/`lint`/`test` de frontend y backend pasan; `go build`/`vet`/`test`
+- [x] `npm run build`/`lint`/`test` de frontend y backend pasan; `go build`/`vet`/`test`
   del chaincode pasan.
 
 ---
@@ -519,33 +519,117 @@ trazabilidad de RF/RNF, y esta vez además `chaincode/README.md` (hoy un placeho
 una línea) con contenido real.
 
 **Criterios de aceptación:**
-- [ ] `chaincode/README.md`: qué hace el contrato, cómo correr `go build`/`test`/`vet`,
+- [x] `chaincode/README.md`: qué hace el contrato, cómo correr `go build`/`test`/`vet`,
   cómo desplegarlo (`docker/deploy-cc.sh`), el modelo de datos (`Event`, documento).
-- [ ] `backend/.env.example`/`docker/.env.example`: cualquier env var nueva (`FABRIC_CHAINCODE_NAME`
-  ya tenía default, confirmar si hace falta documentarlo explícito ahora que cambió).
-- [ ] `backend/README.md`: sección de `documents` con el contrato de `POST /documents`
-  (mismo formato de tabla que ya se usó para `/auth/*` en Sprint 1).
-- [ ] `CLAUDE.md`/`claude_docs/SPEC.md` §5: la fila de `chaincode/` dice "nada todavía" —
-  actualizar con los comandos reales (`go build ./...`, `go test ./...`, `go vet ./...`).
-- [ ] `claude_docs/SPEC.md`: marcar RF‑08…17 y RNF‑04, 05, 09, 11, 13, 23, 24 como
-  implementados (mismo lugar que se usó en Sprint 1, junto al mapa de capacidades §3).
+- [x] `backend/.env.example`/`docker/.env.example`: `FABRIC_CHAINCODE_NAME` agregada como
+  override comentado en `backend/.env.example` (ya tenía default `"contracts"`, no hacía
+  falta para `docker/.env.example` — confirmado leyendo `docker/compose.app.yml`: no pasa
+  ningún `FABRIC_*` al backend, todos sus defaults ya alcanzan dentro de Docker).
+- [x] `backend/README.md`: sección de `documents` con el contrato de `POST /documents`
+  (mismo formato de tabla que ya se usó para `/auth/*` en Sprint 1) — reemplaza la vieja
+  sección "Qué sigue (Sprint 2)" que hablaba de esto como trabajo futuro.
+- [x] `CLAUDE.md`/`claude_docs/SPEC.md` §5: la fila de `chaincode/` actualizada con los
+  comandos reales; `docker/up.sh`/`deploy-sample-cc.sh`→`deploy-cc.sh` también
+  actualizadas en ambos documentos (quedaban con el nombre del script retirado en T2).
+- [x] `claude_docs/SPEC.md`: RF‑08…17 y RNF‑04, 05, 09, 11, 13, 23, 24 marcados como
+  implementados junto al mapa de capacidades (§3), mismo lugar que Sprint 1. Aclarado que
+  RF‑18…22 (consulta de "mis documentos"/trazabilidad del Empleado) no están — dependen de
+  una función de lectura que el chaincode no tiene todavía (D6).
 
 **Verificación:**
-- [ ] Manual: `docker/down.sh && docker/up.sh` desde cero + smoke test completo de
-  HU‑005…007 una vez más, ya con toda la documentación al día.
+- [x] Manual: `docker/down.sh && docker/up.sh` desde cero + smoke test completo de
+  HU‑005…007, con dos incidentes reales en el camino (ninguno relacionado con la
+  documentación en sí, ambos bugs reales de entorno/código expuestos recién al repetir el
+  ciclo completo desde cero):
+  1. **Puerto `17054` (operations de `ca_org1`, estándar de `fabric-samples`) dentro de un
+     rango que Windows excluye dinámicamente (NAT de Hyper‑V/WSL)** — `up.sh` quedó
+     colgado para siempre esperando un `ca_org1` que nunca iba a arrancar
+     (`docker start ca_org1` a mano confirmó el error real: `listen tcp 0.0.0.0:17054:
+     bind: ...no permitido por sus permisos de acceso`). No es nada que el repo pueda
+     arreglar — es el rango dinámico de Windows, no algo fijo en el código. Se cortó la
+     ejecución colgada, se bajó todo, Sofia reinició Windows (regenera los rangos
+     excluidos) y el segundo intento arrancó limpio. No se documenta como bug permanente
+     en `docker/README.md` (ya tiene su sección de bugs de Windows/Git Bash) porque no es
+     reproducible a voluntad ni tiene un fix de script — es un recordatorio para la
+     próxima vez que `up.sh` se cuelgue sin razón aparente.
+  2. **`npm run seed` (y `npm run dev`) nunca cargaban `backend/.env` — bug real, no nuevo
+     de esta tarea.** Ni `tsx` ni el código (`src/config/env.ts`) tienen ningún loader de
+     `.env` (nunca hubo `dotenv` ni `--env-file`); en una terminal nueva (sin variables
+     exportadas a mano de una sesión anterior) `MONGO_URI` caía al default sin credenciales
+     y Mongo rechazaba `createIndexes` con `Unauthorized`. Confirmado que no era un
+     problema de credenciales (`docker exec mongo mongosh ... auth("root","changeme")` →
+     `AUTH_OK`) ni de un proceso nativo interceptando el puerto (`Get-NetTCPConnection
+     -LocalPort 27017` → el propio `com.docker.backend.exe`). Arreglado con la flag nativa
+     de Node 20+ `--env-file-if-exists=.env` en los scripts `dev`/`seed` de
+     `backend/package.json` (no en `start`, que corre en Docker sin `backend/.env` —
+     `--env-file-if-exists` no rompe si el archivo no existe, a diferencia de
+     `--env-file`). Sin dependencia nueva. Re-verificado: `npm run seed` sembró los 3
+     usuarios con el `.env` real.
+  - Con ambos resueltos: ciclo `login` → OTP real → `POST /documents` con PDF real →
+    `201` → `logout` → reuso del token → `401` → `GET /fabric/ping` → `200` con metadata
+    real → `/` y `/system-status` del frontend en `200`.
+  - **Tercer hallazgo, en el propio `smoke-test.sh` (CA‑02):** el comentario que T6 dejó en
+    `frontend/src/lib/api.ts` mencionaba `backend/src/fabric/gateway.ts` como referencia de
+    contexto — el grep de CA‑02 (que busca que el frontend no hable con infraestructura
+    directamente) lo marcó como violación solo por contener la palabra "fabric" en un
+    comentario, un falso positivo real. Corregido reescribiendo el comentario sin esa
+    palabra (sin perder la información) en vez de debilitar el grep del smoke test —
+    mismo criterio de siempre: el chequeo existe para atrapar justo este tipo de acople,
+    no hay que aflojarlo por un comentario de más.
+  - `bash docker/smoke-test.sh` final: `PASS` (CA‑01 y CA‑02).
+  - `npm run build`/`test` (63/63)/`lint` del backend; `npm run build`/`lint` del
+    frontend; `go build`/`vet`/`test` del chaincode — todos en verde en esta corrida final.
+- [x] Ronda de `code-reviewer` (verdict: **REQUEST CHANGES** → aplicado): encontró que el
+  párrafo de "Estado de implementación" de `SPEC.md` §3 sobre-reclamaba dos RNF — RNF‑09
+  ("tiempo de respuesta adecuado en consulta **y verificación**") no tenía nada que medir
+  todavía (Sprint 2 no construyó ninguna consulta) y RNF‑11 ("generación **y comparación**
+  de huellas") solo tenía la mitad (comparación es del módulo `verification`, Sprint 3).
+  Corregido: el párrafo ahora dice "completos para la mitad de carga del módulo",
+  lista solo RF‑08…17 y RNF‑04,05,13,23,24 como completos, y explica por qué RNF‑09/11
+  quedan parciales. Confirmó además, línea por línea contra
+  `backend/src/routes/documents.ts`/`documentService.ts`/`chaincode/contract/smartcontract.go`,
+  que el resto de RF/RNF marcados sí corresponden exactamente al código. También encontró
+  que el hueco de idempotencia que ya había señalado la ronda de T6 (timeout del cliente
+  vs. peor caso del backend, sin clave de idempotencia) solo vivía en este archivo de
+  planificación, invisible para quien solo lee los README — agregada una nota en
+  `backend/README.md` junto al párrafo de RNF‑13. Se aplicaron los 2 hallazgos Optional
+  más baratos: `backend/package.json`'s `engines.node` decía `">=20"` pero
+  `--env-file-if-exists` en realidad requiere **Node v22.9.0** (confirmado contra la doc
+  oficial de Node, no contra la memoria) — corregido a `">=22.9.0"`, re-verificado que el
+  build de Docker (que usa `node:20-alpine` para correr `dist/server.js`, nunca `dev`/
+  `seed`) sigue funcionando sin problema; y un comentario de una línea en
+  `docker/smoke-test.sh` explicando que el grep de CA‑02 es case-sensitive a propósito
+  (por qué "Fabric" con mayúscula no dispara el chequeo pero "fabric" en minúscula sí).
+  Re-verificado todo: `npm run build`/`test` (63/63)/`lint` del backend, rebuild del
+  contenedor `backend`, `bash docker/smoke-test.sh` → `PASS` otra vez.
 
 **Dependencias:** T1‑T6.
 
 **Archivos:** `chaincode/README.md`, `backend/README.md`, `backend/.env.example`,
-`docker/.env.example`, `CLAUDE.md`, `claude_docs/SPEC.md`.
+`backend/package.json` (scripts `dev`/`seed` + `engines.node`, hallazgos de la
+verificación y del review), `frontend/src/lib/api.ts` (reescritura de un comentario,
+hallazgo de la verificación), `docker/smoke-test.sh` (comentario, hallazgo del review),
+`CLAUDE.md`, `claude_docs/SPEC.md`.
 
 **Alcance:** S.
 
 ---
 
 ### ✅ Checkpoint: HU‑005…007 terminadas (DoD — SPEC §10.2)
-- [ ] Los 6 escenarios Gherkin de HU‑005…007 (CA‑01/CA‑02 cada una) en PASS.
-- [ ] RF‑08…17 y RNF‑04, 05, 09, 11, 13, 23, 24 marcados como implementados.
-- [ ] Entorno verificado en Docker Compose.
-- [ ] PR abierto y revisado; mensaje de commit redactado (sin commit automático).
+- [x] Los 6 escenarios Gherkin de HU‑005…007 (CA‑01/CA‑02 cada una) en PASS (cubiertos por
+  la verificación manual de T4/T6/T7 — no hay runner de tests E2E automatizado todavía,
+  mismo criterio que el resto del proyecto).
+- [x] RF‑08…17 y RNF‑04, 05, 13, 23, 24 marcados como implementados (RNF‑09/11 quedan
+  explícitamente parciales — ver corrección del review de T7 en `SPEC.md` §3: falta
+  consulta y comparación, Sprint 3).
+- [x] Entorno verificado en Docker Compose (ciclo completo desde cero, smoke test PASS).
+- [x] Commits de cierre (T1‑T7) hechos directo a `main` por Sofia, sin PR — **excepción
+  documentada, no un olvido**: `feat/blockchain` (la rama donde vivió T1‑T6) ya estaba
+  completamente mergeada a `main` antes de que arrancara T7, así que T7 se commiteó
+  directo ahí (no había una rama separada para abrir un PR real — comparar cualquier rama
+  nueva contra `main` en este punto no mostraría ningún diff). Aceptable para un proyecto
+  de tesis de una sola desarrolladora; mensajes de commit siempre redactados por Claude y
+  nunca commiteados automáticamente, por norma del equipo. **A partir de Sprint 3**, el
+  trabajo arranca en una rama nueva para que el PR real vuelva a tener sentido como
+  checkpoint del DoD.
 - [ ] Aceptación de dirección/codirección registrada.

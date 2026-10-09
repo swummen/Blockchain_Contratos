@@ -28,7 +28,12 @@ export async function ensureIndexes(): Promise<void> {
   await usersCollection().createIndex({ email: 1 }, { unique: true });
 }
 
-function normalizeEmail(email: string): string {
+// Exportado (Sprint 4 T5, hallazgo de review): los servicios que construyen
+// el objeto a devolver en la respuesta HTTP necesitan la misma normalización
+// que ya se aplica acá adentro al escribir — si no, un correo con mayúsculas
+// queda guardado en minúsculas pero la respuesta sigue mostrando lo que
+// escribió el admin, inconsistente con lo que de verdad persiste.
+export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
@@ -59,6 +64,38 @@ export async function updatePasswordHash(
   passwordHash: string,
 ): Promise<void> {
   await usersCollection().updateOne({ _id: userId }, { $set: { passwordHash } });
+}
+
+// RF-43/44 (Sprint 4 T5): sin límite ni paginación — mismo criterio que
+// aceptaría `listDocuments` si el volumen fuera chico, y acá lo es de verdad
+// (usuarios de un sistema interno, no documentos que se acumulan con cada
+// operación de negocio).
+export async function listUsers(): Promise<UserDoc[]> {
+  return usersCollection().find().sort({ _id: 1 }).toArray();
+}
+
+// RF-45: alta real (a diferencia de `insertUserIfMissing`, que es solo para
+// el seed idempotente de Sprint 1 — acá un correo duplicado tiene que fallar
+// de verdad, no quedar silenciosamente ignorado).
+export async function insertUser(user: UserDoc): Promise<void> {
+  await usersCollection().insertOne({ ...user, email: normalizeEmail(user.email) });
+}
+
+// RF-46.
+export async function updateUser(
+  userId: string,
+  input: { name: string; email: string; role: Role },
+): Promise<void> {
+  await usersCollection().updateOne(
+    { _id: userId },
+    { $set: { ...input, email: normalizeEmail(input.email) } },
+  );
+}
+
+// RF-47: baja lógica — nunca borra el usuario ni su trazabilidad histórica
+// (los documentos que ya registró siguen con su `responsibleUser` intacto).
+export async function deactivateUser(userId: string): Promise<void> {
+  await usersCollection().updateOne({ _id: userId }, { $set: { status: "Inactivo" } });
 }
 
 // Forma pública del usuario (sin passwordHash), con las mismas claves que ya

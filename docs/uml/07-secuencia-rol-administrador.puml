@@ -6,55 +6,80 @@ participant "Fabric Gateway\n(SDK)" as SDK
 participant "Chaincode (Go)" as CC
 database "MongoDB" as DB
 
+note over BE
+  En cada solicitud /admin/* el backend valida
+  el JWT y el rol = Administrador (RBAC).
+end note
+
 == Panel general ==
-Administrador -> FE : Accede al panel general (RF-41)
+Administrador -> FE : Accede al panel general (RF-041)
 FE -> BE : GET /admin/dashboard
+BE -> BE : Validar JWT y rol = Administrador (RBAC)
 BE -> DB : Agregar conteos por estado
-DB --> BE : Total, verificados, pendientes, alterados (RF-42)
+DB --> BE : Total, verificados, pendientes, alterados (RF-042)
 BE --> FE : 200 OK
 FE --> Administrador : Muestra panel consolidado
 
 == Gestion de usuarios ==
-Administrador -> FE : Consultar usuarios (RF-43)
+Administrador -> FE : Consultar usuarios (RF-043)
 FE -> BE : GET /admin/usuarios
 BE -> DB : Buscar usuarios
-DB --> BE : Lista [id, nombre, rol, correo, estado] (RF-44)
+DB --> BE : Lista [id, nombre, rol, correo, estado] (RF-044)
 BE --> FE : 200 OK
 FE --> Administrador : Tabla de usuarios
 
-Administrador -> FE : Crear usuario (RF-45)
+Administrador -> FE : Crear usuario (RF-045)
 FE -> BE : POST /admin/usuarios {datos}
-BE -> DB : Insertar usuario (password con hash + salt)
-DB --> BE : Usuario creado
-BE --> FE : 201 Created
+alt correo ya registrado
+    BE --> FE : 409 Conflict
+    FE --> Administrador : Mensaje de error claro
+else datos validos
+    BE -> DB : Insertar usuario (password con hash + salt)
+    DB --> BE : Usuario creado
+    BE -> SDK : invoke RegistrarEvento(null, "GestionUsuario", admin, "Usuario creado")
+    SDK -> CC : Transaccion RegistrarEvento
+    CC --> SDK : txID
+    SDK --> BE : txID
+    BE --> FE : 201 Created
+    FE --> Administrador : Usuario creado
+end
 
-Administrador -> FE : Editar usuario (RF-46)
+Administrador -> FE : Editar usuario (RF-046)
 FE -> BE : PUT /admin/usuarios/{id}
 BE -> DB : Actualizar nombre / correo / rol
 DB --> BE : OK
+BE -> SDK : invoke RegistrarEvento(null, "GestionUsuario", admin, "Usuario editado (incluye cambio de rol)")
+SDK -> CC : Transaccion RegistrarEvento
+CC --> SDK : txID
+SDK --> BE : txID
 BE --> FE : 200 OK
+FE --> Administrador : Usuario actualizado
 
-Administrador -> FE : Desactivar usuario (RF-47)
+Administrador -> FE : Desactivar usuario (RF-047)
 FE -> BE : PATCH /admin/usuarios/{id}/desactivar
 BE -> DB : Marcar estado = Inactivo (baja logica, sin eliminar)
 DB --> BE : OK
+BE -> SDK : invoke RegistrarEvento(null, "GestionUsuario", admin, "Usuario desactivado")
+SDK -> CC : Transaccion RegistrarEvento
+CC --> SDK : txID
+SDK --> BE : txID
 BE --> FE : 200 OK
 FE --> Administrador : Usuario desactivado (historico preservado)
 
 == Consulta administrativa de documentos y trazabilidad ==
-Administrador -> FE : Consultar documentos (RF-48)
+Administrador -> FE : Consultar documentos (RF-048)
 FE -> BE : GET /admin/documentos
 BE -> DB : Buscar documentos
-DB --> BE : Lista [nombre, id, usuario, fecha, estado, huella] (RF-49)
+DB --> BE : Lista [nombre, id, usuario, fecha, estado, huella] (RF-049)
 BE --> FE : 200 OK
 FE --> Administrador : Vista administrativa de documentos
 
-Administrador -> FE : Consultar trazabilidad administrativa (RF-50)
+Administrador -> FE : Consultar trazabilidad administrativa (RF-050)
 FE -> BE : GET /admin/trazabilidad
 BE -> SDK : query ConsultarTrazabilidad()
 SDK -> CC : Consulta del historico completo
 CC --> SDK : Eventos [docId, accion, usuario, txID, fecha, resultado]
 SDK --> BE : Eventos
-BE --> FE : 200 OK (RF-51)
+BE --> FE : 200 OK (RF-051)
 FE --> Administrador : Tabla de trazabilidad administrativa
 @enduml

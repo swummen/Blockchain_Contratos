@@ -6,9 +6,15 @@ para el diseño completo — este archivo es un resumen práctico, no la fuente 
 ## Qué hay hoy
 
 Sprint 0 (T4+T5) dejó el *walking skeleton* — Mongo y Fabric probados de punta a punta,
-sin lógica de negocio. Sprint 1 (`identity`, T1-T7) ya agregó la primera lógica de negocio
-real: login con OTP, sesión JWT, RBAC y cambio de contraseña — ver la sección
-"`identity`" más abajo para el contrato completo.
+sin lógica de negocio. Sprint 1 (`identity`, T1-T7) agregó la primera lógica de negocio
+real: login con OTP, sesión JWT, RBAC y cambio de contraseña. Sprint 2 (`documents` +
+`ledger`, T1-T6) agregó la primera escritura real al ledger: el Empleado carga un PDF,
+se valida, se registra su huella SHA‑256 en el chaincode real y se guarda en Mongo.
+Sprint 3 (`verification`, T1-T6) agregó la primera función de **lectura** del chaincode
+y la comparación real de huellas: el Verificador consulta un documento registrado, sube
+un PDF a comparar, y el sistema determina y registra si la integridad está confirmada o
+comprometida — ver las secciones "`identity`", "`documents`" y "`verification`" más
+abajo para el contrato completo de cada una.
 
 - Express + TypeScript, compilado con `tsc` (CommonJS, no ESM — evita fricción con Jest).
 - `GET /health` — hace un `ping` real a Mongo en cada request (no un flag cacheado de
@@ -128,37 +134,123 @@ consola (`[dev] SMTP no configurado — código OTP para <email>: <código>`) en
 enviarlo — buscalo en `docker logs backend` (o la consola de `npm run dev`). Nunca es un
 fallback silencioso.
 
-## Qué sigue (Sprint 2: chaincode + escrituras al ledger)
+## `documents` (Sprint 2, T1-T6 — completo)
 
-Con `identity` completo, lo que viene es el chaincode real del proyecto (módulo `ledger`
-de `claude_docs/SPEC.md` — `RegisterDocument`, huellas SHA-256, eventos, `txID`; RF‑16,
-22, 35, 40, 51) y los endpoints de negocio del backend que lo invoquen (documentos,
-verificación, administración) — esos sí van a necesitar `requireAuth(...roles)` con una
-lista de roles real, a diferencia de `identity` (ninguna de sus rutas la necesitó).
+El Empleado carga un PDF (`POST /documents`), se valida (firma real `%PDF-`, no el
+`Content-Type` del cliente; tamaño ≤ 20MB; un solo archivo), se calcula su huella SHA‑256,
+se registra en el chaincode real (`RegisterDocument`, vía `submitChaincodeTransaction`) y
+recién si eso tuvo éxito se guarda en Mongo (`documents`). Decisiones completas en
+`claude_docs/tasks/plan-sprint2-documents-ledger.md` (D1‑D13); estado tarea por tarea en
+`claude_docs/tasks/todo-sprint2-documents-ledger.md`.
 
-Lo que ya está resuelto para cuando llegue ese momento:
+### Escribir al ledger: `submitChaincodeTransaction`
 
-- **Escribir al ledger es `submitTransaction`, no `evaluateTransaction`.** `gateway.ts`
-  solo expone `queryChaincode()` (evaluate, solo lectura) porque es todo lo que T5
-  necesitaba. Para registrar una huella o un evento van a necesitar un
-  `submitTransaction(fcn, ...args)` — misma conexión, mismo `contract`, sin nada nuevo
-  que cablear.
-- El nombre del chaincode (`basic`) y el canal (`contratoschannel`) van a cambiar cuando
-  exista el chaincode real — están en `src/config/fabric.ts`, no hardcodeados en
-  `gateway.ts` ni en las rutas.
-- **Dos bugs de Windows + Git Bash** ya aparecieron y están resueltos en los scripts de
-  `docker/` (reescritura de rutas por MSYS) — si al scriptear algo similar ven errores
-  raros de rutas tipo `C:\Program Files\Git\...` donde no debería haber una ruta de
-  Windows, es ese problema. También afecta a `docker exec`/`docker run` con argumentos de
-  ruta corridos desde Git Bash (ej. `docker exec backend touch /crypto/x` se mangló solo
-  al probarlo) — el escape es `//` al inicio de la ruta (`//crypto/x`). Detalle completo
-  en `docker/README.md`.
-- **El frontend real ya existe** (rama `Feat/Front`, ya en `main`) y desde Sprint 1 (T6/T7)
-  ya habla de verdad con este backend para todo el flujo de `identity` — login, OTP,
-  sesión, logout, cambio de contraseña (`frontend/src/lib/api.ts`,
-  `frontend/src/context/SessionContext.tsx`). Las pantallas de negocio
-  (Empleado/Verificador/Administrador) siguen con datos hardcodeados de `src/data/*.ts` —
-  conectarlas es trabajo de Sprint 2+, no algo que ya esté resuelto.
+`src/fabric/gateway.ts` gana la contraparte de escritura de `queryChaincode()`:
+`submitChaincodeTransaction(fcn, ...args)` — sí pasa por endoso + orden real (a
+diferencia de `evaluateTransaction`), con sus propios deadlines
+(`ENDORSE_TIMEOUT_MS`/`SUBMIT_TIMEOUT_MS` = 5s, `COMMIT_TIMEOUT_MS` = 15s, más largo porque
+tiene que esperar el corte real del bloque). Nunca atrapa el error del SDK — lo deja
+propagar tal cual, porque el mensaje real de un rechazo del chaincode (ej. "documento ya
+registrado") no viaja en `.message` sino en `.details[0].message`
+(`GatewayError.details`) — quien llama decide cuánto de eso exponer al cliente.
+
+### Contrato de `POST /documents`
+
+| Ruta | Auth | Body | Respuesta 201 | Errores |
+|---|---|---|---|---|
+| `POST /documents` | sí, solo `Empleado` (`requireAuth("Empleado")` — primer uso real de la variante con roles) | `multipart/form-data`, campo `document` (un PDF) | `{documentId}` | `400` sin archivo/más de uno/no-PDF (firma real, no `Content-Type`)/archivo > 20MB · `401` sin sesión válida · `403` rol distinto de Empleado · `502` el chaincode rechazó el registro (ver RNF‑13 abajo) · `500` el ledger anotó el registro pero Mongo falló después |
+
+### Por qué nunca hay un éxito a medias (RNF‑13, HU‑007‑CA‑02)
+
+Mongo **nunca** se toca antes de confirmar la escritura en el ledger — si
+`submitChaincodeTransaction` falla, se responde `502` y no se guarda nada. Si el ledger
+tuvo éxito pero el guardado en Mongo falla después (el hash ya quedó anclado e inmutable
+on-chain, RNF‑05 — no hay forma de revertirlo), se loguea como una inconsistencia real
+server-side y se responde `500`, nunca un `200` falso. No hay ningún mecanismo de
+compensación/saga automático para ese caso límite — queda documentado como reconciliación
+manual (sobre-construirlo ahora sería resolver un problema que todavía no se presentó en
+un MVP de tesis).
+
+**Hueco conocido, sin resolver todavía:** el timeout del cliente (30s,
+`frontend/src/lib/api.ts#uploadDocument`) deja poco margen sobre el peor caso del backend
+(endorse + submit + commit ≈ 25s) y `documentId` no tiene ninguna clave de idempotencia
+(`crypto.randomUUID()` por intento) — si el cliente corta primero, un reintento del
+usuario podría anclar el mismo archivo dos veces on-chain. Queda para quien diseñe la
+reconciliación/lectura de Sprint 3/4 (resolverlo de verdad requiere tocar el chaincode,
+no solo el backend).
+
+### El chaincode real ya reemplazó al de ejemplo
+
+El nombre del chaincode (`contracts`) y el canal (`contratoschannel`) están en
+`src/config/fabric.ts` (`chaincodeName`/`channelName`), no hardcodeados en `gateway.ts` ni
+en las rutas. Detalle del contrato Go en sí (qué valida, modelo de datos, cómo
+compilarlo/desplegarlo): `chaincode/README.md`.
+
+**Dos bugs de Windows + Git Bash** ya aparecieron y están resueltos en los scripts de
+`docker/` (reescritura de rutas por MSYS) — si al scriptear algo similar ven errores raros
+de rutas tipo `C:\Program Files\Git\...` donde no debería haber una ruta de Windows, es ese
+problema. También afecta a `docker exec`/`docker run` con argumentos de ruta corridos desde
+Git Bash (ej. `docker exec backend touch /crypto/x` se mangló solo al probarlo) — el escape
+es `//` al inicio de la ruta (`//crypto/x`). Detalle completo en `docker/README.md`.
+
+## `verification` (Sprint 3, T1-T6 — completo)
+
+El Verificador consulta un documento ya registrado (su huella y estado), sube un PDF a
+comparar, y el sistema calcula su hash, lo compara contra el registrado, ancla el
+resultado real en el ledger (`RecordVerification`, chaincode) y actualiza Mongo.
+Decisiones completas en `claude_docs/tasks/plan-sprint3-verification.md` (D1‑D8); estado
+tarea por tarea en `claude_docs/tasks/todo-sprint3-verification.md`.
+
+### Primera lectura real del chaincode: `queryLedgerDocument`
+
+`backend/src/services/documentService.ts` tiene un helper interno,
+`queryLedgerDocument(documentId)`, compartido por `getDocument` y `verifyDocument`: llama
+a `queryChaincode("GetDocument", documentId)` y clasifica el error — `404` solo si viene
+de una respuesta real del peer (`.details` poblado, con el mensaje exacto "document ...
+not found" del chaincode), `502` para cualquier otro caso (incluidos errores de
+transporte/config, que nunca traen `.details` poblado — así nunca se disfrazan de un 404
+de negocio).
+
+### Contratos de `/documents*` de este sprint
+
+| Ruta | Auth | Body | Respuesta 200 | Errores |
+|---|---|---|---|---|
+| `GET /documents` | sí, `Verificador`/`Administrador` (enumera documentos de **todos** los usuarios — un Empleado no lo necesita, RF‑18 en Sprint 4 le va a dar su propio listado acotado a lo suyo) | — | `[{documentId, name, responsibleUser, registeredAt, status}, ...]` (**nunca** el hash; últimos 100, sin paginación — D8, ver abajo) | `401` sin sesión válida · `403` rol sin permiso |
+| `GET /documents/:id` | sí, cualquier rol (lo que varía por rol es el enmascarado del hash, no el acceso — RF‑27/RNF‑08) | — | `{documentId, name?, responsibleUser?, registeredAt?, hash, status}` (`hash` completo solo para `Verificador`/`Administrador`, enmascarado el resto vía `maskHash` — mismo algoritmo que `frontend/src/lib/mask-hash.ts`, copiado, no importado: son paquetes npm separados) | `401` sin sesión · `404` no existe (HU‑010‑CA‑02) · `502` falla el chaincode |
+| `POST /documents/:id/verifications` | sí, solo `Verificador` (RF‑23) | `multipart/form-data`, campo `document` (el PDF a comparar) | `{status: "Verificado"\|"Alterado", matches, registeredHash, computedHash}` (hash siempre completo — quien pregunta ya es Verificador) | `400` archivo inválido · `401`/`403` · `404` el `documentId` de la URL no existe · `502` falla `RecordVerification` (nunca toca Mongo) · `500` el ledger anotó la verificación pero Mongo falló después |
+
+### Por qué nunca hay un éxito a medias (mismo criterio D13 de Sprint 2)
+
+`verifyDocument` valida el PDF **antes** de consultar el ledger (un archivo inválido nunca
+gasta un round-trip a Fabric) y llama a `RecordVerification` **antes** de tocar Mongo — si
+eso falla, `502` y Mongo queda intacto. Si el ledger tiene éxito pero `updateDocumentStatus`
+falla después, se loguea como inconsistencia y se responde `500`, nunca un `200` falso
+(mismo patrón que `registerDocument`).
+
+**Hueco conocido, sin resolver todavía:** `verifyDocument` descarta el `Event` real que
+devuelve `RecordVerification` (con su `Timestamp`/`TxID` determinista del ledger) — ni el
+backend ni el frontend tienen hoy el momento real de la verificación para mostrar como
+evidencia (RNF‑05/HU‑014), solo una aproximación del reloj del navegador. Si hace falta
+ese dato como evidencia real, `verifyDocument` tiene que capturar y devolver el `Event`.
+
+**También conocido:** un reintento del cliente justo si el proceso se cae entre el commit
+real a la blockchain y el `updateDocumentStatus` de Mongo es seguro (`RecordVerification`
+no tiene ningún guard de "ya verificado", cada evento tiene su propio `TxID` — permite
+re-verificar a propósito, HU‑014‑CA‑02 "Nueva verificación"), pero deja dos eventos reales
+de verificación para lo que el humano percibe como una sola acción. Consecuencia ya
+aceptada del mismo criterio "sin saga/outbox" de D13, no un bug nuevo.
+
+### D8: listado mínimo de documentos (ampliación de alcance, pedida por Sofia)
+
+Probando el flujo a mano, no había ninguna forma de que el Verificador ubicara un
+documento sin que alguien le pasara el `documentId` (un UUID de 36 caracteres) a mano.
+`GET /documents` (arriba) se adelantó desde el alcance completo de RF‑37…40 (Sprint 4,
+con filtros/búsqueda/paginación reales) para resolver justo eso — lee directo de MongoDB
+(`listDocuments`, nuevo en `documentRepository.ts`), nunca del chaincode (que sigue sin
+ninguna función de listado, D6 de Sprint 2 intacto), y nunca incluye el hash (no hace
+falta para elegir cuál consultar). `VerificarIntegridadPage` lo usa para poblar un
+selector; elegir un documento de la lista dispara la misma consulta real (`GetDocument`)
+que ya hacía la búsqueda manual por id — la lista nunca es la fuente de la verdad.
 
 ## Referencias
 
@@ -168,4 +260,12 @@ Lo que ya está resuelto para cuando llegue ese momento:
   estado actual.
 - `claude_docs/tasks/plan-sprint1-identity.md` / `todo-sprint1-identity.md` — plan,
   decisiones (D1‑D9) y tareas del sprint de `identity` (login, OTP, sesión, RBAC), completo.
+- `claude_docs/tasks/plan-sprint2-documents-ledger.md` / `todo-sprint2-documents-ledger.md`
+  — plan, decisiones (D1‑D13) y tareas del sprint de `documents`+`ledger` (carga de PDF,
+  huella SHA‑256, chaincode real), completo.
+- `claude_docs/tasks/plan-sprint3-verification.md` / `todo-sprint3-verification.md` —
+  plan, decisiones (D1‑D8) y tareas del sprint de `verification` (consulta de huella,
+  comparación real, listado mínimo de documentos), completo.
+- `chaincode/README.md` — qué hace el contrato Go, modelo de datos, cómo
+  compilarlo/testearlo/desplegarlo.
 - `docker/README.md` — cómo levantar la red Fabric y Mongo, puertos, prerrequisitos.

@@ -7,8 +7,10 @@ import { ensureIndexes as ensureOtpIndexes } from "./repositories/otpRepository"
 import { ensureIndexes as ensureSessionIndexes } from "./repositories/sessionRepository";
 import { authRouter } from "./routes/auth";
 import { documentsRouter } from "./routes/documents";
+import { eventsRouter } from "./routes/events";
 import { fabricRouter } from "./routes/fabric";
 import { healthRouter } from "./routes/health";
+import { usersRouter } from "./routes/users";
 
 export function createApp() {
   const app = express();
@@ -46,7 +48,44 @@ export function createApp() {
   // dispara el preflight.
   app.use("/documents", (req, res, next) => {
     res.header("Access-Control-Allow-Origin", authConfig.frontendOrigin);
-    res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+    // GET agregado recién en Sprint 4 (hallazgo real durante T4: Sprint 3 ya
+    // había agregado GET /documents/:id, pero esto nunca se actualizó desde
+    // que se escribió en Sprint 2 con solo POST). El valor estaba mal, pero
+    // nunca llegó a bloquear nada en la práctica — GET (como HEAD y POST) es
+    // un "CORS-safelisted method" (spec de Fetch): el chequeo de método del
+    // preflight pasa igual aunque Allow-Methods no lo liste, así que ningún
+    // navegador real lo rechazó nunca por esto (confirmado leyendo la spec,
+    // no con curl — curl no aplica ninguna política de CORS, solo muestra
+    // los headers de la respuesta). Documentado y corregido igual porque el
+    // riesgo real es distinto: un método que NO está en esa lista exenta
+    // (PUT/DELETE/PATCH) que se agregue más adelante sin actualizar esto SÍ
+    // quedaría bloqueado por cualquier navegador, sin excepción.
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+  // /events (Sprint 4, T4): mismo criterio D8, pero sin body — solo GET con
+  // el header Authorization, que ya dispara el preflight por sí solo aunque
+  // el método en sí sea "simple".
+  app.use("/events", (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", authConfig.frontendOrigin);
+    res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Authorization");
+    if (req.method === "OPTIONS") {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+  // /users (Sprint 4, T5): mismo criterio D8 — GET/POST/PUT, body JSON (a
+  // diferencia de /documents, acá nunca se sube un archivo).
+  app.use("/users", (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", authConfig.frontendOrigin);
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     if (req.method === "OPTIONS") {
       res.sendStatus(204);
@@ -70,6 +109,8 @@ export function createApp() {
   app.use(fabricRouter);
   app.use(authRouter);
   app.use(documentsRouter);
+  app.use(eventsRouter);
+  app.use(usersRouter);
   // Catch-all al final (T4: primera vez que una ruta protegida hace un
   // await a Mongo en pleno camino de la request — findSessionByJti). Sin
   // esto, una excepción ahí (Mongo caído a mitad de request) cae en la

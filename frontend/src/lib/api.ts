@@ -17,8 +17,17 @@ export async function getHealth(): Promise<HealthStatus> {
   return res.json()
 }
 
-// El backend (backend/src/routes/auth.ts) siempre responde { message } en
-// error — se propaga tal cual, ya son mensajes pensados para mostrarse.
+// El backend siempre responde { message } en error — se propaga tal cual, ya
+// son mensajes pensados para mostrarse. Compartido por los helpers de abajo
+// (JSON y multipart) para no repetir el mismo parseo 4 veces.
+async function parseJsonResponse<T>(res: Response): Promise<T> {
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.message ?? `El backend respondió ${res.status}`)
+  }
+  return data as T
+}
+
 async function postAuthJson<T>(path: string, body: unknown, token?: string): Promise<T> {
   let res: Response
   try {
@@ -41,11 +50,20 @@ async function postAuthJson<T>(path: string, body: unknown, token?: string): Pro
     // en inglés ("Failed to fetch"), así que se normaliza acá.
     throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
   }
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    throw new Error(data.message ?? `El backend respondió ${res.status}`)
+  return parseJsonResponse<T>(res)
+}
+
+async function getAuthJson<T>(path: string, token: string): Promise<T> {
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10_000),
+    })
+  } catch {
+    throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
   }
-  return data as T
+  return parseJsonResponse<T>(res)
 }
 
 export async function login(email: string, password: string): Promise<void> {
@@ -91,17 +109,75 @@ export async function uploadDocument(
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
-      // Más largo que el de postAuthJson: además del round-trip HTTP, este
-      // endpoint espera el commit real del bloque en Fabric antes de
-      // responder (backend/src/fabric/gateway.ts, COMMIT_TIMEOUT_MS=15s).
+      // Más largo que el de postAuthJson: además del round-trip HTTP, el
+      // backend espera un commit real de la red blockchain antes de
+      // responder (ver COMMIT_TIMEOUT_MS en el gateway del backend).
       signal: AbortSignal.timeout(30_000),
     })
   } catch {
     throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
   }
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    throw new Error(data.message ?? `El backend respondió ${res.status}`)
+  return parseJsonResponse<UploadDocumentResult>(res)
+}
+
+export interface DocumentLookup {
+  documentId: string
+  name?: string
+  responsibleUser?: string
+  registeredAt?: string
+  hash: string
+  status: "Pendiente" | "Verificado" | "Alterado"
+}
+
+// RF-25/26 (HU-010/011): consulta puntual por identificador exacto — 404 si
+// no existe (HU-010-CA-02). Es la fuente real de hash/status (el ledger es
+// la autoridad); `listDocuments` de abajo es solo para elegir cuál consultar.
+export async function getDocument(token: string, documentId: string): Promise<DocumentLookup> {
+  return getAuthJson(`/documents/${encodeURIComponent(documentId)}`, token)
+}
+
+export interface DocumentSummary {
+  documentId: string
+  name: string
+  responsibleUser: string
+  registeredAt: string
+  status: "Pendiente" | "Verificado" | "Alterado"
+}
+
+// Listado mínimo (ampliación de alcance de Sprint 3 T5): nunca trae el hash
+// — alcanza con lo que hace falta para elegir un documento; el hash real se
+// pide recién con getDocument().
+export async function listDocuments(token: string): Promise<DocumentSummary[]> {
+  return getAuthJson("/documents", token)
+}
+
+export interface VerifyDocumentResult {
+  status: "Verificado" | "Alterado"
+  matches: boolean
+  registeredHash: string
+  computedHash: string
+}
+
+export async function verifyDocument(
+  token: string,
+  documentId: string,
+  file: File
+): Promise<VerifyDocumentResult> {
+  const formData = new FormData()
+  formData.append("document", file)
+
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/documents/${encodeURIComponent(documentId)}/verifications`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+      // Mismo motivo que uploadDocument: el backend espera el commit real de
+      // RecordVerification en la blockchain antes de responder.
+      signal: AbortSignal.timeout(30_000),
+    })
+  } catch {
+    throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
   }
-  return data as UploadDocumentResult
+  return parseJsonResponse<VerifyDocumentResult>(res)
 }

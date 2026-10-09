@@ -5,15 +5,15 @@
   "description": "Gateway Node.js + Express hacia Hyperledger Fabric y MongoDB (ver claude_docs/SPEC.md)",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx --env-file-if-exists=.env watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "seed": "tsx src/scripts/seedUsers.ts",
+    "seed": "tsx --env-file-if-exists=.env src/scripts/seedUsers.ts",
     "test": "jest",
     "lint": "oxlint src tests"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.9.0"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.4",

@@ -49,6 +49,13 @@ const eventKeyType = "event"
 
 var sha256HexPattern = regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
 
+// validVerificationResults maps each allowed Event.Result value to the
+// Document.Status it produces (RF-34: nothing else is allowed to change it).
+var validVerificationResults = map[string]string{
+	"confirmada":   "Verificado",
+	"comprometida": "Alterado",
+}
+
 func validateHash(sha256Hex string) error {
 	if !sha256HexPattern.MatchString(sha256Hex) {
 		return fmt.Errorf("sha256Hex must be a 64-character hex string, got %q", sha256Hex)
@@ -67,30 +74,53 @@ func (c *ContractsContract) documentExists(
 	return docJSON != nil, nil
 }
 
-// putEvent writes the document record (first event only, since later events don't
-// change the fingerprint) and the event itself under its own composite key — a
-// key that's never reused, so GetStateByPartialCompositeKey(eventKeyType,
+// getDocument reads and unmarshals the Document record, or returns an error if
+// documentID was never registered.
+func (c *ContractsContract) getDocument(
+	ctx contractapi.TransactionContextInterface,
+	documentID string,
+) (*Document, error) {
+	docJSON, err := ctx.GetStub().GetState(documentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %w", err)
+	}
+	if docJSON == nil {
+		return nil, fmt.Errorf("document %s not found", documentID)
+	}
+	var doc Document
+	if err := json.Unmarshal(docJSON, &doc); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal document: %w", err)
+	}
+	return &doc, nil
+}
+
+// putEvent writes the document record (caller decides its Status — a fresh
+// "Pendiente" one on first registration, or an existing one with an updated
+// Status after a verification) and the event itself under its own composite
+// key — a key that's never reused, so GetStateByPartialCompositeKey(eventKeyType,
 // []string{documentID}) always returns the full chronological history. LevelDB
 // (the peer state DB fixed in Sprint 0) doesn't support rich/CouchDB queries, so
 // traceability is resolved with composite-key ranges instead of a secondary index.
 func (c *ContractsContract) putEvent(
 	ctx contractapi.TransactionContextInterface,
-	documentID string,
-	sha256Hex string,
+	doc Document,
 	evt Event,
 ) error {
+	if doc.DocumentID != evt.DocumentID {
+		return fmt.Errorf("doc.DocumentID (%s) does not match evt.DocumentID (%s)", doc.DocumentID, evt.DocumentID)
+	}
+
 	stub := ctx.GetStub()
 
-	doc := Document{DocumentID: documentID, Sha256Hex: sha256Hex, Status: "Pendiente"}
 	docJSON, err := json.Marshal(doc)
 	if err != nil {
 		return err
 	}
-	if err := stub.PutState(documentID, docJSON); err != nil {
+	if err := stub.PutState(doc.DocumentID, docJSON); err != nil {
 		return fmt.Errorf("failed to put document to world state: %w", err)
 	}
 
-	eventKey, err := stub.CreateCompositeKey(eventKeyType, []string{documentID, evt.TxID})
+	eventKey, err := stub.CreateCompositeKey(eventKeyType, []string{doc.DocumentID, evt.TxID})
 	if err != nil {
 		return fmt.Errorf("failed to build event composite key: %w", err)
 	}
@@ -142,9 +172,127 @@ func (c *ContractsContract) RegisterDocument(
 	}
 	evt.Timestamp = ts.AsTime().UTC().Format(time.RFC3339)
 
-	if err := c.putEvent(ctx, documentID, sha256Hex, evt); err != nil {
+	doc := Document{DocumentID: documentID, Sha256Hex: sha256Hex, Status: "Pendiente"}
+	if err := c.putEvent(ctx, doc, evt); err != nil {
 		return nil, err
 	}
 
 	return &evt, nil
+}
+
+// GetDocument returns the fingerprint record anchored by RegisterDocument. A
+// read-only query (evaluateTransaction) — the first one this contract exposes.
+func (c *ContractsContract) GetDocument(
+	ctx contractapi.TransactionContextInterface,
+	documentID string,
+) (*Document, error) {
+	if documentID == "" {
+		return nil, fmt.Errorf("documentID is required")
+	}
+	return c.getDocument(ctx, documentID)
+}
+
+// RecordVerification anchors the outcome of comparing a document's registered
+// fingerprint against a freshly computed one. It never receives either PDF or
+// either hash — the backend already did the comparison (RNF-04); this only
+// records the result and updates Document.Status accordingly (RF-34: nothing
+// else is allowed to change it).
+func (c *ContractsContract) RecordVerification(
+	ctx contractapi.TransactionContextInterface,
+	documentID string,
+	result string,
+	user string,
+) (*Event, error) {
+	if documentID == "" {
+		return nil, fmt.Errorf("documentID is required")
+	}
+	if user == "" {
+		return nil, fmt.Errorf("user is required")
+	}
+	newStatus, ok := validVerificationResults[result]
+	if !ok {
+		return nil, fmt.Errorf(`result must be "confirmada" or "comprometida", got %q`, result)
+	}
+
+	doc, err := c.getDocument(ctx, documentID)
+	if err != nil {
+		return nil, err
+	}
+
+	txID := ctx.GetStub().GetTxID()
+	evt := Event{
+		DocumentID: documentID,
+		Action:     "verificacion",
+		Result:     result,
+		User:       user,
+		TxID:       txID,
+	}
+
+	ts, err := ctx.GetStub().GetTxTimestamp()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read tx timestamp: %w", err)
+	}
+	evt.Timestamp = ts.AsTime().UTC().Format(time.RFC3339)
+
+	doc.Status = newStatus
+	if err := c.putEvent(ctx, *doc, evt); err != nil {
+		return nil, err
+	}
+
+	return &evt, nil
+}
+
+// getEventsByPartialKey iterates every event whose composite key starts with
+// the given attributes — []string{documentID} for one document's history, or
+// []string{} for every event of every document (D1/D2 of Sprint 4). Only
+// those two shapes are valid for this schema: []string{""} is NOT the same
+// as []string{} (it matches documentID=="", which never exists — silently
+// zero results, not "everything"), and a second element would be read as
+// TxID, not a second documentID. Both current callers below pass hardcoded
+// literals; a future caller building `keys` dynamically must preserve this.
+// Always closes the iterator, even if unmarshaling a result fails midway. No
+// particular order is guaranteed — composite-key order groups by documentID,
+// not by Timestamp across different documents (D2: chronological ordering
+// across documents is the backend's job).
+func (c *ContractsContract) getEventsByPartialKey(
+	ctx contractapi.TransactionContextInterface,
+	keys []string,
+) ([]*Event, error) {
+	iterator, err := ctx.GetStub().GetStateByPartialCompositeKey(eventKeyType, keys)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query events: %w", err)
+	}
+	defer iterator.Close()
+
+	events := []*Event{}
+	for iterator.HasNext() {
+		kv, err := iterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate events: %w", err)
+		}
+		var evt Event
+		if err := json.Unmarshal(kv.Value, &evt); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event: %w", err)
+		}
+		events = append(events, &evt)
+	}
+	return events, nil
+}
+
+// GetDocumentEvents returns every traceability event for one document (RF-21/22).
+func (c *ContractsContract) GetDocumentEvents(
+	ctx contractapi.TransactionContextInterface,
+	documentID string,
+) ([]*Event, error) {
+	if documentID == "" {
+		return nil, fmt.Errorf("documentID is required")
+	}
+	return c.getEventsByPartialKey(ctx, []string{documentID})
+}
+
+// GetAllEvents returns every traceability event for every document (RF-39/40, RF-50/51).
+func (c *ContractsContract) GetAllEvents(
+	ctx contractapi.TransactionContextInterface,
+) ([]*Event, error) {
+	return c.getEventsByPartialKey(ctx, []string{})
 }

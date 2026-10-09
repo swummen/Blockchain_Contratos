@@ -9,6 +9,13 @@ entity "Usuario" as Usuario {
   passwordHash : string
   rol : enum {Empleado, Verificador, Administrador}
   estado : enum {Activo, Inactivo}
+  intentosFallidos : int
+  bloqueadoHasta : datetime
+  politicaAceptada : boolean
+  fechaAceptacionPolitica : datetime
+  tokenSegundoFactor : string (hash)
+  tokenExpiraEn : datetime
+  tokenIntentos : int
 }
 
 entity "Documento" as Documento {
@@ -24,7 +31,7 @@ entity "Documento" as Documento {
 entity "EventoTrazabilidad" as Evento {
   * id : ObjectId <<PK>>
   --
-  documentoId : ObjectId <<FK>>
+  documentoId : ObjectId <<FK, opcional>>
   usuarioId : ObjectId <<FK>>
   accion : enum {Registro, Verificacion, Consulta, GestionUsuario}
   txId : string
@@ -37,13 +44,16 @@ Usuario ||--o{ Evento : "ejecuta >"
 Documento ||--o{ Evento : "genera >"
 
 note bottom of Evento
-  RNF-04 / RNF-05: unicamente la
+  RNF-004 / RNF-005: unicamente la
   huellaCriptografica y los eventos
   de trazabilidad (con su txId) se
   anclan de forma inmutable en la
   blockchain (Hyperledger Fabric).
-  El contenido del PDF y los datos
-  de Usuario/Documento residen en
-  MongoDB (RNF-13).
+  El archivo PDF no se almacena.
+  MongoDB guarda solo metadatos de
+  Usuario/Documento y un indice de
+  eventos (RNF-013).
+  documentoId es opcional: los eventos
+  GestionUsuario no tienen documento.
 end note
 @enduml

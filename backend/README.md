@@ -89,9 +89,9 @@ logout, RBAC, cambio de contraseña. Decisiones de diseño completas en
 
 ### Seed de usuarios
 
-`npm run seed` (`src/scripts/seedUsers.ts`) siembra 1 usuario por rol si la colección
+`npm run seed` (`src/scripts/seedUsers.ts`) siembra los usuarios de prueba si la colección
 `users` está vacía — idempotente, se puede correr las veces que haga falta. **Contraseña
-de desarrollo de los tres: `Contratos123!`** (nunca usar esto en un ambiente real). Ver el
+de desarrollo de los cuatro: `Contratos123!`** (nunca usar esto en un ambiente real). Ver el
 script para los emails de cada rol. Reemplaza a `frontend/src/data/users.ts` como fuente
 real para el login; deja de ser necesario cuando HU‑018 (Sprint 4) le dé al Administrador
 el alta real de usuarios.
@@ -103,8 +103,8 @@ error (los mensajes ya están pensados para mostrarse tal cual en la UI).
 
 | Ruta | Auth | Body | Respuesta 200 | Errores |
 |---|---|---|---|---|
-| `POST /auth/login` | no | `{email, password, role}` | `{message}` (dispara el envío del OTP) | `400` datos faltantes/`role` inválido · `401` credenciales inválidas (mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta desactivada — RF‑002 CA‑02) · `502` no se pudo enviar el correo |
-| `POST /auth/verify-otp` | no | `{email, code}` | `{token, user}` (`user` sin `passwordHash`, mismas claves que `frontend/src/types/domain.ts`) | `400` código inválido/vencido/incorrecto/intentos agotados · `403` el rol elegido en el login no coincide con el real (HU‑002 CA‑02) |
+| `POST /auth/login` | no | `{email, password}` | `{message}` (dispara el envío del OTP) | `400` datos faltantes · `401` credenciales inválidas (mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta desactivada — RF‑002 CA‑02) · `502` no se pudo enviar el correo |
+| `POST /auth/verify-otp` | no | `{email, code}` | `{token, user}` (`user` sin `passwordHash`, mismas claves que `frontend/src/types/domain.ts`; el rol viene de la cuenta, ya no se selecciona en el login) | `400` código inválido/vencido/incorrecto/intentos agotados |
 | `GET /auth/me` | sí | — | `{user}` | `401` sin sesión válida |
 | `POST /auth/logout` | sí | — | `204` | `401` sin sesión válida |
 | `POST /auth/change-password` | sí | `{currentPassword, newPassword}` | `{message}` | `400` actual incorrecta/nueva inválida · `401` sin sesión válida |

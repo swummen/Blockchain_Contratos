@@ -44,6 +44,29 @@ for f in fabric-samples/test-network/compose/docker/docker-compose-test-net.yaml
   fi
 done
 
+# Windows con Smart App Control / App Control activo bloquea algunos binarios
+# nativos sin firma de install-fabric.sh (verificado: configtxlator.exe y
+# orderer.exe; Git Bash solo muestra "Permission denied"). orderer corre en su
+# contenedor, pero configtxlator lo usa network.sh para fijar los anchor peers
+# (setAnchorPeer). Si el .exe no puede ejecutarse, dejamos un wrapper
+# bin/configtxlator (sin extensión: Git Bash lo prefiere al .exe) que corre la
+# misma versión dentro de hyperledger/fabric-tools, montando fabric-samples en
+# la misma ruta POSIX para que las rutas absolutas /c/... de los argumentos
+# sigan valiendo dentro del contenedor.
+if [ -f fabric-samples/bin/configtxlator.exe ] && ! fabric-samples/bin/configtxlator.exe version >/dev/null 2>&1; then
+  echo "==> configtxlator.exe bloqueado por Windows; uso hyperledger/fabric-tools:${FABRIC_VERSION} vía Docker."
+  docker image inspect "hyperledger/fabric-tools:${FABRIC_VERSION}" >/dev/null 2>&1 \
+    || docker pull "hyperledger/fabric-tools:${FABRIC_VERSION}"
+  SAMPLES_DIR="$(cd fabric-samples && pwd)"
+  cat > fabric-samples/bin/configtxlator <<EOF
+#!/usr/bin/env bash
+MSYS_NO_PATHCONV=1 exec docker run --rm -i \\
+  -v "$(cygpath -w "$SAMPLES_DIR"):$SAMPLES_DIR" -w "\$(pwd)" \\
+  hyperledger/fabric-tools:${FABRIC_VERSION} configtxlator "\$@"
+EOF
+  chmod +x fabric-samples/bin/configtxlator
+fi
+
 # El peer CLI que usa network.sh (checkPrereqs) necesita los binarios y config
 # descargados por install-fabric.sh -f/-c en el paso anterior.
 export PATH="${SCRIPT_DIR}/fabric-samples/bin:${PATH}"

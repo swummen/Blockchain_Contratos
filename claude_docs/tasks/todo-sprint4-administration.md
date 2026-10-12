@@ -5,8 +5,8 @@ Fuente de verdad: `claude_docs/SPEC.md`.
 Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6 y T7
 implementados y probados mecánicamente contra el stack real (falta confirmación en
 navegador); limitaciones de T7 resueltas; `origin/Feat/Front` (Laura) integrado en
-`feat/sprint4-frontend`. T8 implementado y probado mecánicamente. Sigue T9 (frontend:
-Administrador — `UsuariosPage`, CRUD real).**
+`feat/sprint4-frontend`. T8 y T9 implementados y probados mecánicamente. Sigue el checkpoint
+de punta a punta en navegador y T10 (documentación y cierre).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -452,15 +452,37 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### T9: Frontend — Administrador: `UsuariosPage` (CRUD real)
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `listUsers`, `createUser`, `updateUser`,
-  `deactivateUser` (todas autenticadas).
-- [ ] `UsuariosPage` deja de usar `useAppData()` para crear/editar/desactivar — llama a
-  los endpoints reales de T5.
-- [ ] `npm run build`/`npm run lint` pasan.
+- [x] `frontend/src/lib/api.ts` gana `listUsers`, `createUser`, `updateUser`,
+  `deactivateUser` (todas autenticadas). `postAuthJson` pasa a delegar en un
+  `sendAuthJson(method, ...)` nuevo para poder hacer `PUT` sin duplicar el manejo de
+  timeout/errores.
+- [x] `UsuariosPage` deja de usar `useAppData()` para crear/editar/desactivar — llama a
+  los endpoints reales de T5. El formulario muestra el error del backend sin cerrarse
+  (p. ej. `409` por correo duplicado); al crear, un aviso muestra la contraseña temporal
+  para comunicarla; desactivar pide confirmación (no hay reactivación, D8); el
+  Administrador no ve "Desactivar" sobre sí mismo y no puede cambiar su propio rol.
+  Ya ninguna pantalla usa `useAppData()` (queda solo `AppDataContext.tsx`, sin
+  consumidores — limpieza para T10).
+- [x] `npm run build`/`npm run lint` pasan (0 errores).
+- [x] **Extra, backend (`para_sofi.md` §4, mecanismo 2):** cambiar el rol de un usuario
+  con `PUT /users/:id` ahora corta sus sesiones abiertas (`deleteSessionsByUserId`, mismo
+  arreglo que la desactivación) — antes conservaba el rol viejo hasta que el JWT
+  expirara. Solo si el rol cambió (editar nombre/correo no corta nada). Además,
+  `PUT /users/:id` rechaza con `400` que el Administrador se quite su propio rol (mismo
+  criterio que la auto-desactivación), y `POST /users` devuelve `temporaryPassword` para
+  que el frontend no tenga su propia copia de la contraseña fija (D7b). El mecanismo 1
+  (selector de rol en el login) ya lo resolvió `Feat/Front` (login sin rol).
+  Tests: 136/136 (4 nuevos + 1 ampliado).
 
 **Verificación:**
-- [ ] Manual en navegador: crear un usuario nuevo, editarlo, desactivarlo — los tres
-  contra el backend real, reflejados en Mongo.
+- [x] Mecánico contra el stack real (2026‑10‑12): Administrador crea un usuario →
+  `201` con `temporaryPassword`; correo duplicado → `409`; el usuario nuevo entra con la
+  contraseña temporal; con su sesión abierta, el Administrador le cambia el rol a
+  Verificador → esa sesión recibe `401` al instante y un nuevo login ya accede a
+  `GET /events`; desactivarlo → `204`, su sesión abierta `401`, login `401`;
+  Administrador quitándose el rol o desactivándose → `400`, su sesión sigue viva;
+  preflight `PUT /users` permitido. Falta la confirmación de Sofia en navegador.
+- Nota: la prueba dejó en Mongo un usuario `Prueba T9 Editada` (Verificador, Inactivo).
 
 **Dependencias:** T5.
 

@@ -170,6 +170,13 @@ export async function getDocumentEvents(
   return getAuthJson(`/documents/${encodeURIComponent(documentId)}/events`, token)
 }
 
+// RF-39/40/50/51 (HU-016/020): trazabilidad general, solo Verificador y
+// Administrador. Ya ordenada cronológicamente (más antiguo primero) y acotada
+// a los 200 eventos más recientes por el backend.
+export async function getAllEvents(token: string): Promise<DocumentEvent[]> {
+  return getAuthJson("/events", token)
+}
+
 export interface VerifyDocumentResult {
   status: "Verificado" | "Alterado"
   matches: boolean

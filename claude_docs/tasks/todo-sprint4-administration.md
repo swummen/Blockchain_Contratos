@@ -2,9 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10‑08**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6
-implementado (build/lint en verde), falta su prueba manual contra el stack real. Sigue T7
-(frontend: Verificador — `DocumentosPage` + `TrazabilidadGlobalPage`).**
+Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6 y T7
+implementados y probados mecánicamente contra el stack real (falta confirmación en
+navegador). Sigue T8 (frontend: Administrador — panel, documentos, trazabilidad).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -356,10 +356,10 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
   archivos no tocados).
 
 **Verificación:**
-- [ ] Manual en navegador (o mecánico si no hay navegador, mismo criterio de siempre):
-  Empleado ve solo sus documentos y su propia trazabilidad. **Pendiente**: Docker
-  Desktop no estaba corriendo al cerrar la tarea — falta levantar el stack
-  (`bash docker/up.sh`) y probar con `m.lopez` y `c.ruiz`.
+- [x] Mecánico contra el stack real (2026‑10‑12, mismo criterio de siempre): `m.lopez`
+  (U001) recibe solo sus 2 documentos en `GET /documents` y la trazabilidad real de uno
+  de ellos (`registro` + `verificacion`); `c.ruiz` (U002) recibe `[]` y `403` al pedir
+  la trazabilidad del documento de `m.lopez`. Falta la confirmación de Sofia en navegador.
 
 **Dependencias:** T3.
 
@@ -374,13 +374,26 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### T7: Frontend — Verificador: `DocumentosPage` + `TrazabilidadGlobalPage`
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `getAllEvents(token)`.
-- [ ] Las dos pantallas dejan de usar `useAppData()`.
-- [ ] `npm run build`/`npm run lint` pasan.
+- [x] `frontend/src/lib/api.ts` gana `getAllEvents(token)`.
+- [x] Las dos pantallas dejan de usar `useAppData()`. `DocumentosPage` usa
+  `listDocuments` (sin filtro para el Verificador) con el identificador copiable;
+  `TrazabilidadGlobalPage` usa `GET /events` (más reciente primero) y muestra el nombre
+  del archivo en la columna "Documento" (si el listado falla, cae al identificador sin
+  bloquear la tabla). `TraceabilityTable` usa `txId` como clave y acepta
+  `documentNames`, igual que `TraceabilityTimeline` en T6.
+- [x] `npm run build`/`npm run lint` pasan (0 errores).
 
 **Verificación:**
-- [ ] Manual (o mecánico): Verificador ve todos los documentos registrados y toda la
-  trazabilidad general.
+- [x] Mecánico contra el stack real (2026‑10‑12): `p.gomez` (Verificador) recibe los 2
+  documentos de todos los Empleados y los 5 eventos reales del ledger (registros +
+  verificaciones `confirmada`/`comprometida`, con `TxID` reales); `m.lopez` (Empleado)
+  recibe `403` en `GET /events`. Preflight CORS de `/events` con `GET` permitido. Falta
+  la confirmación de Sofia en navegador.
+- Notas (no bloqueantes): el listado real no trae hash, así que "Todos los documentos"
+  ya no muestra la huella (se consulta en "Verificar integridad"); la columna "Usuario"
+  y el "responsable" muestran el `userId` (`U001`, `U003`), no el nombre — el
+  Verificador no tiene acceso a `GET /users`. Resolverlo requiere que el backend
+  devuelva el nombre junto al id (entra con el tema del ID, `para_sofi.md` §3).
 
 **Dependencias:** T3, T4.
 

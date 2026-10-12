@@ -5,6 +5,7 @@ import {
   DocumentCounts,
   DocumentStatus,
   findDocumentById,
+  findPendingDuplicate,
   insertDocument,
   listDocuments as listDocumentsFromMongo,
   updateDocumentStatus,
@@ -98,6 +99,21 @@ export async function registerDocument(
   // RF-14/RNF-11: automática, determinista — el mismo contenido siempre da
   // el mismo hash (HU-006-CA-02).
   const hash = crypto.createHash("sha256").update(file.buffer).digest("hex");
+
+  // Pedido de Sofia: no tiene sentido tener dos registros "Pendiente" del
+  // mismo archivo esperando verificación a la vez — solo se puede volver a
+  // subirlo una vez que el anterior ya se verificó (o salió "Alterado").
+  const duplicate = await findPendingDuplicate(userId, hash);
+  if (duplicate) {
+    return {
+      ok: false,
+      status: 409,
+      message:
+        `Ya tienes este documento registrado y pendiente de verificación (ID: ${duplicate._id}). ` +
+        "Solo puedes volver a subirlo una vez que se verifique.",
+    };
+  }
+
   const documentId = crypto.randomUUID();
 
   try {

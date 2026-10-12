@@ -85,7 +85,7 @@ export function UserMenu() {
             <AlertDialogAction
               onClick={async () => {
                 await logout()
-                navigate("/")
+                navigate("/sesion-cerrada")
               }}
             >
               Cerrar sesión

@@ -1,4 +1,4 @@
-import type { User } from "@/types/domain"
+import type { TraceAction, TraceResult, User } from "@/types/domain"
 
 // Único punto de contacto con el backend (RNF-20): el frontend nunca le
 // habla a Fabric ni a Mongo directamente, siempre a través de esta URL.
@@ -149,6 +149,25 @@ export interface DocumentSummary {
 // pide recién con getDocument().
 export async function listDocuments(token: string): Promise<DocumentSummary[]> {
   return getAuthJson("/documents", token)
+}
+
+export interface DocumentEvent {
+  documentId: string
+  action: TraceAction
+  user: string
+  txId: string
+  timestamp: string
+  result?: TraceResult
+}
+
+// RF-21/22 (HU-009): trazabilidad de un documento, ya ordenada
+// cronológicamente por el backend. Un Empleado solo puede pedir la de sus
+// propios documentos (403 si no).
+export async function getDocumentEvents(
+  token: string,
+  documentId: string
+): Promise<DocumentEvent[]> {
+  return getAuthJson(`/documents/${encodeURIComponent(documentId)}/events`, token)
 }
 
 export interface VerifyDocumentResult {

@@ -3,11 +3,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileDropzone } from "@/components/shared/FileDropzone"
 import { HashDisplay } from "@/components/shared/HashDisplay"
+import { CopyButton } from "@/components/shared/CopyButton"
 import { useSession } from "@/context/SessionContext"
 import { uploadDocument } from "@/lib/api"
 import { computeSha256Hex } from "@/lib/sha256"
 import { formatBytes, formatDateTime } from "@/lib/format"
-import { CheckCircle2, Copy } from "lucide-react"
+import { CheckCircle2 } from "lucide-react"
 import type { ContractDocument } from "@/types/domain"
 
 export default function CargarDocumentoPage() {
@@ -17,19 +18,6 @@ export default function CargarDocumentoPage() {
   const [registered, setRegistered] = React.useState<ContractDocument | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
-  const [copied, setCopied] = React.useState(false)
-
-  async function handleCopyId() {
-    if (!registered) return
-    try {
-      await navigator.clipboard.writeText(registered.documentId)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // Sin permiso de clipboard o navegador sin la API — el id ya está
-      // visible y seleccionable a mano, así que no hace falta un fallback.
-    }
-  }
 
   async function handleRegister() {
     if (!file || !user || !token) return
@@ -100,10 +88,7 @@ export default function CargarDocumentoPage() {
                   <code className="block flex-1 truncate rounded-md bg-muted px-2.5 py-1.5 font-mono text-xs text-foreground/80">
                     {registered.documentId}
                   </code>
-                  <Button type="button" variant="outline" size="sm" onClick={handleCopyId}>
-                    <Copy className="size-3.5" />
-                    {copied ? "Copiado" : "Copiar"}
-                  </Button>
+                  <CopyButton value={registered.documentId} />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Compartí este identificador con el Verificador, o va a poder elegirlo

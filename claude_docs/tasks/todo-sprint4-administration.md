@@ -2,8 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10‑08**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). Listo
-para commit. Sigue T6 (frontend: Empleado — `MisDocumentosPage` + `MiTrazabilidadPage`).**
+Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6
+implementado (build/lint en verde), falta su prueba manual contra el stack real. Sigue T7
+(frontend: Verificador — `DocumentosPage` + `TrazabilidadGlobalPage`).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -335,15 +336,30 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### T6: Frontend — Empleado: `MisDocumentosPage` + `MiTrazabilidadPage`
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana las funciones que falten (reusar `listDocuments`
+- [x] `frontend/src/lib/api.ts` gana las funciones que falten (reusar `listDocuments`
   existente si el filtro por rol ya lo cubre del lado del backend; agregar
-  `getDocumentEvents(token, documentId)`).
-- [ ] `MisDocumentosPage` y `MiTrazabilidadPage` dejan de usar `useAppData()` (el mock).
-- [ ] `npm run build`/`npm run lint` pasan.
+  `getDocumentEvents(token, documentId)`). Se reusó `listDocuments` (el backend ya acota
+  a los del Empleado, T3) y se agregó `getDocumentEvents` + el tipo `DocumentEvent`.
+- [x] `MisDocumentosPage` y `MiTrazabilidadPage` dejan de usar `useAppData()` (el mock).
+  `MiTrazabilidadPage` arma la trazabilidad pidiendo `GET /documents/:id/events` por cada
+  documento propio (el Empleado no tiene acceso a `GET /events`), ordenada de más reciente
+  a más antiguo, mostrando el nombre del archivo en vez del UUID.
+- [x] **Extra (problema del ID, `para_sofi.md` §3):** cada documento de "Mis documentos"
+  muestra su identificador completo con botón "Copiar" — el Empleado ya puede recuperar
+  su ID en cualquier momento, no solo en la pantalla de éxito de la carga. El botón se
+  extrajo a `components/shared/CopyButton.tsx` y `CargarDocumentoPage` lo reusa.
+- [x] `DocumentListItem` acepta documentos sin `hash`/`sizeLabel` (el listado real no
+  los trae); `TraceabilityTimeline` usa `txId` como clave (los eventos reales no tienen
+  `eventId`) y acepta un mapa opcional `documentNames`. Las pantallas que siguen en mock
+  (T7/T8) no cambian de comportamiento.
+- [x] `npm run build`/`npm run lint` pasan (0 errores; 4 warnings ya existentes en
+  archivos no tocados).
 
 **Verificación:**
 - [ ] Manual en navegador (o mecánico si no hay navegador, mismo criterio de siempre):
-  Empleado ve solo sus documentos y su propia trazabilidad.
+  Empleado ve solo sus documentos y su propia trazabilidad. **Pendiente**: Docker
+  Desktop no estaba corriendo al cerrar la tarea — falta levantar el stack
+  (`bash docker/up.sh`) y probar con `m.lopez` y `c.ruiz`.
 
 **Dependencias:** T3.
 

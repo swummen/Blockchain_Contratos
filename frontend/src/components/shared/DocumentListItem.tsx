@@ -1,20 +1,37 @@
 import { FileText } from "lucide-react"
 import { StatusBadge } from "./StatusBadge"
 import { HashDisplay } from "./HashDisplay"
+import { CopyButton } from "./CopyButton"
 import { formatDateTime } from "@/lib/format"
 import type { ContractDocument } from "@/types/domain"
 
+// `GET /documents` (listado real) no trae ni el hash ni el tamaño — solo
+// las pantallas que todavía leen el mock los tienen. Sin hash, la huella no
+// se muestra (se consulta puntual con getDocument cuando hace falta).
+type ListedDocument = Omit<ContractDocument, "hash" | "sizeLabel"> &
+  Partial<Pick<ContractDocument, "hash" | "sizeLabel">>
+
 interface DocumentListItemProps {
-  document: ContractDocument
+  document: ListedDocument
   canViewFullHash: boolean
   showResponsible?: boolean
+  /** Muestra el identificador completo con un botón para copiarlo. */
+  copyableId?: boolean
 }
 
 export function DocumentListItem({
   document,
   canViewFullHash,
   showResponsible = false,
+  copyableId = false,
 }: DocumentListItemProps) {
+  const details = [
+    copyableId ? null : document.documentId,
+    showResponsible ? document.responsibleUser : null,
+    document.sizeLabel,
+    formatDateTime(document.registeredAt),
+  ].filter(Boolean)
+
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
@@ -24,20 +41,31 @@ export function DocumentListItem({
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{document.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {document.documentId}
-              {showResponsible ? ` · ${document.responsibleUser}` : ""} ·{" "}
-              {document.sizeLabel} · {formatDateTime(document.registeredAt)}
-            </p>
+            <p className="text-xs text-muted-foreground">{details.join(" · ")}</p>
           </div>
         </div>
         <StatusBadge status={document.status} />
       </div>
-      <HashDisplay
-        hash={document.hash}
-        canViewFull={canViewFullHash}
-        className="mt-3"
-      />
+      {copyableId && (
+        <div className="mt-3 space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">
+            Identificador del documento
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="block flex-1 truncate rounded-md bg-muted px-2.5 py-1.5 font-mono text-xs text-foreground/80">
+              {document.documentId}
+            </code>
+            <CopyButton value={document.documentId} />
+          </div>
+        </div>
+      )}
+      {document.hash && (
+        <HashDisplay
+          hash={document.hash}
+          canViewFull={canViewFullHash}
+          className="mt-3"
+        />
+      )}
     </div>
   )
 }

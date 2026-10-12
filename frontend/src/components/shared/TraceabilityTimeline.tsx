@@ -6,7 +6,17 @@ const ACTION_LABEL: Record<TraceEvent["action"], string> = {
   verificacion: "Verificación de integridad",
 }
 
-export function TraceabilityTimeline({ events }: { events: TraceEvent[] }) {
+// Los eventos reales del ledger no traen eventId (el mock sí) — el txId ya
+// es único por evento (una transacción escribe un solo evento).
+type TimelineEvent = Omit<TraceEvent, "eventId">
+
+interface TraceabilityTimelineProps {
+  events: TimelineEvent[]
+  /** documentId → nombre legible; si falta, se muestra el identificador. */
+  documentNames?: Record<string, string>
+}
+
+export function TraceabilityTimeline({ events, documentNames }: TraceabilityTimelineProps) {
   if (events.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -18,10 +28,10 @@ export function TraceabilityTimeline({ events }: { events: TraceEvent[] }) {
   return (
     <ol className="space-y-5 border-l border-border pl-5">
       {events.map((event) => (
-        <li key={event.eventId} className="relative">
+        <li key={event.txId} className="relative">
           <span className="absolute top-1.5 -left-[1.45rem] size-2.5 rounded-full border-2 border-background bg-primary" />
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-medium">
                 {ACTION_LABEL[event.action]}
                 {event.result === "comprometida" && (
@@ -30,12 +40,12 @@ export function TraceabilityTimeline({ events }: { events: TraceEvent[] }) {
                   </span>
                 )}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="truncate text-xs text-muted-foreground">
                 {formatDateTime(event.timestamp)} · TX: {event.txId}
               </p>
             </div>
-            <span className="shrink-0 text-xs font-medium text-muted-foreground">
-              {event.documentId}
+            <span className="max-w-[45%] shrink-0 truncate text-xs font-medium text-muted-foreground">
+              {documentNames?.[event.documentId] ?? event.documentId}
             </span>
           </div>
         </li>

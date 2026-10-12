@@ -2,9 +2,8 @@
 
 Plan: `claude_docs/tasks/plan-id-seleccion.md` (acordado 2026‑10‑12).
 Fuente de verdad: `claude_docs/SPEC.md` (RF‑24, nota de cambio Sprint 4).
-Estado: **RF‑24 actualizado en SPEC. T1 y T2 completos y probados en navegador (dos
-personas con archivo homónimo, distinguidas y verificadas correctamente). Sigue T3
-(cierre).**
+Estado: **COMPLETO. T1, T2 y T3 cerrados. Falta solo el visto bueno de Sofia en
+navegador y el commit (mensaje redactado en T3).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -78,11 +77,29 @@ vía secundaria. Sin cambios de backend (D4).
 ## T3: Documentación y cierre
 
 **Criterios de aceptación:**
-- [ ] `claude_docs/SPEC.md`: RF‑24 con la nota de cambio (ya hecho) — confirmar que quedó
-  coherente con lo implementado.
-- [ ] Nota breve en el código/`para_sofi.md` sobre cómo quedó resuelta la selección.
-- [ ] Mensaje de commit redactado (sin commit automático).
+- [x] `claude_docs/SPEC.md`: RF‑24 con la nota de cambio (Sprint 4, selección en dos
+  pasos) — coherente con lo implementado.
+- [x] `para_sofi.md`: bloque "✅ Resuelto (2026-10-12)" al final de la sección 3 con cómo
+  quedó la selección; sección 6 (pendientes) y fecha de última actualización al día.
+- [x] Mensaje de commit redactado (sin commit automático) — ver abajo.
 
 **Dependencias:** T2.
 
 **Alcance:** S.
+
+### Mensaje de commit redactado
+
+```
+Selección de documento en dos pasos (persona → contrato) — RF-24
+
+- VerificarIntegridadPage: elegir primero la persona responsable y luego
+  su contrato, en vez de una lista plana de nombres de archivo. Resuelve
+  la ambigüedad entre contratos homónimos de personas distintas.
+- El panel de evidencia muestra al responsable del documento elegido.
+- El UUID queda interno; ingreso manual del identificador como vía
+  secundaria colapsada.
+- SPEC.md: nota de cambio en RF-24. para_sofi.md: sección 3 marcada como
+  resuelta. Plan y todo en claude_docs/tasks/{plan,todo}-id-seleccion.md.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+```

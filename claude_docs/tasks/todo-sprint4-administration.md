@@ -5,8 +5,8 @@ Fuente de verdad: `claude_docs/SPEC.md`.
 Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6 y T7
 implementados y probados mecánicamente contra el stack real (falta confirmación en
 navegador); limitaciones de T7 resueltas; `origin/Feat/Front` (Laura) integrado en
-`feat/sprint4-frontend`. Sigue T8 (frontend: Administrador — panel, documentos,
-trazabilidad).**
+`feat/sprint4-frontend`. T8 implementado y probado mecánicamente. Sigue T9 (frontend:
+Administrador — `UsuariosPage`, CRUD real).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -418,15 +418,25 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### T8: Frontend — Administrador: `DashboardPage` + `DocumentosPage` + `TrazabilidadPage`
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `getDocumentsSummary(token)`.
-- [ ] Las tres pantallas dejan de usar `useAppData()` para estos datos (reusan
-  `listDocuments`/`getAllEvents` ya agregados en T7 donde aplique).
-- [ ] `npm run build`/`npm run lint` pasan.
+- [x] `frontend/src/lib/api.ts` gana `getDocumentsSummary(token)` (+ tipo `DocumentsSummary`).
+- [x] Las tres pantallas dejan de usar `useAppData()` para estos datos (reusan
+  `listDocuments`/`getAllEvents` ya agregados en T7 donde aplique). `DashboardPage`:
+  totales de `GET /documents/summary` + los 6 eventos más recientes de `GET /events`
+  (cargas independientes: si el ledger no responde, los totales se muestran igual);
+  `DocumentosPage`: mismo listado que el Verificador, con ID copiable y huella completa;
+  `TrazabilidadPage`: misma tabla y mismo detalle que el Verificador (HU‑020‑CA‑02).
+  `KpiCard` acepta `"—"` mientras carga.
+- [x] `npm run build`/`npm run lint` pasan (0 errores).
 
 **Verificación:**
-- [ ] Manual (o mecánico): el panel muestra totales reales que coinciden con Mongo; los
-  listados de documentos/trazabilidad muestran lo mismo que ve el Verificador (mismo
-  nivel de detalle, HU‑020‑CA‑02).
+- [x] Mecánico contra el stack real (2026‑10‑12): `GET /documents/summary` como
+  `admin@empresa.com` → `{total:2, pendiente:0, verificado:1, alterado:1}`, idéntico a un
+  `aggregate` directo en Mongo; `GET /events` → 5 eventos con nombres; `GET /documents` →
+  2 documentos con hash completo (64 caracteres) y responsable por nombre; Verificador en
+  `GET /documents/summary` → `403`. Falta la confirmación de Sofia en navegador.
+- Nota (ya anotada en el review de T4, no bloqueante): el total del panel cuenta todos
+  los documentos, mientras que el listado se corta en 100 — con más de 100 documentos los
+  dos números dejarían de coincidir a simple vista.
 
 **Dependencias:** T3, T4.
 

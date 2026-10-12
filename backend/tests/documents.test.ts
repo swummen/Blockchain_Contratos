@@ -40,6 +40,11 @@ jest.mock("../src/repositories/documentRepository", () => ({
   countDocumentsByStatus: jest.fn(),
 }));
 
+jest.mock("../src/repositories/userRepository", () => ({
+  ...jest.requireActual("../src/repositories/userRepository"),
+  findUserNamesByIds: jest.fn(),
+}));
+
 import { queryChaincode, submitChaincodeTransaction } from "../src/fabric/gateway";
 import {
   countDocumentsByStatus,
@@ -50,6 +55,8 @@ import {
   updateDocumentStatus,
 } from "../src/repositories/documentRepository";
 import { findSessionByJti } from "../src/repositories/sessionRepository";
+import { findUserNamesByIds } from "../src/repositories/userRepository";
+import { maskHash } from "../src/services/documentService";
 import { createApp } from "../src/server";
 
 const activeSession = {
@@ -75,6 +82,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   (findSessionByJti as jest.Mock).mockResolvedValue(activeSession);
   (findPendingDuplicate as jest.Mock).mockResolvedValue(null);
+  (findUserNamesByIds as jest.Mock).mockResolvedValue(new Map([["U001", "María López"], ["U003", "Pedro Gómez"]]));
 });
 
 describe("POST /documents", () => {
@@ -450,25 +458,27 @@ describe("POST /documents/:id/verifications", () => {
 });
 
 describe("GET /documents", () => {
-  it("200 con el resumen de los documentos (sin el hash)", async () => {
-    (listDocuments as jest.Mock).mockResolvedValue([
-      {
-        _id: "doc2",
-        name: "b.pdf",
-        responsibleUser: "U001",
-        registeredAt: new Date("2026-10-02T00:00:00.000Z"),
-        hash: "deadbeef",
-        status: "Pendiente",
-      },
-      {
-        _id: "doc1",
-        name: "a.pdf",
-        responsibleUser: "U001",
-        registeredAt: new Date("2026-10-01T00:00:00.000Z"),
-        hash: "cafef00d",
-        status: "Verificado",
-      },
-    ]);
+  const twoDocs = [
+    {
+      _id: "doc2",
+      name: "b.pdf",
+      responsibleUser: "U001",
+      registeredAt: new Date("2026-10-02T00:00:00.000Z"),
+      hash: FULL_HASH,
+      status: "Pendiente",
+    },
+    {
+      _id: "doc1",
+      name: "a.pdf",
+      responsibleUser: "U009",
+      registeredAt: new Date("2026-10-01T00:00:00.000Z"),
+      hash: FULL_HASH,
+      status: "Verificado",
+    },
+  ];
+
+  it("Verificador: 200 con nombre del responsable y hash completo", async () => {
+    (listDocuments as jest.Mock).mockResolvedValue(twoDocs);
 
     const res = await request(createApp())
       .get("/documents")
@@ -480,20 +490,37 @@ describe("GET /documents", () => {
         documentId: "doc2",
         name: "b.pdf",
         responsibleUser: "U001",
+        responsibleName: "María López",
         registeredAt: "2026-10-02T00:00:00.000Z",
+        hash: FULL_HASH,
         status: "Pendiente",
       },
       {
         documentId: "doc1",
         name: "a.pdf",
-        responsibleUser: "U001",
+        responsibleUser: "U009",
+        // U009 no es un usuario registrado: cae al userId, no falla.
+        responsibleName: "U009",
         registeredAt: "2026-10-01T00:00:00.000Z",
+        hash: FULL_HASH,
         status: "Verificado",
       },
     ]);
-    // El hash nunca viaja en el listado — ni completo ni enmascarado, no
-    // hace falta para elegir un documento (se pide recién al consultarlo).
-    expect(res.body[0].hash).toBeUndefined();
+    // Una sola consulta de nombres para todo el listado, no una por documento.
+    expect(findUserNamesByIds).toHaveBeenCalledTimes(1);
+    expect(findUserNamesByIds).toHaveBeenCalledWith(["U001", "U009"]);
+  });
+
+  it("Empleado: el hash del listado viaja enmascarado (RF-27/RNF-08)", async () => {
+    (listDocuments as jest.Mock).mockResolvedValue([twoDocs[0]]);
+
+    const res = await request(createApp())
+      .get("/documents")
+      .set("Authorization", `Bearer ${token("Empleado")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body[0].hash).not.toBe(FULL_HASH);
+    expect(res.body[0].hash).toBe(maskHash(FULL_HASH));
   });
 
   it("Administrador: 200 (mismo acceso que Verificador)", async () => {
@@ -571,11 +598,19 @@ describe("GET /documents/:id/events", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
-      { documentId: "doc1", action: "registro", user: "U001", txId: "tx1", timestamp: "2026-10-01T00:00:00Z" },
+      {
+        documentId: "doc1",
+        action: "registro",
+        user: "U001",
+        userName: "María López",
+        txId: "tx1",
+        timestamp: "2026-10-01T00:00:00Z",
+      },
       {
         documentId: "doc1",
         action: "verificacion",
         user: "U003",
+        userName: "Pedro Gómez",
         txId: "tx2",
         timestamp: "2026-10-02T00:00:00Z",
         result: "confirmada",

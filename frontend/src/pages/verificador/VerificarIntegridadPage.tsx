@@ -176,7 +176,7 @@ export default function VerificarIntegridadPage() {
                               "contrato.pdf" de empleados distintos) —
                               responsable y fecha son lo que ya trae
                               DocumentSummary sin pedir nada nuevo al backend. */}
-                          {doc.name} — {doc.responsibleUser} ·{" "}
+                          {doc.name} — {doc.responsibleName} ·{" "}
                           {formatDateTime(doc.registeredAt)} · {doc.status}
                         </SelectItem>
                       ))}

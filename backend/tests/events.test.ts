@@ -38,8 +38,14 @@ jest.mock("../src/repositories/documentRepository", () => ({
   countDocumentsByStatus: jest.fn(),
 }));
 
+jest.mock("../src/repositories/userRepository", () => ({
+  ...jest.requireActual("../src/repositories/userRepository"),
+  findUserNamesByIds: jest.fn(),
+}));
+
 import { queryChaincode } from "../src/fabric/gateway";
 import { findSessionByJti } from "../src/repositories/sessionRepository";
+import { findUserNamesByIds } from "../src/repositories/userRepository";
 import { createApp } from "../src/server";
 
 const activeSession = {
@@ -61,6 +67,7 @@ function token(role = "Verificador") {
 beforeEach(() => {
   jest.clearAllMocks();
   (findSessionByJti as jest.Mock).mockResolvedValue(activeSession);
+  (findUserNamesByIds as jest.Mock).mockResolvedValue(new Map([["U001", "María López"]]));
 });
 
 describe("GET /events", () => {
@@ -76,10 +83,23 @@ describe("GET /events", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
-      { documentId: "doc1", action: "registro", user: "U001", txId: "tx1", timestamp: "2026-10-01T00:00:00Z" },
-      { documentId: "doc2", action: "registro", user: "U001", txId: "tx2", timestamp: "2026-10-02T00:00:00Z" },
+      { documentId: "doc1", action: "registro", user: "U001", userName: "María López", txId: "tx1", timestamp: "2026-10-01T00:00:00Z" },
+      { documentId: "doc2", action: "registro", user: "U001", userName: "María López", txId: "tx2", timestamp: "2026-10-02T00:00:00Z" },
     ]);
     expect(queryChaincode).toHaveBeenCalledWith("GetAllEvents");
+  });
+
+  it("usuario del evento que no existe en Mongo (p. ej. el smoke test): userName cae al userId", async () => {
+    (queryChaincode as jest.Mock).mockResolvedValue(
+      JSON.stringify([
+        { Action: "registro", DocumentID: "doc9", Timestamp: "2026-10-01T00:00:00Z", TxID: "tx9", User: "smoke-test-user" },
+      ]),
+    );
+
+    const res = await request(createApp()).get("/events").set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body[0].userName).toBe("smoke-test-user");
   });
 
   it("Administrador: 200, mismo nivel de detalle que el Verificador (HU-020-CA-02)", async () => {

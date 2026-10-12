@@ -3,6 +3,9 @@ import { useSession } from "@/context/SessionContext"
 import { DocumentListItem } from "@/components/shared/DocumentListItem"
 import { listDocuments, type DocumentSummary } from "@/lib/api"
 
+// RF-18 (Sprint 4 T6): el empleado puede volver a ver y copiar el id de
+// cualquier documento suyo en cualquier momento — antes solo lo veía una vez,
+// en la pantalla de éxito de la carga (para_sofi.md §3, "el problema del ID").
 export default function MisDocumentosPage() {
   const { token } = useSession()
 
@@ -11,13 +14,23 @@ export default function MisDocumentosPage() {
 
   React.useEffect(() => {
     if (!token) return
+    let cancelled = false
+
     // RF-18/19 (HU-008): el backend ya acota GET /documents a los del
     // Empleado autenticado — no se filtra nada acá.
     listDocuments(token)
-      .then(setDocuments)
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "No se pudieron cargar tus documentos.")
+      .then((docs) => {
+        if (!cancelled) setDocuments(docs)
       })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "No se pudieron cargar tus documentos.")
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [token])
 
   return (

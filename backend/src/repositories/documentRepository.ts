@@ -26,6 +26,19 @@ export async function findDocumentById(documentId: string): Promise<DocumentDoc 
   return documentsCollection().findOne({ _id: documentId });
 }
 
+// Pedido de Sofia (ver para_sofi.md): evita que el mismo empleado registre
+// dos veces el mismo archivo mientras el primero sigue "Pendiente" — no hay
+// ninguna razón de negocio para tener dos registros idénticos esperando
+// verificación a la vez. Se filtra por responsibleUser (no es global): dos
+// empleados distintos sí pueden tener, cada uno, un documento igual de
+// contenido pendiente al mismo tiempo.
+export async function findPendingDuplicate(
+  responsibleUser: string,
+  hash: string,
+): Promise<DocumentDoc | null> {
+  return documentsCollection().findOne({ responsibleUser, hash, status: "Pendiente" });
+}
+
 // Único lugar que cambia `status` después de la inserción inicial (RF-34:
 // nunca manual, solo tras comparar huellas en verifyDocument).
 export async function updateDocumentStatus(documentId: string, status: DocumentStatus): Promise<void> {

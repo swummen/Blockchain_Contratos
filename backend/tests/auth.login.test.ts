@@ -23,7 +23,13 @@ jest.mock("../src/repositories/otpRepository", () => ({
 
 jest.mock("../src/repositories/userRepository", () => {
   const actual = jest.requireActual("../src/repositories/userRepository");
-  return { ...actual, findUserByEmail: jest.fn() };
+  return {
+    ...actual,
+    findUserByEmail: jest.fn(),
+    registerFailedLogin: jest.fn(),
+    resetFailedLogin: jest.fn(),
+    lockUser: jest.fn(),
+  };
 });
 
 jest.mock("../src/services/emailService", () => ({
@@ -31,7 +37,12 @@ jest.mock("../src/services/emailService", () => ({
 }));
 
 import { upsertOtp } from "../src/repositories/otpRepository";
-import { findUserByEmail } from "../src/repositories/userRepository";
+import {
+  findUserByEmail,
+  lockUser,
+  registerFailedLogin,
+  resetFailedLogin,
+} from "../src/repositories/userRepository";
 import { sendOtpEmail } from "../src/services/emailService";
 
 const PASSWORD = "Contratos123!";
@@ -57,6 +68,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (registerFailedLogin as jest.Mock).mockResolvedValue(1);
 });
 
 describe("POST /auth/login", () => {
@@ -73,6 +85,7 @@ describe("POST /auth/login", () => {
       VALID_BODY.email,
       expect.stringMatching(/^\d{6}$/),
     );
+    expect(resetFailedLogin).toHaveBeenCalledWith("U001");
   });
 
   it("usuario inexistente: 401 genérico, no revela cuál dato falló", async () => {
@@ -83,6 +96,9 @@ describe("POST /auth/login", () => {
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ message: "Credenciales inválidas." });
     expect(upsertOtp).not.toHaveBeenCalled();
+    // RF-54: un correo que no existe no tiene cuenta a la que llevarle la
+    // cuenta de intentos.
+    expect(registerFailedLogin).not.toHaveBeenCalled();
   });
 
   it("contraseña incorrecta: el mismo 401 genérico que un usuario inexistente", async () => {
@@ -94,6 +110,46 @@ describe("POST /auth/login", () => {
 
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ message: "Credenciales inválidas." });
+    expect(registerFailedLogin).toHaveBeenCalledWith("U001");
+  });
+
+  it("5to intento fallido: bloquea la cuenta 15 minutos (RF-54)", async () => {
+    (findUserByEmail as jest.Mock).mockResolvedValue({ ...SEED_USER, passwordHash });
+    (registerFailedLogin as jest.Mock).mockResolvedValue(5);
+
+    const res = await request(createApp())
+      .post("/auth/login")
+      .send({ ...VALID_BODY, password: "otra-cosa" });
+
+    expect(res.status).toBe(401);
+    expect(lockUser).toHaveBeenCalledWith("U001", expect.any(Date));
+  });
+
+  it("cuenta bloqueada: 423, ni siquiera compara la contraseña ni cuenta el intento", async () => {
+    (findUserByEmail as jest.Mock).mockResolvedValue({
+      ...SEED_USER,
+      passwordHash,
+      lockedUntil: new Date(Date.now() + 10 * 60_000),
+    });
+
+    const res = await request(createApp()).post("/auth/login").send(VALID_BODY);
+
+    expect(res.status).toBe(423);
+    expect(res.body.message).toMatch(/bloqueada/i);
+    expect(registerFailedLogin).not.toHaveBeenCalled();
+    expect(upsertOtp).not.toHaveBeenCalled();
+  });
+
+  it("bloqueo ya vencido: se procesa el login normalmente", async () => {
+    (findUserByEmail as jest.Mock).mockResolvedValue({
+      ...SEED_USER,
+      passwordHash,
+      lockedUntil: new Date(Date.now() - 1000),
+    });
+
+    const res = await request(createApp()).post("/auth/login").send(VALID_BODY);
+
+    expect(res.status).toBe(200);
   });
 
   it("usuario desactivado: el mismo 401 genérico, no se envía OTP", async () => {

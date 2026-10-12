@@ -27,6 +27,7 @@ jest.mock("../src/repositories/sessionRepository", () => ({
   createSession: jest.fn(),
   findSessionByJti: jest.fn(),
   deleteSession: jest.fn(),
+  touchSession: jest.fn(),
 }));
 
 jest.mock("../src/repositories/userRepository", () => {
@@ -53,6 +54,7 @@ const activeSession = {
   userId: "U001",
   role: "Empleado" as const,
   expiresAt: new Date(Date.now() + 60_000),
+  lastSeenAt: new Date(),
 };
 
 function seedUser() {

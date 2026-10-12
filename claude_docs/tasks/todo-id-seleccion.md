@@ -2,8 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-id-seleccion.md` (acordado 2026‑10‑12).
 Fuente de verdad: `claude_docs/SPEC.md` (RF‑24, nota de cambio Sprint 4).
-Estado: **RF‑24 actualizado en SPEC. T1 completo y probado en navegador. Sigue T2
-(prueba con dos personas homónimas) → T3 (cierre).**
+Estado: **RF‑24 actualizado en SPEC. T1 y T2 completos y probados en navegador (dos
+personas con archivo homónimo, distinguidas y verificadas correctamente). Sigue T3
+(cierre).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -49,15 +50,24 @@ vía secundaria. Sin cambios de backend (D4).
 ## T2: Verificación manual del flujo nuevo contra el stack real
 
 **Criterios de aceptación:**
-- [ ] Subir dos contratos distintos con el mismo nombre de archivo desde dos empleados
+- [x] Subir dos contratos distintos con el mismo nombre de archivo desde dos empleados
   distintos; confirmar que el Verificador los distingue (paso 1 por persona) y elige el
-  correcto.
-- [ ] Verificar con el archivo correcto → "Integridad confirmada"; con uno alterado →
-  "Integridad comprometida".
-- [ ] Ingreso manual de un `documentId` inexistente → "El documento no está registrado".
+  correcto. Se subió a `c.ruiz` (Carlos Ruiz, U002) un `CONTRATO FALSO.pdf` — mismo
+  nombre que los de María López. El paso 1 lista ambas personas; cada una muestra su
+  propio `CONTRATO FALSO.pdf` por separado.
+- [x] Verificar con el archivo correcto → "Integridad confirmada"; con uno alterado →
+  "Integridad comprometida". El documento de Carlos comparado con **su** archivo →
+  confirmada (prueba que apuntó al documento de Carlos, no al homónimo de María: si
+  hubiera apuntado al de María, el hash no coincidiría); comparado con un archivo
+  distinto → comprometida. El panel de evidencia muestra "Carlos Ruiz" como responsable.
+- [x] Ingreso manual de un `documentId` inexistente → "El documento no está registrado".
 
 **Verificación:**
-- [ ] E2E (Playwright) o manual en navegador + confirmación de Sofia.
+- [x] E2E (Playwright, 2026‑10‑12): todo lo anterior en verde, 0 problemas. Falta la
+  confirmación final de Sofia en navegador.
+
+**Nota:** la prueba dejó en Mongo/ledger un documento `CONTRATO FALSO.pdf` de `c.ruiz`
+(U002), Pendiente. Se limpia con `docker/down.sh` (reinicia el entorno).
 
 **Dependencias:** T1.
 

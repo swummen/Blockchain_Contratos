@@ -5,11 +5,11 @@ import { CopyButton } from "./CopyButton"
 import { formatDateTime } from "@/lib/format"
 import type { ContractDocument } from "@/types/domain"
 
-// `GET /documents` (listado real) no trae ni el hash ni el tamaño — solo
-// las pantallas que todavía leen el mock los tienen. Sin hash, la huella no
-// se muestra (se consulta puntual con getDocument cuando hace falta).
+// Acepta tanto el listado real (`GET /documents`: trae hash y nombre del
+// responsable, no el tamaño) como el mock que todavía usan algunas pantallas
+// (trae tamaño, no `responsibleName`). Lo que falte simplemente no se muestra.
 type ListedDocument = Omit<ContractDocument, "hash" | "sizeLabel"> &
-  Partial<Pick<ContractDocument, "hash" | "sizeLabel">>
+  Partial<Pick<ContractDocument, "hash" | "sizeLabel">> & { responsibleName?: string }
 
 interface DocumentListItemProps {
   document: ListedDocument
@@ -27,7 +27,7 @@ export function DocumentListItem({
 }: DocumentListItemProps) {
   const details = [
     copyableId ? null : document.documentId,
-    showResponsible ? document.responsibleUser : null,
+    showResponsible ? (document.responsibleName ?? document.responsibleUser) : null,
     document.sizeLabel,
     formatDateTime(document.registeredAt),
   ].filter(Boolean)

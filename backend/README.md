@@ -223,7 +223,7 @@ de negocio).
 
 | Ruta | Auth | Body | Respuesta 200 | Errores |
 |---|---|---|---|---|
-| `GET /documents` | sí, `Verificador`/`Administrador` (enumera documentos de **todos** los usuarios — un Empleado no lo necesita, RF‑18 en Sprint 4 le va a dar su propio listado acotado a lo suyo) | — | `[{documentId, name, responsibleUser, registeredAt, status}, ...]` (**nunca** el hash; últimos 100, sin paginación — D8, ver abajo) | `401` sin sesión válida · `403` rol sin permiso |
+| `GET /documents` | sí, `Verificador`/`Administrador` (enumera documentos de **todos** los usuarios — un Empleado no lo necesita, RF‑18 en Sprint 4 le va a dar su propio listado acotado a lo suyo) | — | `[{documentId, name, responsibleUser, responsibleName, registeredAt, hash, status}, ...]` (últimos 100, sin paginación — D8, ver abajo; `hash` completo para `Verificador`/`Administrador`, enmascarado para `Empleado` — RF‑27; `responsibleName` cae al userId si el usuario no existe. Desde Sprint 4 también lo usa el `Empleado`, acotado a sus documentos) | `401` sin sesión válida · `403` rol sin permiso |
 | `GET /documents/:id` | sí, cualquier rol (lo que varía por rol es el enmascarado del hash, no el acceso — RF‑27/RNF‑08) | — | `{documentId, name?, responsibleUser?, registeredAt?, hash, status}` (`hash` completo solo para `Verificador`/`Administrador`, enmascarado el resto vía `maskHash` — mismo algoritmo que `frontend/src/lib/mask-hash.ts`, copiado, no importado: son paquetes npm separados) | `401` sin sesión · `404` no existe (HU‑010‑CA‑02) · `502` falla el chaincode |
 | `POST /documents/:id/verifications` | sí, solo `Verificador` (RF‑23) | `multipart/form-data`, campo `document` (el PDF a comparar) | `{status: "Verificado"\|"Alterado", matches, registeredHash, computedHash}` (hash siempre completo — quien pregunta ya es Verificador) | `400` archivo inválido · `401`/`403` · `404` el `documentId` de la URL no existe · `502` falla `RecordVerification` (nunca toca Mongo) · `500` el ledger anotó la verificación pero Mongo falló después |
 
@@ -255,8 +255,10 @@ documento sin que alguien le pasara el `documentId` (un UUID de 36 caracteres) a
 `GET /documents` (arriba) se adelantó desde el alcance completo de RF‑37…40 (Sprint 4,
 con filtros/búsqueda/paginación reales) para resolver justo eso — lee directo de MongoDB
 (`listDocuments`, nuevo en `documentRepository.ts`), nunca del chaincode (que sigue sin
-ninguna función de listado, D6 de Sprint 2 intacto), y nunca incluye el hash (no hace
-falta para elegir cuál consultar). `VerificarIntegridadPage` lo usa para poblar un
+ninguna función de listado, D6 de Sprint 2 intacto). (Nota de cambio, Sprint 4: desde
+el arreglo de las limitaciones de T7 incluye el hash — enmascarado para el Empleado — y
+el nombre del responsable; el hash sale de la copia de Mongo, que nunca cambia después del
+registro porque `RecordVerification` solo toca `Status`.) `VerificarIntegridadPage` lo usa para poblar un
 selector; elegir un documento de la lista dispara la misma consulta real (`GetDocument`)
 que ya hacía la búsqueda manual por id — la lista nunca es la fuente de la verdad.
 

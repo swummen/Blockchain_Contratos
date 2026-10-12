@@ -4,7 +4,9 @@ Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10�
 Fuente de verdad: `claude_docs/SPEC.md`.
 Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6 y T7
 implementados y probados mecánicamente contra el stack real (falta confirmación en
-navegador). Sigue T8 (frontend: Administrador — panel, documentos, trazabilidad).**
+navegador); limitaciones de T7 resueltas; `origin/Feat/Front` (Laura) integrado en
+`feat/sprint4-frontend`. Sigue T8 (frontend: Administrador — panel, documentos,
+trazabilidad).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -389,11 +391,19 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
   verificaciones `confirmada`/`comprometida`, con `TxID` reales); `m.lopez` (Empleado)
   recibe `403` en `GET /events`. Preflight CORS de `/events` con `GET` permitido. Falta
   la confirmación de Sofia en navegador.
-- Notas (no bloqueantes): el listado real no trae hash, así que "Todos los documentos"
-  ya no muestra la huella (se consulta en "Verificar integridad"); la columna "Usuario"
-  y el "responsable" muestran el `userId` (`U001`, `U003`), no el nombre — el
-  Verificador no tiene acceso a `GET /users`. Resolverlo requiere que el backend
-  devuelva el nombre junto al id (entra con el tema del ID, `para_sofi.md` §3).
+- [x] **Limitaciones de T7 resueltas (2026‑10‑12, pedido de Sofia):**
+  - **Nombres en vez de userId.** `GET /documents` gana `responsibleName` y los eventos
+    (`GET /events`, `GET /documents/:id/events`) ganan `userName`, resueltos en Mongo con
+    una sola consulta por respuesta (`findUserNamesByIds` en `userRepository.ts`). Si el
+    id no es un usuario registrado (p. ej. `smoke-test-user`), cae al id, no falla. El
+    selector de `VerificarIntegridadPage` (cambio de Laura, `Feat/Front`) también muestra
+    el nombre en vez de `U001` — con nombre + fecha ya se distinguen dos "contrato.pdf".
+  - **Huella en el listado.** `GET /documents` trae `hash` — completo para
+    Verificador/Administrador, enmascarado server-side para el Empleado (RF‑27, mismo
+    `maskHash` que `GET /documents/:id`). Sale de la copia de Mongo: es seguro porque la
+    huella nunca cambia después del registro (`RecordVerification` solo toca `Status`).
+    Confirmado en vivo: el hash del listado coincide con el del ledger en los 2 documentos.
+  - Tests: 132/132 del backend (2 nuevos + 3 actualizados); `backend/README.md` al día.
 
 **Dependencias:** T3, T4.
 

@@ -51,6 +51,20 @@ export async function findUserById(userId: string): Promise<UserDoc | null> {
   return usersCollection().findOne({ _id: userId });
 }
 
+// Listados de documentos y trazabilidad (Sprint 4, limitación de T7): el
+// ledger y `documents` solo guardan el userId ("U001") — esto lo traduce al
+// nombre para mostrar, en una sola consulta por listado. Ids que no existen
+// como usuario (p. ej. "smoke-test-user" del smoke test) quedan fuera del
+// mapa; el caller decide qué mostrar en ese caso.
+export async function findUserNamesByIds(userIds: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(userIds)];
+  if (unique.length === 0) return new Map();
+  const users = await usersCollection()
+    .find({ _id: { $in: unique } }, { projection: { name: 1 } })
+    .toArray();
+  return new Map(users.map((u) => [u._id, u.name]));
+}
+
 export async function countUsers(): Promise<number> {
   return usersCollection().countDocuments();
 }

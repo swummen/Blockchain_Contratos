@@ -140,13 +140,17 @@ export interface DocumentSummary {
   documentId: string
   name: string
   responsibleUser: string
+  /** Nombre legible del responsable (cae al userId si el usuario no existe). */
+  responsibleName: string
   registeredAt: string
+  /** Completo para Verificador/Administrador, ya enmascarado por el backend para el Empleado. */
+  hash: string
   status: "Pendiente" | "Verificado" | "Alterado"
 }
 
-// Listado mínimo (ampliación de alcance de Sprint 3 T5): nunca trae el hash
-// — alcanza con lo que hace falta para elegir un documento; el hash real se
-// pide recién con getDocument().
+// Listado (Sprint 3 T5, ampliado en Sprint 4): para el Empleado, solo sus
+// documentos. El hash es la copia de Mongo — antes de verificar, la fuente
+// real sigue siendo getDocument() (el ledger).
 export async function listDocuments(token: string): Promise<DocumentSummary[]> {
   return getAuthJson("/documents", token)
 }
@@ -155,6 +159,8 @@ export interface DocumentEvent {
   documentId: string
   action: TraceAction
   user: string
+  /** Nombre legible de `user` (cae al userId si no es un usuario registrado). */
+  userName: string
   txId: string
   timestamp: string
   result?: TraceResult

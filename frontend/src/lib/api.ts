@@ -1,4 +1,4 @@
-import type { TraceAction, TraceResult, User } from "@/types/domain"
+import type { Role, TraceAction, TraceResult, User } from "@/types/domain"
 
 // Único punto de contacto con el backend (RNF-20): el frontend nunca le
 // habla a Fabric ni a Mongo directamente, siempre a través de esta URL.
@@ -29,10 +29,19 @@ async function parseJsonResponse<T>(res: Response): Promise<T> {
 }
 
 async function postAuthJson<T>(path: string, body: unknown, token?: string): Promise<T> {
+  return sendAuthJson("POST", path, body, token)
+}
+
+async function sendAuthJson<T>(
+  method: "POST" | "PUT",
+  path: string,
+  body: unknown,
+  token?: string
+): Promise<T> {
   let res: Response
   try {
     res = await fetch(`${API_URL}${path}`, {
-      method: "POST",
+      method,
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -225,4 +234,39 @@ export async function verifyDocument(
     throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
   }
   return parseJsonResponse<VerifyDocumentResult>(res)
+}
+
+export interface UserInput {
+  name: string
+  email: string
+  role: Role
+}
+
+// RF-43…47 (HU-018): gestión de usuarios, solo Administrador.
+export async function listUsers(token: string): Promise<User[]> {
+  return getAuthJson("/users", token)
+}
+
+// D7b: el usuario nuevo entra con una contraseña temporal fija que el
+// backend devuelve para que el Administrador se la comunique.
+export async function createUser(
+  token: string,
+  input: UserInput
+): Promise<{ user: User; temporaryPassword: string }> {
+  return postAuthJson("/users", input, token)
+}
+
+// Si cambia el rol, el backend cierra las sesiones abiertas de ese usuario
+// (el rol viaja en el JWT) — tendrá que volver a iniciar sesión.
+export async function updateUser(
+  token: string,
+  userId: string,
+  input: UserInput
+): Promise<{ user: User }> {
+  return sendAuthJson("PUT", `/users/${encodeURIComponent(userId)}`, input, token)
+}
+
+// RF-47: baja lógica, sin reactivación. Corta también sus sesiones abiertas.
+export async function deactivateUser(token: string, userId: string): Promise<void> {
+  await postAuthJson(`/users/${encodeURIComponent(userId)}/deactivate`, undefined, token)
 }

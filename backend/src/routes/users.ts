@@ -38,13 +38,22 @@ usersRouter.post("/users", requireAuth("Administrador"), async (req, res) => {
     res.status(result.status).json({ message: result.message });
     return;
   }
-  res.status(201).json({ user: result.user });
+  res.status(201).json({ user: result.user, temporaryPassword: result.temporaryPassword });
 });
 
 usersRouter.put("/users/:id", requireAuth("Administrador"), async (req, res) => {
   const input = parseUserInput(req.body);
   if (!input) {
     res.status(400).json({ message: INVALID_INPUT_MESSAGE });
+    return;
+  }
+
+  // Mismo criterio que la auto-desactivación (abajo): un Administrador que
+  // se quita su propio rol pierde acceso a esta pantalla sin forma de
+  // revertirlo desde la app. Quien llega acá ya es Administrador
+  // (requireAuth), así que cualquier otro rol sería un cambio.
+  if (req.params.id === req.user?.sub && input.role !== "Administrador") {
+    res.status(400).json({ message: "No podés cambiar tu propio rol." });
     return;
   }
 

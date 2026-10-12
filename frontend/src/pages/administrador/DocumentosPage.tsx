@@ -1,8 +1,34 @@
-import { useAppData } from "@/context/AppDataContext"
+import * as React from "react"
+import { useSession } from "@/context/SessionContext"
 import { DocumentListItem } from "@/components/shared/DocumentListItem"
+import { listDocuments, type DocumentSummary } from "@/lib/api"
 
 export default function DocumentosPage() {
-  const { documents } = useAppData()
+  const { token } = useSession()
+
+  const [documents, setDocuments] = React.useState<DocumentSummary[] | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    if (!token) return
+    let cancelled = false
+
+    // RF-48/49 (HU-019): mismo listado que ve el Verificador — todos los
+    // documentos (hasta 100), con la huella completa y el responsable.
+    listDocuments(token)
+      .then((docs) => {
+        if (!cancelled) setDocuments(docs)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "No se pudieron cargar los documentos.")
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [token])
 
   return (
     <div className="space-y-6">
@@ -13,16 +39,25 @@ export default function DocumentosPage() {
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {documents.map((doc) => (
-          <DocumentListItem
-            key={doc.documentId}
-            document={doc}
-            canViewFullHash
-            showResponsible
-          />
-        ))}
-      </div>
+      {error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : documents === null ? (
+        <p className="text-sm text-muted-foreground">Cargando documentos…</p>
+      ) : documents.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Todavía no hay documentos registrados.</p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {documents.map((doc) => (
+            <DocumentListItem
+              key={doc.documentId}
+              document={doc}
+              canViewFullHash
+              showResponsible
+              copyableId
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

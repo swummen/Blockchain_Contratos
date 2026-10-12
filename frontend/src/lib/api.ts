@@ -183,6 +183,19 @@ export async function getAllEvents(token: string): Promise<DocumentEvent[]> {
   return getAuthJson("/events", token)
 }
 
+export interface DocumentsSummary {
+  total: number
+  pendiente: number
+  verificado: number
+  alterado: number
+}
+
+// RF-41/42 (HU-017): totales reales por estado, solo Administrador. Contados
+// en Mongo con un aggregate — nunca limitados a los 100 de listDocuments.
+export async function getDocumentsSummary(token: string): Promise<DocumentsSummary> {
+  return getAuthJson("/documents/summary", token)
+}
+
 export interface VerifyDocumentResult {
   status: "Verificado" | "Alterado"
   matches: boolean

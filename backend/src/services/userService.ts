@@ -37,8 +37,11 @@ export interface CreateUserInput {
   role: Role;
 }
 
+// `temporaryPassword` (T9): el Administrador necesita comunicársela al
+// usuario nuevo. Es la misma contraseña fija y documentada de D7b — devolverla
+// evita que el frontend tenga su propia copia que se desincronice de esta.
 export type CreateUserResult =
-  | { ok: true; user: PublicUser }
+  | { ok: true; user: PublicUser; temporaryPassword: string }
   | { ok: false; status: number; message: string };
 
 const DUPLICATE_EMAIL_RESULT = {
@@ -84,7 +87,7 @@ export async function createUser(input: CreateUserInput): Promise<CreateUserResu
     throw err;
   }
 
-  return { ok: true, user: toPublicUser(user) };
+  return { ok: true, user: toPublicUser(user), temporaryPassword: TEMP_PASSWORD };
 }
 
 export interface UpdateUserInput {
@@ -119,6 +122,16 @@ export async function updateUser(userId: string, input: UpdateUserInput): Promis
       return DUPLICATE_EMAIL_RESULT;
     }
     throw err;
+  }
+
+  // para_sofi.md §4: el rol viaja firmado en el JWT y requireAuth nunca lo
+  // relee de Mongo — sin esto, una sesión abierta conservaba el rol viejo
+  // hasta que el token expirara (hasta jwtExpiresMinutes). Mismo arreglo que
+  // deactivateUser: se cortan sus sesiones y el próximo login emite un JWT
+  // con el rol nuevo. Solo si el rol cambió — editar nombre/correo no afecta
+  // nada de lo que el JWT lleva adentro.
+  if (input.role !== user.role) {
+    await deleteSessionsByUserId(userId);
   }
 
   return { ok: true, user: toPublicUser({ ...user, ...normalizedInput }) };

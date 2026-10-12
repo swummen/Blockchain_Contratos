@@ -1,4 +1,4 @@
-import type { TraceAction, TraceResult, User } from "@/types/domain"
+import type { Role, TraceAction, TraceResult, User } from "@/types/domain"
 
 // Único punto de contacto con el backend (RNF-20): el frontend nunca le
 // habla a Fabric ni a Mongo directamente, siempre a través de esta URL.
@@ -29,10 +29,19 @@ async function parseJsonResponse<T>(res: Response): Promise<T> {
 }
 
 async function postAuthJson<T>(path: string, body: unknown, token?: string): Promise<T> {
+  return sendAuthJson("POST", path, body, token)
+}
+
+async function sendAuthJson<T>(
+  method: "POST" | "PUT",
+  path: string,
+  body: unknown,
+  token?: string
+): Promise<T> {
   let res: Response
   try {
     res = await fetch(`${API_URL}${path}`, {
-      method: "POST",
+      method,
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -140,13 +149,17 @@ export interface DocumentSummary {
   documentId: string
   name: string
   responsibleUser: string
+  /** Nombre legible del responsable (cae al userId si el usuario no existe). */
+  responsibleName: string
   registeredAt: string
+  /** Completo para Verificador/Administrador, ya enmascarado por el backend para el Empleado. */
+  hash: string
   status: "Pendiente" | "Verificado" | "Alterado"
 }
 
-// Listado mínimo (ampliación de alcance de Sprint 3 T5): nunca trae el hash
-// — alcanza con lo que hace falta para elegir un documento; el hash real se
-// pide recién con getDocument().
+// Listado (Sprint 3 T5, ampliado en Sprint 4): para el Empleado, solo sus
+// documentos. El hash es la copia de Mongo — antes de verificar, la fuente
+// real sigue siendo getDocument() (el ledger).
 export async function listDocuments(token: string): Promise<DocumentSummary[]> {
   return getAuthJson("/documents", token)
 }
@@ -155,6 +168,8 @@ export interface DocumentEvent {
   documentId: string
   action: TraceAction
   user: string
+  /** Nombre legible de `user` (cae al userId si no es un usuario registrado). */
+  userName: string
   txId: string
   timestamp: string
   result?: TraceResult
@@ -168,6 +183,26 @@ export async function getDocumentEvents(
   documentId: string
 ): Promise<DocumentEvent[]> {
   return getAuthJson(`/documents/${encodeURIComponent(documentId)}/events`, token)
+}
+
+// RF-39/40/50/51 (HU-016/020): trazabilidad general, solo Verificador y
+// Administrador. Ya ordenada cronológicamente (más antiguo primero) y acotada
+// a los 200 eventos más recientes por el backend.
+export async function getAllEvents(token: string): Promise<DocumentEvent[]> {
+  return getAuthJson("/events", token)
+}
+
+export interface DocumentsSummary {
+  total: number
+  pendiente: number
+  verificado: number
+  alterado: number
+}
+
+// RF-41/42 (HU-017): totales reales por estado, solo Administrador. Contados
+// en Mongo con un aggregate — nunca limitados a los 100 de listDocuments.
+export async function getDocumentsSummary(token: string): Promise<DocumentsSummary> {
+  return getAuthJson("/documents/summary", token)
 }
 
 export interface VerifyDocumentResult {
@@ -199,4 +234,39 @@ export async function verifyDocument(
     throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
   }
   return parseJsonResponse<VerifyDocumentResult>(res)
+}
+
+export interface UserInput {
+  name: string
+  email: string
+  role: Role
+}
+
+// RF-43…47 (HU-018): gestión de usuarios, solo Administrador.
+export async function listUsers(token: string): Promise<User[]> {
+  return getAuthJson("/users", token)
+}
+
+// D7b: el usuario nuevo entra con una contraseña temporal fija que el
+// backend devuelve para que el Administrador se la comunique.
+export async function createUser(
+  token: string,
+  input: UserInput
+): Promise<{ user: User; temporaryPassword: string }> {
+  return postAuthJson("/users", input, token)
+}
+
+// Si cambia el rol, el backend cierra las sesiones abiertas de ese usuario
+// (el rol viaja en el JWT) — tendrá que volver a iniciar sesión.
+export async function updateUser(
+  token: string,
+  userId: string,
+  input: UserInput
+): Promise<{ user: User }> {
+  return sendAuthJson("PUT", `/users/${encodeURIComponent(userId)}`, input, token)
+}
+
+// RF-47: baja lógica, sin reactivación. Corta también sus sesiones abiertas.
+export async function deactivateUser(token: string, userId: string): Promise<void> {
+  await postAuthJson(`/users/${encodeURIComponent(userId)}/deactivate`, undefined, token)
 }

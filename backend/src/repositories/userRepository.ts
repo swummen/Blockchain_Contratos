@@ -15,6 +15,12 @@ export interface UserDoc {
   passwordHash: string;
   role: Role;
   status: UserStatus;
+  // RF-54: contador de intentos fallidos consecutivos de login y, si llegó
+  // al tope, hasta cuándo queda bloqueada la cuenta. Ausentes en usuarios
+  // sembrados antes de este cambio — se tratan como "0 intentos, sin
+  // bloqueo" (ver helpers de abajo), no hace falta migrar nada a mano.
+  failedLoginAttempts?: number;
+  lockedUntil?: Date;
 }
 
 function usersCollection(): Collection<UserDoc> {
@@ -45,6 +51,20 @@ export async function findUserById(userId: string): Promise<UserDoc | null> {
   return usersCollection().findOne({ _id: userId });
 }
 
+// Listados de documentos y trazabilidad (Sprint 4, limitación de T7): el
+// ledger y `documents` solo guardan el userId ("U001") — esto lo traduce al
+// nombre para mostrar, en una sola consulta por listado. Ids que no existen
+// como usuario (p. ej. "smoke-test-user" del smoke test) quedan fuera del
+// mapa; el caller decide qué mostrar en ese caso.
+export async function findUserNamesByIds(userIds: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(userIds)];
+  if (unique.length === 0) return new Map();
+  const users = await usersCollection()
+    .find({ _id: { $in: unique } }, { projection: { name: 1 } })
+    .toArray();
+  return new Map(users.map((u) => [u._id, u.name]));
+}
+
 export async function countUsers(): Promise<number> {
   return usersCollection().countDocuments();
 }
@@ -64,6 +84,31 @@ export async function updatePasswordHash(
   passwordHash: string,
 ): Promise<void> {
   await usersCollection().updateOne({ _id: userId }, { $set: { passwordHash } });
+}
+
+// RF-54 RN-03: cada intento fallido se cuenta; devuelve el total ya
+// incrementado para que authService decida si llegó al tope y hay que
+// bloquear. findOneAndUpdate (no updateOne+findOne) para no tener que leer
+// dos veces ni dejar una ventana entre incrementar y conocer el valor.
+export async function registerFailedLogin(userId: string): Promise<number> {
+  const result = await usersCollection().findOneAndUpdate(
+    { _id: userId },
+    { $inc: { failedLoginAttempts: 1 } },
+    { returnDocument: "after" },
+  );
+  return result?.failedLoginAttempts ?? 0;
+}
+
+export async function lockUser(userId: string, until: Date): Promise<void> {
+  await usersCollection().updateOne({ _id: userId }, { $set: { lockedUntil: until } });
+}
+
+// RN-01 de RF-54: el contador se reinicia tras una autenticación exitosa.
+export async function resetFailedLogin(userId: string): Promise<void> {
+  await usersCollection().updateOne(
+    { _id: userId },
+    { $set: { failedLoginAttempts: 0 }, $unset: { lockedUntil: "" } },
+  );
 }
 
 // RF-43/44 (Sprint 4 T5): sin límite ni paginación — mismo criterio que

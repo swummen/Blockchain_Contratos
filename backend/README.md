@@ -89,9 +89,9 @@ logout, RBAC, cambio de contraseña. Decisiones de diseño completas en
 
 ### Seed de usuarios
 
-`npm run seed` (`src/scripts/seedUsers.ts`) siembra 1 usuario por rol si la colección
+`npm run seed` (`src/scripts/seedUsers.ts`) siembra los usuarios de prueba si la colección
 `users` está vacía — idempotente, se puede correr las veces que haga falta. **Contraseña
-de desarrollo de los tres: `Contratos123!`** (nunca usar esto en un ambiente real). Ver el
+de desarrollo de los cuatro: `Contratos123!`** (nunca usar esto en un ambiente real). Ver el
 script para los emails de cada rol. Reemplaza a `frontend/src/data/users.ts` como fuente
 real para el login; deja de ser necesario cuando HU‑018 (Sprint 4) le dé al Administrador
 el alta real de usuarios.
@@ -103,8 +103,8 @@ error (los mensajes ya están pensados para mostrarse tal cual en la UI).
 
 | Ruta | Auth | Body | Respuesta 200 | Errores |
 |---|---|---|---|---|
-| `POST /auth/login` | no | `{email, password, role}` | `{message}` (dispara el envío del OTP) | `400` datos faltantes/`role` inválido · `401` credenciales inválidas (mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta desactivada — RF‑002 CA‑02) · `502` no se pudo enviar el correo |
-| `POST /auth/verify-otp` | no | `{email, code}` | `{token, user}` (`user` sin `passwordHash`, mismas claves que `frontend/src/types/domain.ts`) | `400` código inválido/vencido/incorrecto/intentos agotados · `403` el rol elegido en el login no coincide con el real (HU‑002 CA‑02) |
+| `POST /auth/login` | no | `{email, password}` | `{message}` (dispara el envío del OTP) | `400` datos faltantes · `401` credenciales inválidas (mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta desactivada — RF‑002 CA‑02) · `423` cuenta bloqueada temporalmente por intentos fallidos (RF‑54) · `502` no se pudo enviar el correo |
+| `POST /auth/verify-otp` | no | `{email, code}` | `{token, user}` (`user` sin `passwordHash`, mismas claves que `frontend/src/types/domain.ts`; el rol viene de la cuenta, ya no se selecciona en el login) | `400` código inválido/vencido/incorrecto/intentos agotados |
 | `GET /auth/me` | sí | — | `{user}` | `401` sin sesión válida |
 | `POST /auth/logout` | sí | — | `204` | `401` sin sesión válida |
 | `POST /auth/change-password` | sí | `{currentPassword, newPassword}` | `{message}` | `400` actual incorrecta/nueva inválida · `401` sin sesión válida |
@@ -126,6 +126,14 @@ usado todavía, ningún endpoint de Sprint 1 lo necesita).
 - `JWT_SECRET` no tiene default (es un secreto) — el backend falla al arrancar si falta.
   `docker/compose.app.yml` sí trae un default de desarrollo (mismo criterio que
   `MONGO_ROOT_PASSWORD=changeme`), nunca usar eso fuera de local/Docker.
+- RNF‑07: además del vencimiento absoluto de `expiresAt` (`JWT_EXPIRES_MINUTES`,
+  default 60), la sesión se cierra tras `SESSION_INACTIVITY_MINUTES` (default 15) sin
+  ningún request autenticado — `requireAuth()` compara contra `lastSeenAt` en cada
+  request y lo refresca si la sesión sigue viva.
+- RF‑54: `MAX_LOGIN_ATTEMPTS` (default 5) intentos fallidos consecutivos bloquean la
+  cuenta por `LOGIN_LOCKOUT_MINUTES` (default 15) — `POST /auth/login` responde `423`
+  mientras dure el bloqueo, sin comparar la contraseña. El contador vive en el propio
+  usuario (`failedLoginAttempts`/`lockedUntil`) y se reinicia con un login exitoso.
 
 ### Probar sin SMTP real
 
@@ -215,7 +223,7 @@ de negocio).
 
 | Ruta | Auth | Body | Respuesta 200 | Errores |
 |---|---|---|---|---|
-| `GET /documents` | sí, `Verificador`/`Administrador` (enumera documentos de **todos** los usuarios — un Empleado no lo necesita, RF‑18 en Sprint 4 le va a dar su propio listado acotado a lo suyo) | — | `[{documentId, name, responsibleUser, registeredAt, status}, ...]` (**nunca** el hash; últimos 100, sin paginación — D8, ver abajo) | `401` sin sesión válida · `403` rol sin permiso |
+| `GET /documents` | sí, `Verificador`/`Administrador` (enumera documentos de **todos** los usuarios — un Empleado no lo necesita, RF‑18 en Sprint 4 le va a dar su propio listado acotado a lo suyo) | — | `[{documentId, name, responsibleUser, responsibleName, registeredAt, hash, status}, ...]` (últimos 100, sin paginación — D8, ver abajo; `hash` completo para `Verificador`/`Administrador`, enmascarado para `Empleado` — RF‑27; `responsibleName` cae al userId si el usuario no existe. Desde Sprint 4 también lo usa el `Empleado`, acotado a sus documentos) | `401` sin sesión válida · `403` rol sin permiso |
 | `GET /documents/:id` | sí, cualquier rol (lo que varía por rol es el enmascarado del hash, no el acceso — RF‑27/RNF‑08) | — | `{documentId, name?, responsibleUser?, registeredAt?, hash, status}` (`hash` completo solo para `Verificador`/`Administrador`, enmascarado el resto vía `maskHash` — mismo algoritmo que `frontend/src/lib/mask-hash.ts`, copiado, no importado: son paquetes npm separados) | `401` sin sesión · `404` no existe (HU‑010‑CA‑02) · `502` falla el chaincode |
 | `POST /documents/:id/verifications` | sí, solo `Verificador` (RF‑23) | `multipart/form-data`, campo `document` (el PDF a comparar) | `{status: "Verificado"\|"Alterado", matches, registeredHash, computedHash}` (hash siempre completo — quien pregunta ya es Verificador) | `400` archivo inválido · `401`/`403` · `404` el `documentId` de la URL no existe · `502` falla `RecordVerification` (nunca toca Mongo) · `500` el ledger anotó la verificación pero Mongo falló después |
 
@@ -247,8 +255,10 @@ documento sin que alguien le pasara el `documentId` (un UUID de 36 caracteres) a
 `GET /documents` (arriba) se adelantó desde el alcance completo de RF‑37…40 (Sprint 4,
 con filtros/búsqueda/paginación reales) para resolver justo eso — lee directo de MongoDB
 (`listDocuments`, nuevo en `documentRepository.ts`), nunca del chaincode (que sigue sin
-ninguna función de listado, D6 de Sprint 2 intacto), y nunca incluye el hash (no hace
-falta para elegir cuál consultar). `VerificarIntegridadPage` lo usa para poblar un
+ninguna función de listado, D6 de Sprint 2 intacto). (Nota de cambio, Sprint 4: desde
+el arreglo de las limitaciones de T7 incluye el hash — enmascarado para el Empleado — y
+el nombre del responsable; el hash sale de la copia de Mongo, que nunca cambia después del
+registro porque `RecordVerification` solo toca `Status`.) `VerificarIntegridadPage` lo usa para poblar un
 selector; elegir un documento de la lista dispara la misma consulta real (`GetDocument`)
 que ya hacía la búsqueda manual por id — la lista nunca es la fuente de la verdad.
 

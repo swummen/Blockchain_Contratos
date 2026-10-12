@@ -6,7 +6,8 @@ encontramos y qué falta. No es la documentación formal (esa vive en
 `claude_docs/SPEC.md` y en `claude_docs/tasks/`) — esto es para que tengas el
 panorama completo en un solo lugar, sin tener que ir sprint por sprint.
 
-Última actualización: 2026-10-08, después de cerrar Sprint 4 T5.
+Última actualización: 2026-10-12, después de conectar el frontend de los 3
+roles (Sprint 4 T6-T9) y resolver el problema del ID (selección en dos pasos).
 
 ---
 
@@ -133,6 +134,41 @@ del desplegable del Verificador con nombres ambiguos probablemente necesite,
 más adelante, mostrar también el nombre del Empleado responsable y la fecha
 al lado del nombre del archivo, para poder distinguir documentos con el mismo
 nombre — eso todavía no está ni planeado formalmente.
+
+### ✅ Resuelto (2026-10-12)
+
+Todo lo de arriba ya se resolvió. Quedó así:
+
+- **El Empleado ya puede recuperar su id cuando quiera.** "Mis documentos"
+  (Sprint 4 T6) dejó de ser un mock: muestra cada documento suyo con el id
+  completo y un botón "Copiar". Ya no depende de copiarlo en el único
+  instante de la pantalla de carga.
+- **El desplegable del Verificador ya no es una lista plana ambigua.** Ahora
+  la selección es en **dos pasos** (tu idea): primero se elige a la **persona
+  responsable** (por nombre), y después el **contrato** de esa persona (con
+  nombre, fecha y estado). Dos "contrato.pdf" de empleados distintos ya nunca
+  se confunden, porque primero se acota a una sola persona. Se probó de verdad:
+  se subió un "CONTRATO FALSO.pdf" a nombre de Carlos Ruiz (mismo nombre que
+  uno de María López) y el Verificador los distinguió sin problema; verificar
+  el de Carlos contra su propio archivo dio "confirmada" (prueba de que apuntó
+  al documento correcto y no al homónimo).
+- **El panel de evidencia muestra a quién pertenece el documento elegido**
+  ("Responsable · Carlos Ruiz"), para confirmar a ojo que se está verificando
+  el contrato que es.
+- **El UUID quedó interno:** nadie lo tiene que recordar ni teclear. El ingreso
+  manual del identificador sigue existiendo como vía secundaria (colapsada),
+  por si un documento no aparece en el listado.
+
+Lo que **no** se hizo (decisiones conscientes): no se agregó un código corto
+legible tipo `DOC-2026-0042` (el selector por persona lo hizo innecesario por
+ahora; se puede agregar después si hace falta), y no se agregó una función de
+"solicitar verificación" (el Verificador puede verificar cualquier contrato
+cuando quiera). El tope de 100 del listado y la falta de buscador/paginación
+siguen pendientes para cuando haya volumen real (es el alcance completo de
+RF‑37…40).
+
+Trazabilidad: `claude_docs/SPEC.md` RF‑24 (nota de cambio Sprint 4),
+`claude_docs/tasks/plan-id-seleccion.md` y `todo-id-seleccion.md`.
 
 ---
 
@@ -270,16 +306,24 @@ código) o gracias a una revisión de código adversarial:
 
 ## 6. Qué falta (lo que ya sabemos que sigue pendiente)
 
-- **Sprint 4, T6 a T9 (todo frontend):** conectar las pantallas reales de
-  cada rol al backend que ya existe — hoy todas muestran datos de mentira. Es
-  lo que sigue justo después de esto.
-- **El problema del ID del documento** (sección 3) — sin una solución de
-  fondo todavía, más allá del parche de T6 que debería al menos resolver "el
-  Empleado puede volver a ver su propio id cuando quiera".
-- **El cambio de rol no corta sesiones abiertas** (sección 4) — mismo arreglo
-  que ya existe para desactivar, pendiente de aplicar también acá.
-- **El selector de rol en el login no sabe cuál es tu rol real** (sección 4)
-  — ninguna solución decidida todavía, dos ideas sobre la mesa.
+- ~~**Sprint 4, T6 a T9 (todo frontend)**~~ → **Hecho (2026-10-12).** Las
+  pantallas de los 3 roles ya usan el backend real; ninguna muestra datos de
+  mentira. Falta solo el cierre de documentación del sprint (T10).
+- ~~**El problema del ID del documento**~~ → **Resuelto (2026-10-12),** ver el
+  bloque "✅ Resuelto" al final de la sección 3: selección en dos pasos
+  (persona → contrato) + "Mis documentos" real + panel con responsable.
+- ~~**El cambio de rol no corta sesiones abiertas**~~ → **Resuelto (2026-10-12):**
+  cambiar el rol de un usuario ahora corta sus sesiones abiertas al instante
+  (mismo arreglo que la desactivación), y el Administrador no puede quitarse su
+  propio rol.
+- ~~**El selector de rol en el login no sabe cuál es tu rol real**~~ →
+  **Resuelto:** el login ya no pide el rol (cambio de la rama de Laura); el
+  backend lo determina solo contra la cuenta.
+- **Pendiente de verificar en navegador por vos:** todo lo de Sprint 4 y el
+  flujo nuevo del ID se probó con Playwright (automatizado) contra el stack
+  real, pero falta tu visto bueno a mano.
+- **El tope de 100 del listado y la falta de buscador/paginación** siguen
+  pendientes para cuando haya volumen real (alcance completo de RF‑37…40).
 - **RNF-10 y RNF-14** (benchmarks formales de performance): están marcados
   como "parcial" en el SPEC — son mediciones que todavía no se corrieron
   formalmente, no features sin construir.

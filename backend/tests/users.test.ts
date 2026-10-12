@@ -29,6 +29,7 @@ jest.mock("../src/repositories/sessionRepository", () => ({
   findSessionByJti: jest.fn(),
   deleteSession: jest.fn(),
   deleteSessionsByUserId: jest.fn(),
+  touchSession: jest.fn(),
 }));
 
 jest.mock("../src/repositories/documentRepository", () => ({
@@ -68,6 +69,7 @@ const activeSession = {
   userId: "U099",
   role: "Administrador" as const,
   expiresAt: new Date(Date.now() + 60_000),
+  lastSeenAt: new Date(),
 };
 
 function token(role = "Administrador") {
@@ -140,6 +142,9 @@ describe("POST /users", () => {
     expect(res.body.user).toMatchObject({ name: "Carlos Ruiz", email: "c.ruiz@empresa.com", role: "Empleado", status: "Activo" });
     expect(res.body.user.userId).toBeTruthy();
     expect(JSON.stringify(res.body)).not.toContain("passwordHash");
+    // La contraseña temporal (D7b) viaja aparte para que el Administrador
+    // pueda comunicarla — nunca su hash.
+    expect(res.body.temporaryPassword).toBe("Contratos123!");
 
     const inserted = (insertUser as jest.Mock).mock.calls[0][0];
     expect(inserted.passwordHash).not.toBe("Contratos123!");
@@ -247,6 +252,55 @@ describe("PUT /users/:id", () => {
 
     expect(res.status).toBe(409);
     expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it("cambio de rol: corta las sesiones abiertas del usuario (el rol viaja en el JWT)", async () => {
+    (findUserById as jest.Mock).mockResolvedValue(seedUser()); // rol actual: Empleado
+    (findUserByEmail as jest.Mock).mockResolvedValue(seedUser());
+    (updateUser as jest.Mock).mockResolvedValue(undefined);
+
+    const res = await request(createApp()).put("/users/U001").set("Authorization", authHeader()).send(input); // -> Verificador
+
+    expect(res.status).toBe(200);
+    expect(deleteSessionsByUserId).toHaveBeenCalledWith("U001");
+  });
+
+  it("mismo rol (solo cambia nombre/correo): no corta sesiones", async () => {
+    (findUserById as jest.Mock).mockResolvedValue(seedUser());
+    (findUserByEmail as jest.Mock).mockResolvedValue(seedUser());
+    (updateUser as jest.Mock).mockResolvedValue(undefined);
+
+    const res = await request(createApp())
+      .put("/users/U001")
+      .set("Authorization", authHeader())
+      .send({ ...input, role: "Empleado" });
+
+    expect(res.status).toBe(200);
+    expect(deleteSessionsByUserId).not.toHaveBeenCalled();
+  });
+
+  it("Administrador quitándose su propio rol: 400, no toca nada", async () => {
+    const res = await request(createApp())
+      .put("/users/U099") // token() firma sub="U099"
+      .set("Authorization", authHeader())
+      .send({ name: "Admin", email: "admin@empresa.com", role: "Empleado" });
+
+    expect(res.status).toBe(400);
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it("Administrador editando su propio nombre (sin cambiar rol): 200", async () => {
+    (findUserById as jest.Mock).mockResolvedValue(seedUser({ _id: "U099", role: "Administrador" }));
+    (findUserByEmail as jest.Mock).mockResolvedValue(null);
+    (updateUser as jest.Mock).mockResolvedValue(undefined);
+
+    const res = await request(createApp())
+      .put("/users/U099")
+      .set("Authorization", authHeader())
+      .send({ name: "Admin Nuevo", email: "admin@empresa.com", role: "Administrador" });
+
+    expect(res.status).toBe(200);
+    expect(deleteSessionsByUserId).not.toHaveBeenCalled();
   });
 
   it("mismo correo que ya tenia (no es duplicado contra si mismo): 200", async () => {

@@ -2,9 +2,11 @@
 
 Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10‑08**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6
-implementado (build/lint en verde), falta su prueba manual contra el stack real. Sigue T7
-(frontend: Verificador — `DocumentosPage` + `TrazabilidadGlobalPage`).**
+Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6 y T7
+implementados y probados mecánicamente contra el stack real (falta confirmación en
+navegador); limitaciones de T7 resueltas; `origin/Feat/Front` (Laura) integrado en
+`feat/sprint4-frontend`. T8 y T9 implementados y probados mecánicamente. Sigue el checkpoint
+de punta a punta en navegador y T10 (documentación y cierre).**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -356,10 +358,10 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
   archivos no tocados).
 
 **Verificación:**
-- [ ] Manual en navegador (o mecánico si no hay navegador, mismo criterio de siempre):
-  Empleado ve solo sus documentos y su propia trazabilidad. **Pendiente**: Docker
-  Desktop no estaba corriendo al cerrar la tarea — falta levantar el stack
-  (`bash docker/up.sh`) y probar con `m.lopez` y `c.ruiz`.
+- [x] Mecánico contra el stack real (2026‑10‑12, mismo criterio de siempre): `m.lopez`
+  (U001) recibe solo sus 2 documentos en `GET /documents` y la trazabilidad real de uno
+  de ellos (`registro` + `verificacion`); `c.ruiz` (U002) recibe `[]` y `403` al pedir
+  la trazabilidad del documento de `m.lopez`. Falta la confirmación de Sofia en navegador.
 
 **Dependencias:** T3.
 
@@ -374,13 +376,34 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### T7: Frontend — Verificador: `DocumentosPage` + `TrazabilidadGlobalPage`
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `getAllEvents(token)`.
-- [ ] Las dos pantallas dejan de usar `useAppData()`.
-- [ ] `npm run build`/`npm run lint` pasan.
+- [x] `frontend/src/lib/api.ts` gana `getAllEvents(token)`.
+- [x] Las dos pantallas dejan de usar `useAppData()`. `DocumentosPage` usa
+  `listDocuments` (sin filtro para el Verificador) con el identificador copiable;
+  `TrazabilidadGlobalPage` usa `GET /events` (más reciente primero) y muestra el nombre
+  del archivo en la columna "Documento" (si el listado falla, cae al identificador sin
+  bloquear la tabla). `TraceabilityTable` usa `txId` como clave y acepta
+  `documentNames`, igual que `TraceabilityTimeline` en T6.
+- [x] `npm run build`/`npm run lint` pasan (0 errores).
 
 **Verificación:**
-- [ ] Manual (o mecánico): Verificador ve todos los documentos registrados y toda la
-  trazabilidad general.
+- [x] Mecánico contra el stack real (2026‑10‑12): `p.gomez` (Verificador) recibe los 2
+  documentos de todos los Empleados y los 5 eventos reales del ledger (registros +
+  verificaciones `confirmada`/`comprometida`, con `TxID` reales); `m.lopez` (Empleado)
+  recibe `403` en `GET /events`. Preflight CORS de `/events` con `GET` permitido. Falta
+  la confirmación de Sofia en navegador.
+- [x] **Limitaciones de T7 resueltas (2026‑10‑12, pedido de Sofia):**
+  - **Nombres en vez de userId.** `GET /documents` gana `responsibleName` y los eventos
+    (`GET /events`, `GET /documents/:id/events`) ganan `userName`, resueltos en Mongo con
+    una sola consulta por respuesta (`findUserNamesByIds` en `userRepository.ts`). Si el
+    id no es un usuario registrado (p. ej. `smoke-test-user`), cae al id, no falla. El
+    selector de `VerificarIntegridadPage` (cambio de Laura, `Feat/Front`) también muestra
+    el nombre en vez de `U001` — con nombre + fecha ya se distinguen dos "contrato.pdf".
+  - **Huella en el listado.** `GET /documents` trae `hash` — completo para
+    Verificador/Administrador, enmascarado server-side para el Empleado (RF‑27, mismo
+    `maskHash` que `GET /documents/:id`). Sale de la copia de Mongo: es seguro porque la
+    huella nunca cambia después del registro (`RecordVerification` solo toca `Status`).
+    Confirmado en vivo: el hash del listado coincide con el del ledger en los 2 documentos.
+  - Tests: 132/132 del backend (2 nuevos + 3 actualizados); `backend/README.md` al día.
 
 **Dependencias:** T3, T4.
 
@@ -395,15 +418,25 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### T8: Frontend — Administrador: `DashboardPage` + `DocumentosPage` + `TrazabilidadPage`
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `getDocumentsSummary(token)`.
-- [ ] Las tres pantallas dejan de usar `useAppData()` para estos datos (reusan
-  `listDocuments`/`getAllEvents` ya agregados en T7 donde aplique).
-- [ ] `npm run build`/`npm run lint` pasan.
+- [x] `frontend/src/lib/api.ts` gana `getDocumentsSummary(token)` (+ tipo `DocumentsSummary`).
+- [x] Las tres pantallas dejan de usar `useAppData()` para estos datos (reusan
+  `listDocuments`/`getAllEvents` ya agregados en T7 donde aplique). `DashboardPage`:
+  totales de `GET /documents/summary` + los 6 eventos más recientes de `GET /events`
+  (cargas independientes: si el ledger no responde, los totales se muestran igual);
+  `DocumentosPage`: mismo listado que el Verificador, con ID copiable y huella completa;
+  `TrazabilidadPage`: misma tabla y mismo detalle que el Verificador (HU‑020‑CA‑02).
+  `KpiCard` acepta `"—"` mientras carga.
+- [x] `npm run build`/`npm run lint` pasan (0 errores).
 
 **Verificación:**
-- [ ] Manual (o mecánico): el panel muestra totales reales que coinciden con Mongo; los
-  listados de documentos/trazabilidad muestran lo mismo que ve el Verificador (mismo
-  nivel de detalle, HU‑020‑CA‑02).
+- [x] Mecánico contra el stack real (2026‑10‑12): `GET /documents/summary` como
+  `admin@empresa.com` → `{total:2, pendiente:0, verificado:1, alterado:1}`, idéntico a un
+  `aggregate` directo en Mongo; `GET /events` → 5 eventos con nombres; `GET /documents` →
+  2 documentos con hash completo (64 caracteres) y responsable por nombre; Verificador en
+  `GET /documents/summary` → `403`. Falta la confirmación de Sofia en navegador.
+- Nota (ya anotada en el review de T4, no bloqueante): el total del panel cuenta todos
+  los documentos, mientras que el listado se corta en 100 — con más de 100 documentos los
+  dos números dejarían de coincidir a simple vista.
 
 **Dependencias:** T3, T4.
 
@@ -419,15 +452,37 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### T9: Frontend — Administrador: `UsuariosPage` (CRUD real)
 
 **Criterios de aceptación:**
-- [ ] `frontend/src/lib/api.ts` gana `listUsers`, `createUser`, `updateUser`,
-  `deactivateUser` (todas autenticadas).
-- [ ] `UsuariosPage` deja de usar `useAppData()` para crear/editar/desactivar — llama a
-  los endpoints reales de T5.
-- [ ] `npm run build`/`npm run lint` pasan.
+- [x] `frontend/src/lib/api.ts` gana `listUsers`, `createUser`, `updateUser`,
+  `deactivateUser` (todas autenticadas). `postAuthJson` pasa a delegar en un
+  `sendAuthJson(method, ...)` nuevo para poder hacer `PUT` sin duplicar el manejo de
+  timeout/errores.
+- [x] `UsuariosPage` deja de usar `useAppData()` para crear/editar/desactivar — llama a
+  los endpoints reales de T5. El formulario muestra el error del backend sin cerrarse
+  (p. ej. `409` por correo duplicado); al crear, un aviso muestra la contraseña temporal
+  para comunicarla; desactivar pide confirmación (no hay reactivación, D8); el
+  Administrador no ve "Desactivar" sobre sí mismo y no puede cambiar su propio rol.
+  Ya ninguna pantalla usa `useAppData()` (queda solo `AppDataContext.tsx`, sin
+  consumidores — limpieza para T10).
+- [x] `npm run build`/`npm run lint` pasan (0 errores).
+- [x] **Extra, backend (`para_sofi.md` §4, mecanismo 2):** cambiar el rol de un usuario
+  con `PUT /users/:id` ahora corta sus sesiones abiertas (`deleteSessionsByUserId`, mismo
+  arreglo que la desactivación) — antes conservaba el rol viejo hasta que el JWT
+  expirara. Solo si el rol cambió (editar nombre/correo no corta nada). Además,
+  `PUT /users/:id` rechaza con `400` que el Administrador se quite su propio rol (mismo
+  criterio que la auto-desactivación), y `POST /users` devuelve `temporaryPassword` para
+  que el frontend no tenga su propia copia de la contraseña fija (D7b). El mecanismo 1
+  (selector de rol en el login) ya lo resolvió `Feat/Front` (login sin rol).
+  Tests: 136/136 (4 nuevos + 1 ampliado).
 
 **Verificación:**
-- [ ] Manual en navegador: crear un usuario nuevo, editarlo, desactivarlo — los tres
-  contra el backend real, reflejados en Mongo.
+- [x] Mecánico contra el stack real (2026‑10‑12): Administrador crea un usuario →
+  `201` con `temporaryPassword`; correo duplicado → `409`; el usuario nuevo entra con la
+  contraseña temporal; con su sesión abierta, el Administrador le cambia el rol a
+  Verificador → esa sesión recibe `401` al instante y un nuevo login ya accede a
+  `GET /events`; desactivarlo → `204`, su sesión abierta `401`, login `401`;
+  Administrador quitándose el rol o desactivándose → `400`, su sesión sigue viva;
+  preflight `PUT /users` permitido. Falta la confirmación de Sofia en navegador.
+- Nota: la prueba dejó en Mongo un usuario `Prueba T9 Editada` (Verificador, Inactivo).
 
 **Dependencias:** T5.
 

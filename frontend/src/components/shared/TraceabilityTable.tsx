@@ -16,8 +16,18 @@ const ACTION_LABEL: Record<TraceEvent["action"], string> = {
   verificacion: "Verificación de integridad",
 }
 
+// Los eventos reales del ledger no traen eventId (el mock sí) — el txId ya
+// es único por evento (una transacción escribe un solo evento).
+type TableEvent = Omit<TraceEvent, "eventId"> & { userName?: string }
+
+interface TraceabilityTableProps {
+  events: TableEvent[]
+  /** documentId → nombre legible; si falta, se muestra el identificador. */
+  documentNames?: Record<string, string>
+}
+
 /** RF-22/RF-40/RF-51: Documento, Acción, Usuario, TX ID, Fecha y Resultado. */
-export function TraceabilityTable({ events }: { events: TraceEvent[] }) {
+export function TraceabilityTable({ events, documentNames }: TraceabilityTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -32,10 +42,12 @@ export function TraceabilityTable({ events }: { events: TraceEvent[] }) {
       </TableHeader>
       <TableBody>
         {events.map((event) => (
-          <TableRow key={event.eventId}>
-            <TableCell className="font-medium">{event.documentId}</TableCell>
+          <TableRow key={event.txId}>
+            <TableCell className="font-medium">
+              {documentNames?.[event.documentId] ?? event.documentId}
+            </TableCell>
             <TableCell>{ACTION_LABEL[event.action]}</TableCell>
-            <TableCell>{event.user}</TableCell>
+            <TableCell>{event.userName ?? event.user}</TableCell>
             <TableCell className="font-mono text-xs text-muted-foreground">
               {event.txId}
             </TableCell>

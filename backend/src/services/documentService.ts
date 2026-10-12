@@ -5,11 +5,12 @@ import {
   DocumentCounts,
   DocumentStatus,
   findDocumentById,
+  findPendingDuplicate,
   insertDocument,
   listDocuments as listDocumentsFromMongo,
   updateDocumentStatus,
 } from "../repositories/documentRepository";
-import { Role } from "../repositories/userRepository";
+import { findUserNamesByIds, Role } from "../repositories/userRepository";
 
 export type RegisterDocumentResult =
   | { ok: true; documentId: string }
@@ -19,7 +20,12 @@ export interface DocumentSummary {
   documentId: string;
   name: string;
   responsibleUser: string;
+  // Nombre legible del responsable; cae al userId si el usuario ya no existe.
+  responsibleName: string;
   registeredAt: string;
+  // Completo para Verificador/Administrador, enmascarado para el Empleado
+  // (RF-27/RNF-08, mismo criterio que GET /documents/:id).
+  hash: string;
   status: DocumentStatus;
 }
 
@@ -98,6 +104,21 @@ export async function registerDocument(
   // RF-14/RNF-11: automática, determinista — el mismo contenido siempre da
   // el mismo hash (HU-006-CA-02).
   const hash = crypto.createHash("sha256").update(file.buffer).digest("hex");
+
+  // Pedido de Sofia: no tiene sentido tener dos registros "Pendiente" del
+  // mismo archivo esperando verificación a la vez — solo se puede volver a
+  // subirlo una vez que el anterior ya se verificó (o salió "Alterado").
+  const duplicate = await findPendingDuplicate(userId, hash);
+  if (duplicate) {
+    return {
+      ok: false,
+      status: 409,
+      message:
+        `Ya tienes este documento registrado y pendiente de verificación (ID: ${duplicate._id}). ` +
+        "Solo puedes volver a subirlo una vez que se verifique.",
+    };
+  }
+
   const documentId = crypto.randomUUID();
 
   try {
@@ -160,13 +181,24 @@ export async function registerDocument(
 // donde él es `responsibleUser` (RF-18, "Mis documentos") — mismo endpoint
 // que `GET /documents/:id` usa para el hash: el comportamiento varía por
 // rol, no la ruta.
+//
+// Desde Sprint 4 (limitación de T7) también trae el nombre del responsable y
+// la huella: sin el nombre, dos "contrato.pdf" de empleados distintos eran
+// indistinguibles; sin la huella, "Todos los documentos" no podía mostrarla.
+// El hash sale de la copia de Mongo — es seguro porque nunca cambia después
+// del registro (RecordVerification solo cambia Status en el ledger), así
+// que no hace falta una consulta al ledger por documento.
 export async function listDocuments(role: Role, userId: string): Promise<DocumentSummary[]> {
   const docs = await listDocumentsFromMongo(role === "Empleado" ? userId : undefined);
+  const names = await findUserNamesByIds(docs.map((doc) => doc.responsibleUser));
+  const canViewFullHash = ROLES_WITH_FULL_HASH.includes(role);
   return docs.map((doc) => ({
     documentId: doc._id,
     name: doc.name,
     responsibleUser: doc.responsibleUser,
+    responsibleName: names.get(doc.responsibleUser) ?? doc.responsibleUser,
     registeredAt: doc.registeredAt.toISOString(),
+    hash: canViewFullHash ? doc.hash : maskHash(doc.hash),
     status: doc.status,
   }));
 }
@@ -312,6 +344,8 @@ export interface EventView {
   documentId: string;
   action: string;
   user: string;
+  // Nombre legible de `user`; cae al userId si no es un usuario registrado.
+  userName: string;
   txId: string;
   timestamp: string;
   result?: string;
@@ -326,15 +360,19 @@ interface LedgerEvent {
   User: string;
 }
 
-function toEventView(evt: LedgerEvent): EventView {
-  return {
+// El ledger solo guarda el userId en cada evento — los nombres se resuelven
+// en Mongo con una sola consulta por respuesta (limitación de T7).
+async function toEventViews(events: LedgerEvent[]): Promise<EventView[]> {
+  const names = await findUserNamesByIds(events.map((evt) => evt.User));
+  return events.map((evt) => ({
     documentId: evt.DocumentID,
     action: evt.Action,
     user: evt.User,
+    userName: names.get(evt.User) ?? evt.User,
     txId: evt.TxID,
     timestamp: evt.Timestamp,
     result: evt.Result,
-  };
+  }));
 }
 
 // El ledger no garantiza ningún orden entre TxID (son hashes, no un contador
@@ -371,7 +409,7 @@ export async function getDocumentEvents(
     return { ok: false, status: 502, message: "No se pudo consultar la trazabilidad. Intenta de nuevo." };
   }
 
-  const events = sortByTimestamp((JSON.parse(raw) as LedgerEvent[]).map(toEventView));
+  const events = sortByTimestamp(await toEventViews(JSON.parse(raw) as LedgerEvent[]));
 
   if (role === "Empleado") {
     // El dueño es el `User` del evento "registro" — del propio ledger, no de
@@ -416,10 +454,14 @@ export async function getAllEvents(): Promise<GetAllEventsResult> {
     return { ok: false, status: 502, message: "No se pudo consultar la trazabilidad. Intenta de nuevo." };
   }
 
-  const events = (JSON.parse(raw) as LedgerEvent[]).map(toEventView);
   // .slice(-N) después de ordenar ascendente: se queda con los N más
   // recientes, no los N primeros que trajo el ledger (sin orden garantizado).
-  return { ok: true, events: sortByTimestamp(events).slice(-MAX_EVENTS) };
+  // Se recorta antes de resolver nombres para no consultar usuarios de
+  // eventos que no se van a devolver.
+  const events = (JSON.parse(raw) as LedgerEvent[])
+    .sort((a, b) => a.Timestamp.localeCompare(b.Timestamp))
+    .slice(-MAX_EVENTS);
+  return { ok: true, events: await toEventViews(events) };
 }
 
 // RF-41/42 (HU-017): panel del Administrador. Puro paso a través del

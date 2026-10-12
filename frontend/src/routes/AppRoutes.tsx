@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./ProtectedRoute"
 
 import LoginPage from "@/pages/LoginPage"
 import OtpPage from "@/pages/OtpPage"
+import LoggedOutPage from "@/pages/LoggedOutPage"
 
 import CargarDocumentoPage from "@/pages/empleado/CargarDocumentoPage"
 import MisDocumentosPage from "@/pages/empleado/MisDocumentosPage"
@@ -26,6 +27,7 @@ export function AppRoutes() {
       <Route element={<AuthLayout />}>
         <Route path="/" element={<LoginPage />} />
         <Route path="/verificacion" element={<OtpPage />} />
+        <Route path="/sesion-cerrada" element={<LoggedOutPage />} />
       </Route>
 
       {/* Diagnóstico de infraestructura (T6, HU-021 CA-02), no forma parte

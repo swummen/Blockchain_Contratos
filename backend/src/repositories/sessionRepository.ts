@@ -14,7 +14,13 @@ export interface SessionDoc {
   // releer este campo para decidir acceso, un cambio de rol post-login lo
   // dejaría desincronizado del token que el cliente sigue usando.
   role: Role;
+  // Tope absoluto (D4 del plan): vence a los jwtExpiresMinutes del login,
+  // sin importar actividad. RNF-07 (15 min de inactividad) es un tope
+  // *distinto* y más corto — ver lastSeenAt.
   expiresAt: Date;
+  // RNF-07: se actualiza en cada request autenticado (requireAuth) para
+  // medir inactividad, independiente de expiresAt.
+  lastSeenAt: Date;
 }
 
 function sessionsCollection(): Collection<SessionDoc> {
@@ -33,6 +39,13 @@ export async function createSession(session: SessionDoc): Promise<void> {
 
 export async function findSessionByJti(jti: string): Promise<SessionDoc | null> {
   return sessionsCollection().findOne({ _id: jti });
+}
+
+// RNF-07: refresca la marca de actividad en cada request autenticado — es
+// lo que hace que la sesión venza por inactividad y no solo por el tope
+// absoluto de expiresAt.
+export async function touchSession(jti: string): Promise<void> {
+  await sessionsCollection().updateOne({ _id: jti }, { $set: { lastSeenAt: new Date() } });
 }
 
 export async function deleteSession(jti: string): Promise<void> {

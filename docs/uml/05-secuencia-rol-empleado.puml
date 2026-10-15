@@ -1,68 +1,88 @@
 @startuml 05-secuencia-rol-empleado
 actor Empleado
-participant "Frontend" as FE
-participant "Backend\nDocument Controller" as BE
-participant "Hash Service\n(SHA-256)" as Hash
-participant "Fabric Gateway\n(SDK)" as SDK
-participant "Chaincode (Go)" as CC
-database "MongoDB" as DB
+participant "Frontend\n(CargarDocumentoPage /\nMisDocumentos / MiTrazabilidad)" as FE
+participant "Backend\nroutes/documents +\ndocumentService" as BE
+participant "fabric/gateway.ts\n(Fabric Gateway SDK)" as GW
+participant "Peers + orderer\n(contratoschannel)" as Net
+participant "Chaincode contracts\n(Go)" as CC
+database "MongoDB\ndocuments · users" as DB
 
-== Carga y registro de documento ==
-Empleado -> FE : Selecciona PDF a registrar (RF-008)
-FE -> FE : Valida formato PDF y tamano <= 20MB (RF-009, RF-011)
-FE -> BE : POST /documentos {archivo, metadatos}
-BE -> BE : Validacion previa de formato/tamano (RF-012)
+note over BE
+  Todas las rutas pasan por requireAuth (JWT + sesión + RBAC).
+  POST /documents: solo rol Empleado.
+end note
 
-alt formato o tamano invalido
-    BE --> FE : 400 Bad Request
-    FE --> Empleado : Mensaje de error claro
-else archivo valido
-    BE -> Hash : Generar huella SHA-256 (RF-014)
-    Hash --> BE : huellaCriptografica
-    BE -> SDK : invoke RegistrarHuella(docId, huella)
-    SDK -> CC : Transaccion RegistrarHuella
+== Carga y registro de documento (RF-008 a RF-017) ==
+Empleado -> FE : Selecciona un PDF (RF-008, RF-010: uno por operación)
+FE -> FE : Valida extensión/tipo PDF y tamaño ≤ 20 MB (RF-009, RF-011)
+FE -> BE : POST /documents (multipart, campo "document")
+BE -> BE : Valida un solo archivo, ≤ 20 MB y firma real "%PDF-" (RF-012)
 
-    alt Fabric confirma la transaccion
-        CC --> SDK : txID
-        SDK --> BE : txID (RF-016)
-        BE -> DB : Guardar metadatos + huella, estado = Pendiente (RF-013, RF-015)
-        alt MongoDB guarda correctamente
-            DB --> BE : OK
-            BE -> SDK : invoke RegistrarEvento(docId, "Registro", usuario, "Exitoso")
-            SDK -> CC : Transaccion RegistrarEvento
-            CC --> SDK : txID del evento
-            SDK --> BE : txID del evento
-            BE --> FE : 201 Created (confirmacion) (RF-017)
-            FE --> Empleado : Documento registrado correctamente
-        else MongoDB falla (RNF-013)
-            DB --> BE : Error
-            BE -> BE : Registrar error y marcar para reconciliacion
-            BE --> FE : 500 (registro incompleto)
-            FE --> Empleado : Mensaje de error claro
+alt archivo inválido
+    BE --> FE : 400 (motivo claro)
+    FE --> Empleado : Mensaje de error (RNF-018)
+else archivo válido
+    BE -> BE : Huella SHA-256 del contenido completo (RF-014, RNF-011)
+    BE -> DB : ¿El mismo Empleado tiene este mismo archivo (mismo hash) en Pendiente?
+    alt sí
+        BE --> FE : 409 Ya tienes este documento pendiente de verificación
+        FE --> Empleado : Mensaje con el identificador existente
+    else no
+        BE -> BE : documentId = UUID nuevo (RF-013)
+        BE -> GW : submit RegisterDocument(documentId, huella, userId)
+        GW -> Net : Propuesta → endoso de Org1 y Org2 (política MAJORITY)
+        Net -> CC : Ejecuta RegisterDocument en cada peer
+        CC -> CC : Valida datos y que el documentId no exista;\nguarda Document{Status: Pendiente} + Event{registro}
+        Net -> Net : Orderer arma el bloque; los peers lo validan y lo agregan
+        alt Fabric confirma la transacción
+            Net --> GW : Event con TxID (RF-016)
+            GW --> BE : Event
+            BE -> DB : Insertar metadatos: nombre, responsable, fecha,\ncopia de huella, estado Pendiente (RF-013, RF-015)
+            alt MongoDB guarda correctamente
+                BE --> FE : 201 {documentId} (RF-017)
+                FE --> Empleado : Registro exitoso + identificador copiable
+            else MongoDB falla (RNF-013)
+                BE -> BE : Registrar la inconsistencia (el hash ya quedó en el ledger)
+                BE --> FE : 500 (nunca un éxito falso)
+            end
+        else Fabric rechaza o no responde
+            GW --> BE : Error
+            BE --> FE : 502 (no se guarda nada en MongoDB — HU-007 CA-02)
+            FE --> Empleado : Mensaje de error
         end
-    else Fabric rechaza o no responde
-        CC --> SDK : Error
-        SDK --> BE : Error
-        BE --> FE : 502 Bad Gateway (nada se guarda en MongoDB)
-        FE --> Empleado : Mensaje de error claro
     end
 end
 
-== Consulta de mis documentos ==
-Empleado -> FE : Consultar mis documentos (RF-018)
-FE -> BE : GET /documentos?usuario=yo
-BE -> DB : Buscar documentos del usuario autenticado
-DB --> BE : Lista [nombre, id, fecha, estado] (RF-019, RF-020)
-BE --> FE : 200 OK
-FE --> Empleado : Muestra documentos y su estado
+== Consulta de mis documentos (RF-018 a RF-020) ==
+Empleado -> FE : Mis documentos
+FE -> BE : GET /documents
+BE -> DB : Documentos con responsibleUser = usuario autenticado (máx. 100)
+DB --> BE : [nombre, documentId, fecha, huella, estado]
+BE -> BE : Enmascarar la huella (RF-027)
+BE --> FE : 200
+FE --> Empleado : Lista con estado e identificador copiable
 
-== Consulta de trazabilidad ==
-Empleado -> FE : Consultar trazabilidad (RF-021)
-FE -> BE : GET /documentos/{id}/trazabilidad
-BE -> SDK : query ConsultarTrazabilidad(docId)
-SDK -> CC : Consulta de eventos del documento
-CC --> SDK : Eventos [accion, usuario, txID, fecha]
-SDK --> BE : Eventos
-BE --> FE : 200 OK (RF-022)
-FE --> Empleado : Historial del documento
+== Trazabilidad de mis documentos (RF-021, RF-022) ==
+Empleado -> FE : Mi trazabilidad
+loop por cada documento propio
+    FE -> BE : GET /documents/{id}/events
+    BE -> GW : evaluate GetDocument(id)
+    GW -> CC : Consulta (no genera bloque)
+    alt no existe
+        CC --> BE : not found
+        BE --> FE : 404
+    else existe
+        BE -> GW : evaluate GetDocumentEvents(id)
+        GW -> CC : Eventos del documento (clave compuesta)
+        CC --> BE : [acción, usuario, TxID, fecha, resultado]
+        alt el evento "registro" es de otro usuario (HU-009 CA-02)
+            BE --> FE : 403
+        else es del Empleado
+            BE -> DB : Nombres de los usuarios
+            BE -> BE : Ordenar por fecha (cronológico)
+            BE --> FE : 200 eventos
+        end
+    end
+end
+FE --> Empleado : Historial (documento, acción, usuario, TxID, fecha y hora)
 @enduml

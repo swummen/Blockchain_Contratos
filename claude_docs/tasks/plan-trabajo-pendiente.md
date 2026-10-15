@@ -32,6 +32,7 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 | R6 | **Confirmar las fechas reales de S11 y S13** en el cronograma (Tabla 5 del trabajo de grado — es una imagen, no se puede leer desde `docs/md/`). | Sofia | El benchmark de RNF‑10 (2.1) tiene que correrse en esas dos semanas. |
 | R7 ✅ | **Limpiar datos de prueba antes de cualquier demo**: quedan `CONTRATO FALSO.pdf` (c.ruiz) y el usuario `Prueba T9 Editada`. `bash docker/down.sh && bash docker/up.sh && npm run seed` deja todo limpio. | Sofia | Una demo con datos de prueba sueltos se ve desordenada. |
 | R8 | **Correos en spam**: si los OTP siguen cayendo en spam, marcar "No es spam" en `contratosblockchain@gmail.com`. Recordar que la SMTP key vence en 1 año **o tras 90 días sin uso**. | Sofia | Que la demo no falle por el correo. |
+| R10 | **Sesión vencida en el frontend**: tras 15 min de inactividad el backend cierra la sesión y responde `401`, pero el frontend solo muestra "Sesión inválida o vencida." y no lleva al login (HU‑022 CA‑04 pide "exige autenticarse nuevamente"). Arreglo chico: ante un `401`, limpiar la sesión y redirigir al inicio. | Claude | Hallado al actualizar el UML. |
 | R9 | **DoD pendiente en todos los sprints**: PR revisado (criterio 1) y aceptación del director/codirectora (criterio 5). Llevar el acta. | Sofia + Laura | Sin esto ninguna HU cuenta como "terminada" para el KPI de HU aprobadas. |
 
 ---
@@ -50,6 +51,8 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 
 - [x] Matriz de infraestructura: `docs/Matriz_Infraestructura.xlsx` (+ `docs/md/`),
   generada desde la configuración real y verificada con el stack corriendo.
+- [x] Diagramas UML actualizados a lo implementado (`docs/uml/`, 8 diagramas + README
+  con el registro de cambios respecto al diseño inicial); los 8 renderizan con PlantUML.
 - [ ] Decidir la observación OBS-01 de la matriz: la política de endoso real es
   **MAJORITY** (firman las 2 organizaciones), no `OR` como dicen D2 (Sprint 0) y D7
   (Sprint 2). Opciones: corregir la documentación, o redesplegar con `OR` ("Ask first":

@@ -2,26 +2,29 @@
 left to right direction
 skinparam packageStyle rectangle
 
-actor "Usuario Autenticado" as UsuarioBase
+actor "Usuario autenticado" as UsuarioBase
 actor Empleado
 actor Verificador
 actor Administrador
+actor "Red Hyperledger Fabric" as Fabric <<sistema>>
+actor "Brevo (correo)" as Brevo <<sistema>>
 
 Empleado --|> UsuarioBase
 Verificador --|> UsuarioBase
 Administrador --|> UsuarioBase
 
-rectangle "Sistema Web de Verificacion de Integridad Documental (Blockchain)" {
-  usecase "Iniciar sesion\n(rol + credenciales + 2FA)" as UC_Login
-  usecase "Cerrar sesion" as UC_Logout
-  usecase "Cambiar contrasena" as UC_ChangePwd
-  usecase "Aceptar politica de\ntratamiento de datos" as UC_Policy
+rectangle "TrazaDoc — Verificación de integridad documental (blockchain)" {
+  usecase "Iniciar sesión\n(credenciales + código por correo)" as UC_Login
+  usecase "Cerrar sesión" as UC_Logout
+  usecase "Cambiar contraseña" as UC_ChangePwd
+  usecase "Aceptar política de\ntratamiento de datos\n(pendiente de implementar)" as UC_Policy
 
   usecase "Cargar documento contractual" as UC_Upload
   usecase "Consultar mis documentos" as UC_MyDocs
   usecase "Consultar trazabilidad\nde mis documentos" as UC_MyTrace
 
   usecase "Verificar integridad documental" as UC_Verify
+  usecase "Seleccionar documento\n(persona → contrato)" as UC_Select
   usecase "Consultar documentos registrados" as UC_DocsVerifier
   usecase "Consultar trazabilidad general" as UC_TraceGeneral
 
@@ -33,15 +36,15 @@ rectangle "Sistema Web de Verificacion de Integridad Documental (Blockchain)" {
 
 UsuarioBase --> UC_Login
 UsuarioBase --> UC_Logout
-UsuarioBase --> UC_Policy
-UC_Login .> UC_Policy : <<include>>
 UsuarioBase --> UC_ChangePwd
+UC_Login .> UC_Policy : <<include>>\n(primer ingreso)
 
 Empleado --> UC_Upload
 Empleado --> UC_MyDocs
 Empleado --> UC_MyTrace
 
 Verificador --> UC_Verify
+UC_Verify .> UC_Select : <<include>>
 Verificador --> UC_DocsVerifier
 Verificador --> UC_TraceGeneral
 
@@ -50,16 +53,25 @@ Administrador --> UC_ManageUsers
 Administrador --> UC_DocsAdmin
 Administrador --> UC_TraceAdmin
 
-UC_Upload .> UC_Login : <<include>>
-UC_Verify .> UC_Login : <<include>>
-UC_Dashboard .> UC_Login : <<include>>
+UC_Login --> Brevo
+UC_Upload --> Fabric
+UC_Verify --> Fabric
+UC_MyTrace --> Fabric
+UC_TraceGeneral --> Fabric
+UC_TraceAdmin --> Fabric
 
 note bottom of UC_Login
-  RF-001 a RF-007: credenciales +
-  segundo factor enviado al correo
-  corporativo. El rol se asigna desde
-  la cuenta (no se selecciona).
-  RF-054: bloqueo por intentos fallidos.
-  RF-055: aceptacion de politica.
+  RF-001 a RF-007: credenciales + código de 6 dígitos
+  enviado al correo registrado mediante Brevo (5 min,
+  5 intentos). El rol se toma de la cuenta: no se elige.
+  RF-054: bloqueo de 15 min tras 5 intentos fallidos.
+  RNF-007: cierre por 15 min de inactividad.
+  RF-055 (política de datos): diseñado, pendiente.
+end note
+
+note bottom of UC_DocsAdmin
+  RF-027: la huella completa solo la ve el
+  Verificador; Empleado y Administrador la
+  ven enmascarada.
 end note
 @enduml

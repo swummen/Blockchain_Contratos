@@ -1,60 +1,92 @@
 @startuml 04-secuencia-autenticacion
 actor Usuario
-participant "Frontend\n(React)" as FE
-participant "Backend\nAuth Controller" as BE
-database "MongoDB" as DB
-participant "Servicio de correo" as Mail
+participant "Frontend\n(LoginPage / OtpPage)" as FE
+participant "Backend\nroutes/auth + authService" as BE
+participant "middlewares/auth\n(requireAuth)" as MW
+database "MongoDB\nusers · otp_codes · sessions" as DB
+participant "emailService\n(nodemailer)" as Mail
+participant "Brevo\n(SMTP relay)" as Brevo
 
-Usuario -> FE : Ingresa usuario y contrasena (RF-002)
-FE -> BE : POST /auth/login {usuario, password}
-BE -> DB : Validar credenciales (hash + salt) (RNF-001)
+== Primer factor: credenciales ==
+Usuario -> FE : Ingresa correo y contraseña (RF-002)\n(el rol NO se elige: se toma de la cuenta)
+FE -> BE : POST /auth/login {email, password}
+BE -> DB : Buscar usuario por correo
 
-alt cuenta bloqueada (RF-054)
-    BE --> FE : 423 Locked
-    FE --> Usuario : Mensaje de cuenta bloqueada temporalmente
-else credenciales invalidas
-    BE -> DB : intentosFallidos++ (si llega al limite: bloqueadoHasta) (RF-054)
-    BE --> FE : 401 Unauthorized
-    FE --> Usuario : Mensaje de error claro (RNF-018)
-else credenciales validas
-    BE -> DB : intentosFallidos = 0
-    BE -> BE : Generar token de segundo factor con vigencia (RF-003)
-    BE -> Mail : Enviar token al correo corporativo
-    Mail --> Usuario : Token de verificacion
-    BE --> FE : 200 OK (pendiente de 2FA)
-
-    Usuario -> FE : Ingresa token recibido
-    FE -> BE : POST /auth/verify-token {token}
-    BE -> BE : Validar token: vigencia y maximo 3 intentos (RF-004)
-
-    opt token vencido o intentos agotados
-        Usuario -> FE : Solicitar reenvio de token
-        FE -> BE : POST /auth/resend-token
-        BE -> Mail : Enviar nuevo token
-        Mail --> Usuario : Nuevo token de verificacion
-    end
-
-    alt token valido
-        opt primer ingreso sin politica aceptada (RF-055)
-            FE --> Usuario : Muestra politica de tratamiento de datos
-            Usuario -> FE : Acepta politica
-            FE -> BE : POST /auth/aceptar-politica
-            BE -> DB : politicaAceptada = true, fechaAceptacionPolitica
-        end
-        BE --> FE : 200 OK + sesion / JWT (rol tomado de la cuenta) (RF-005)
-        FE --> Usuario : Redireccion al panel segun rol (RF-006)
-    else token invalido
-        BE --> FE : 401 Unauthorized
-        FE --> Usuario : Mensaje de error claro (RNF-018)
+alt cuenta bloqueada (lockedUntil vigente) (RF-054)
+    BE --> FE : 423 Cuenta bloqueada temporalmente
+    FE --> Usuario : Mensaje de bloqueo (15 min)
+else usuario inexistente, contraseña incorrecta o cuenta Inactiva
+    BE -> DB : failedLoginAttempts++ (al llegar a 5: lockedUntil = ahora + 15 min)
+    BE --> FE : 401 Credenciales inválidas\n(mismo mensaje en todos los casos — RF-002 CA-02)
+    FE --> Usuario : Mensaje de error (RNF-018)
+else credenciales válidas (bcrypt + sal, RNF-001)
+    BE -> DB : failedLoginAttempts = 0
+    BE -> BE : Generar código de 6 dígitos (RF-003)
+    BE -> DB : otp_codes: hash del código, attempts = 0,\nexpiresAt = ahora + 5 min (índice TTL)
+    BE -> Mail : sendOtpEmail(correo, código)
+    Mail -> Brevo : SMTP + STARTTLS :587
+    Brevo --> Usuario : Correo "TrazaDoc — Código de verificación"
+    alt el proveedor rechaza el envío
+        BE --> FE : 502 No se pudo enviar el código de verificación
+    else enviado
+        BE --> FE : 200 (pendiente de segundo factor)
+        FE --> Usuario : Pantalla para ingresar el código
     end
 end
 
-...15 minutos sin actividad...
-FE -> BE : POST /auth/logout (cierre automatico por inactividad)
-BE --> FE : Sesion invalidada
+== Segundo factor: código por correo ==
+Usuario -> FE : Ingresa el código recibido
+FE -> BE : POST /auth/verify-otp {email, code}
+BE -> DB : Leer otp_codes del usuario
 
-...tiempo despues...
-Usuario -> FE : Cerrar sesion (RF-007)
+alt código vencido o inexistente
+    BE --> FE : 400 Código inválido o vencido
+else 5 intentos agotados (RF-004)
+    BE --> FE : 400 Demasiados intentos (volver a iniciar sesión)
+else código incorrecto
+    BE -> DB : attempts++
+    BE --> FE : 400 Código incorrecto
+else código correcto
+    BE -> DB : Borrar el código usado
+    BE -> DB : sessions: {_id = jti, userId, role,\nexpiresAt = +60 min, lastSeenAt = ahora}
+    BE -> BE : Firmar JWT {sub, role, jti} (HS256)
+    BE --> FE : 200 {token, user} (RF-005)
+    FE -> FE : Guardar token en memoria (SessionContext)
+    opt primer ingreso sin política aceptada (RF-055 — PENDIENTE DE IMPLEMENTAR)
+        FE --> Usuario : Mostrar política de tratamiento de datos
+        Usuario -> FE : Acepta la política
+        FE -> BE : POST /auth/accept-policy
+        BE -> DB : Guardar versión y fecha de aceptación
+    end
+    FE --> Usuario : Redirección al panel de su rol (RF-006)
+end
+
+== Cada petición protegida (RNF-003, RNF-007) ==
+FE -> MW : Petición con Authorization: Bearer <JWT>
+MW -> MW : Verificar firma y vencimiento del JWT
+MW -> DB : ¿Existe la sesión (jti)?
+alt sesión inexistente (logout, cambio de rol o desactivación)
+    MW --> FE : 401 Sesión inválida o vencida
+else más de 15 min sin actividad (lastSeenAt)
+    MW -> DB : Borrar la sesión
+    MW --> FE : 401 Sesión inválida o vencida
+else rol no autorizado para la ruta
+    MW --> FE : 403 No tienes permiso para esta acción
+else válida
+    MW -> DB : lastSeenAt = ahora
+    MW -> BE : Continúa con la ruta
+end
+
+== Cierre de sesión (RF-007) ==
+Usuario -> FE : Cerrar sesión
 FE -> BE : POST /auth/logout
-BE --> FE : Sesion invalidada (RNF-007)
+BE -> DB : Borrar la sesión (el JWT deja de servir aunque no haya vencido)
+BE --> FE : 204
+FE --> Usuario : Pantalla "Sesión cerrada" → vuelve al inicio
+
+== Cambio de contraseña (RF-052, RF-053) ==
+Usuario -> FE : Contraseña actual + nueva
+FE -> BE : POST /auth/change-password
+BE -> DB : Verificar la actual; guardar la nueva con bcrypt + sal
+BE --> FE : 200 / 400 si la actual es incorrecta
 @enduml

@@ -1,75 +1,94 @@
 @startuml 01-diagrama-componentes
 skinparam componentStyle rectangle
 
-package "CAPA DE PRESENTACION - Frontend (React SPA)" {
-  [Modulo de Autenticacion] as UI_Auth
-  [Modulo Empleado] as UI_Empleado
-  [Modulo Verificador] as UI_Verificador
-  [Modulo Administrador] as UI_Admin
+package "CAPA DE PRESENTACIÓN — frontend (React 19 + Vite)" {
+  [Páginas de autenticación\nLoginPage · OtpPage · LoggedOutPage] as UI_Auth
+  [Páginas Empleado\nCargar documento · Mis documentos · Mi trazabilidad] as UI_Empleado
+  [Páginas Verificador\nVerificar integridad · Documentos · Trazabilidad global] as UI_Verificador
+  [Páginas Administrador\nPanel · Usuarios · Documentos · Trazabilidad] as UI_Admin
+  [SessionContext + ProtectedRoute\n(sesión en memoria, rutas por rol)] as UI_Session
+  [lib/api.ts\n(único cliente HTTP, VITE_API_URL)] as UI_Api
 }
 
-package "CAPA DE APLICACION - Backend (Node.js + Express)" {
-  [Auth Controller] as C_Auth
-  [Document Controller] as C_Doc
-  [Verification Controller] as C_Verif
-  [Admin Controller] as C_Admin
-  [Hash Service (SHA-256)] as S_Hash
-  [Fabric Gateway Service] as S_Fabric
-  [User / Document Repository] as S_Repo
-  [Auth Middleware\n(JWT + RBAC)] as S_AuthMW
-  [Mail Service (2FA)] as S_Mail
+package "CAPA DE APLICACIÓN — backend (Node.js 20 + Express + TypeScript)" {
+  package "routes/" {
+    [auth.ts\n/auth/*] as R_Auth
+    [documents.ts\n/documents/*] as R_Docs
+    [events.ts\n/events] as R_Events
+    [users.ts\n/users/*] as R_Users
+  }
+  [middlewares/auth.ts\nrequireAuth: JWT + sesión activa\n+ inactividad + RBAC] as MW
+  package "services/" {
+    [authService\nlogin, OTP, sesión, bloqueo] as S_Auth
+    [documentService\nvalidación PDF, SHA-256, comparación,\nenmascarado de huella, trazabilidad] as S_Doc
+    [userService\nalta, edición, baja lógica] as S_User
+    [emailService\nnodemailer (SMTP)] as S_Mail
+  }
+  package "repositories/" {
+    [userRepository · sessionRepository\notpRepository · documentRepository] as Repo
+  }
+  [fabric/gateway.ts\nFabric Gateway SDK\n(evaluate / submit)] as GW
 }
 
-database "CAPA DE PERSISTENCIA - MongoDB\n(usuarios, metadatos,\nindice de trazabilidad)" as DB
+database "CAPA DE PERSISTENCIA — MongoDB 7\nusers · documents · sessions · otp_codes" as DB
 
-package "CAPA BLOCKCHAIN - Red Hyperledger Fabric" {
-  [Fabric SDK] as SDK
-  [Chaincode (Go)\nRegistrarHuella / ConsultarHuella\nActualizarEstado / RegistrarEvento\nConsultarTrazabilidad] as CC
-  database "Ledger (blockchain)" as Ledger
+package "CAPA BLOCKCHAIN — Hyperledger Fabric 2.5 (canal contratoschannel)" {
+  [peer0.org1 / peer0.org2] as Peer
+  [Chaincode contracts (Go)\nRegisterDocument · GetDocument\nRecordVerification\nGetDocumentEvents · GetAllEvents] as CC
+  database "Ledger\n(world state + bloques)" as Ledger
+  [orderer (Raft)] as Orderer
 }
 
-cloud "Servidor SMTP\n(correo corporativo)" as SMTP
-UI_Auth --> C_Auth : REST/HTTPS
-UI_Empleado --> C_Doc : REST/HTTPS
-UI_Verificador --> C_Verif : REST/HTTPS
-UI_Admin --> C_Admin : REST/HTTPS
+cloud "Brevo\n(SMTP relay)" as Brevo
 
-C_Auth --> S_Repo
-C_Doc --> S_Hash
-C_Doc --> S_Fabric
-C_Doc --> S_Repo
-C_Verif --> S_Hash
-C_Verif --> S_Fabric
-C_Verif --> S_Repo
-C_Admin --> S_Repo
-C_Admin --> S_Fabric
-C_Auth --> S_Mail : envia token 2FA
-S_Mail --> SMTP
-C_Doc --> S_AuthMW : valida JWT y rol
-C_Verif --> S_AuthMW : valida JWT y rol
-C_Admin --> S_AuthMW : valida JWT y rol
+UI_Auth --> UI_Session
+UI_Empleado --> UI_Api
+UI_Verificador --> UI_Api
+UI_Admin --> UI_Api
+UI_Session --> UI_Api
+UI_Api --> R_Auth : REST/JSON
+UI_Api --> R_Docs : REST/JSON\n(multipart para PDF)
+UI_Api --> R_Events : REST/JSON
+UI_Api --> R_Users : REST/JSON
 
-S_Repo --> DB
-S_Fabric --> SDK
-SDK --> CC
+R_Auth --> S_Auth
+R_Docs --> MW
+R_Events --> MW
+R_Users --> MW
+R_Docs --> S_Doc
+R_Events --> S_Doc
+R_Users --> S_User
+
+S_Auth --> S_Mail : envía el código OTP
+S_Auth --> Repo
+S_Doc --> Repo
+S_Doc --> GW
+S_User --> Repo
+MW --> Repo : sesión
+
+S_Mail --> Brevo
+Repo --> DB
+GW --> Peer : gRPC + TLS :7051
+Peer --> CC
 CC --> Ledger
+Peer --> Orderer : envío para ordenar
 
-note right of S_Fabric
-  RNF-020: el frontend nunca
-  se comunica directamente
-  con la red blockchain,
-  siempre a traves del backend.
+note bottom of GW
+  RNF-020: el frontend nunca se comunica
+  con Fabric ni con MongoDB; solo el
+  backend, a través de este módulo.
 end note
 
 note right of Ledger
-  RNF-004: solo se almacenan
-  huellas criptograficas y
-  eventos, nunca el PDF.
+  RNF-004: solo huellas SHA-256 y eventos
+  (con TxID); nunca el PDF. Es la fuente
+  de verdad de integridad y trazabilidad.
 end note
 
-note right of DB
-  La fuente de verdad de integridad y
-  trazabilidad es el ledger. MongoDB
-  guarda metadatos e indice de consulta.
+note bottom of DB
+  Metadatos (nombre, responsable, fecha,
+  copia de huella y estado), usuarios,
+  sesiones y códigos OTP. Se escribe
+  siempre DESPUÉS del ledger (RNF-013).
 end note
 @enduml

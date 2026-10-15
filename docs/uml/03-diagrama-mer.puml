@@ -1,59 +1,85 @@
 @startuml 03-diagrama-mer
 skinparam linetype ortho
 
-entity "Usuario" as Usuario {
-  * id : ObjectId <<PK>>
-  --
-  nombre : string
-  correo : string <<unique>>
-  passwordHash : string
-  rol : enum {Empleado, Verificador, Administrador}
-  estado : enum {Activo, Inactivo}
-  intentosFallidos : int
-  bloqueadoHasta : datetime
-  politicaAceptada : boolean
-  fechaAceptacionPolitica : datetime
-  tokenSegundoFactor : string (hash)
-  tokenExpiraEn : datetime
-  tokenIntentos : int
+package "MongoDB (off-chain)" {
+  entity "users" as Usuario {
+    * _id : string <<PK>> (U001…)
+    --
+    name : string
+    email : string <<unique>>
+    passwordHash : string (bcrypt, con sal)
+    role : enum {Empleado, Verificador, Administrador}
+    status : enum {Activo, Inactivo}
+    failedLoginAttempts : int
+    lockedUntil : datetime
+  }
+
+  entity "documents" as Documento {
+    * _id : string <<PK>> (UUID = documentId)
+    --
+    name : string (nombre del archivo)
+    responsibleUser : string <<FK users._id>>
+    registeredAt : datetime
+    hash : string (copia de la huella SHA-256)
+    status : enum {Pendiente, Verificado, Alterado} (copia)
+  }
+
+  entity "sessions" as Sesion {
+    * _id : string <<PK>> (jti del JWT)
+    --
+    userId : string <<FK users._id>>
+    role : string
+    expiresAt : datetime <<TTL>>
+    lastSeenAt : datetime
+  }
+
+  entity "otp_codes" as Otp {
+    * _id : string <<PK, FK users._id>>
+    --
+    codeHash : string
+    attempts : int
+    expiresAt : datetime <<TTL>>
+  }
 }
 
-entity "Documento" as Documento {
-  * id : ObjectId <<PK>>
-  --
-  nombre : string
-  usuarioResponsableId : ObjectId <<FK>>
-  fechaRegistro : datetime
-  huellaCriptografica : string (SHA-256)
-  estado : enum {Pendiente, Verificado, Alterado}
-}
+package "Hyperledger Fabric — world state (on-chain)" {
+  entity "Document" as LDoc {
+    * DocumentID : string <<clave>>
+    --
+    Sha256Hex : string (64 hex)
+    Status : enum {Pendiente, Verificado, Alterado}
+  }
 
-entity "EventoTrazabilidad" as Evento {
-  * id : ObjectId <<PK>>
-  --
-  documentoId : ObjectId <<FK, opcional>>
-  usuarioId : ObjectId <<FK>>
-  accion : enum {Registro, Verificacion, Consulta, GestionUsuario}
-  txId : string
-  fechaHora : datetime
-  resultado : string
+  entity "Event" as Evento {
+    * clave compuesta ("event", DocumentID, TxID)
+    --
+    Action : enum {registro, verificacion}
+    DocumentID : string
+    Result : enum {confirmada, comprometida} (opcional)
+    Timestamp : string (RFC 3339, de la transacción)
+    TxID : string
+    User : string (users._id)
+  }
 }
 
 Usuario ||--o{ Documento : "registra >"
-Usuario ||--o{ Evento : "ejecuta >"
-Documento ||--o{ Evento : "genera >"
+Usuario ||--o{ Sesion : "abre >"
+Usuario ||--o| Otp : "tiene código >"
+Documento ||--|| LDoc : "mismo documentId"
+LDoc ||--|{ Evento : "genera >"
+Usuario ||..o{ Evento : "ejecuta > (referencia lógica)"
 
 note bottom of Evento
-  RNF-004 / RNF-005: unicamente la
-  huellaCriptografica y los eventos
-  de trazabilidad (con su txId) se
-  anclan de forma inmutable en la
-  blockchain (Hyperledger Fabric).
-  El archivo PDF no se almacena.
-  MongoDB guarda solo metadatos de
-  Usuario/Documento y un indice de
-  eventos (RNF-013).
-  documentoId es opcional: los eventos
-  GestionUsuario no tienen documento.
+  RNF-004 / RNF-005: en el ledger solo se anclan la huella y
+  los eventos de trazabilidad, nunca el PDF. Los eventos son
+  solo de anexado (1 de registro + 0..N de verificación).
+  El ledger es la autoridad de hash y estado; MongoDB guarda
+  una copia para listar y se escribe después (RNF-013).
+end note
+
+note bottom of Usuario
+  Pendiente (RF-055): aceptación de la política de
+  tratamiento de datos (versión, fecha de aceptación).
+  Baja lógica (RF-047): status = Inactivo, nunca se borra.
 end note
 @enduml

@@ -1,72 +1,93 @@
 @startuml 06-secuencia-rol-verificador
 actor Verificador
-participant "Frontend" as FE
-participant "Backend\nVerification Controller" as BE
-participant "Hash Service\n(SHA-256)" as Hash
-participant "Fabric Gateway\n(SDK)" as SDK
-participant "Chaincode (Go)" as CC
-database "MongoDB" as DB
+participant "Frontend\n(VerificarIntegridadPage /\nDocumentos / Trazabilidad global)" as FE
+participant "Backend\nroutes/documents · routes/events\n+ documentService" as BE
+participant "fabric/gateway.ts\n(Fabric Gateway SDK)" as GW
+participant "Peers + orderer\n(contratoschannel)" as Net
+participant "Chaincode contracts\n(Go)" as CC
+database "MongoDB\ndocuments · users" as DB
 
-== Consulta de la huella registrada ==
-Verificador -> FE : Accede al modulo de verificacion (RF-023)
-Verificador -> FE : Selecciona documento registrado (RF-024)
-FE -> BE : GET /documentos/{id}
-BE -> SDK : query ConsultarHuella(docId) (RF-025)
-SDK -> CC : Consulta huella registrada
+note over BE
+  Todas las rutas pasan por requireAuth (JWT + sesión + RBAC).
+  POST /documents/{id}/verifications: solo rol Verificador (RF-023).
+end note
 
-alt la huella existe en el ledger
-    CC --> SDK : huellaRegistrada
-    SDK --> BE : huellaRegistrada
-    BE --> FE : 200 OK (huella visible solo a rol autorizado) (RF-026, RF-027)
-else documento no encontrado
-    CC --> SDK : no encontrada
-    SDK --> BE : no encontrada
-    BE --> FE : 404 Not Found
-    FE --> Verificador : "Documento no registrado en la blockchain"
+== Selección del documento (RF-023 a RF-025) — en dos pasos ==
+Verificador -> FE : Abre "Verificar integridad"
+FE -> BE : GET /documents
+BE -> DB : Todos los documentos (máx. 100) + nombre del responsable
+BE --> FE : 200 lista
+FE -> FE : Agrupa por persona responsable
+Verificador -> FE : 1) Elige la persona  2) Elige su contrato (nombre, fecha, estado)
+note right of FE
+  El documentId (UUID) queda interno.
+  Vía secundaria: ingresar el identificador a mano.
+end note
+
+== Consulta de la huella registrada (RF-026, RF-027) ==
+FE -> BE : GET /documents/{id}
+BE -> GW : evaluate GetDocument(id)
+GW -> CC : Consulta (no genera bloque)
+alt documento no registrado
+    CC --> BE : not found
+    BE --> FE : 404
+    FE --> Verificador : "El documento no está registrado" (HU-010 CA-02)
+else existe
+    CC --> BE : Document{Sha256Hex, Status} (el ledger es la autoridad)
+    BE -> DB : Metadatos (nombre, responsable, fecha)
+    BE --> FE : 200 con la huella COMPLETA (solo para el Verificador)
+    FE --> Verificador : Panel: documento, responsable, fecha y huella
 end
 
-== Verificacion (cuando el documento existe) ==
-Verificador -> FE : Carga documento a comparar (RF-028)
-FE -> FE : Valida formato/tamano (RF-029)
-FE -> BE : POST /verificaciones {docId, archivoComparar}
-BE -> BE : Revalida formato y tamano del archivo (RF-029)
-BE -> Hash : Generar huella del archivo cargado (RF-030)
-Hash --> BE : huellaComparada
-BE -> BE : Comparar huellaRegistrada vs huellaComparada (RF-031)
-
-alt huellas coinciden
-    BE -> BE : resultado = Verificado (RF-032)
-else huellas difieren
-    BE -> BE : resultado = Alterado (RF-032)
+== Verificación (RF-028 a RF-036) ==
+Verificador -> FE : Carga el PDF a comparar (RF-028)
+FE -> FE : Valida PDF y ≤ 20 MB (RF-029)
+FE -> BE : POST /documents/{id}/verifications (multipart)
+BE -> BE : Revalida un archivo, ≤ 20 MB, firma "%PDF-" (RF-029)
+alt archivo inválido
+    BE --> FE : 400
+else válido
+    BE -> GW : evaluate GetDocument(id) — huella registrada
+    GW -> CC : Consulta
+    CC --> BE : Sha256Hex
+    BE -> BE : SHA-256 del archivo cargado (RF-030)
+    BE -> BE : Comparar huellas (RF-031)\ncoinciden → "confirmada" · difieren → "comprometida"
+    BE -> GW : submit RecordVerification(id, resultado, userId)
+    GW -> Net : Propuesta → endoso de Org1 y Org2 → orderer → bloque
+    Net -> CC : RecordVerification
+    CC -> CC : Status = Verificado | Alterado (RF-034: única vía)\n+ nuevo Event{verificacion, resultado}
+    alt Fabric confirma
+        Net --> BE : Event con TxID (RF-035)
+        BE -> DB : Actualizar la copia del estado
+        alt MongoDB actualiza
+            BE --> FE : 200 {status, matches, registeredHash, computedHash}
+            FE --> Verificador : "Integridad confirmada" o "Integridad comprometida"\n+ ambas huellas como evidencia (RF-032, RF-033)
+        else MongoDB falla (RNF-013)
+            BE --> FE : 500 (el resultado ya quedó en el ledger)
+        end
+    else Fabric rechaza
+        BE --> FE : 502 (MongoDB no se toca)
+    end
 end
+Verificador -> FE : "Nueva verificación" (RF-036)
+FE --> Verificador : Formulario vacío de selección (HU-014 CA-02)
 
-BE --> FE : huellaRegistrada, huellaComparada, resultado (RF-033)
-BE -> SDK : invoke ActualizarEstado(docId, resultado)
-SDK -> CC : Transaccion ActualizarEstado
-CC --> SDK : txID
-SDK --> BE : txID
-BE -> DB : Actualizar estado del documento (RF-034)
-BE -> SDK : invoke RegistrarEvento(docId, "Verificacion", usuario, resultado)
-SDK -> CC : Transaccion RegistrarEvento
-CC --> SDK : txID
-SDK --> BE : confirmacion (RF-035)
-BE --> FE : 200 OK
-FE --> Verificador : Muestra resultado; opcion "Nueva verificacion" (RF-036)
+== Consulta de documentos registrados (RF-037, RF-038) ==
+Verificador -> FE : Documentos
+FE -> BE : GET /documents
+BE -> DB : Todos los documentos (máx. 100)
+BE --> FE : 200 [nombre, id, responsable, fecha, estado, huella completa]
+FE --> Verificador : Lista de documentos
 
-== Consulta de documentos y trazabilidad general ==
-Verificador -> FE : Consultar documentos registrados (RF-037)
-FE -> BE : GET /documentos
-BE -> DB : Buscar todos los documentos
-DB --> BE : Lista completa (RF-038)
-BE --> FE : 200 OK
-FE --> Verificador : Tabla de documentos
-
-Verificador -> FE : Consultar trazabilidad general (RF-039)
-FE -> BE : GET /trazabilidad
-BE -> SDK : query ConsultarTrazabilidad()
-SDK -> CC : Consulta del historico completo
-CC --> SDK : Eventos [Documento, Accion, Usuario, txID, Fecha, Resultado]
-SDK --> BE : Eventos
-BE --> FE : 200 OK (RF-040)
-FE --> Verificador : Historial completo
+== Trazabilidad general (RF-039, RF-040) ==
+Verificador -> FE : Trazabilidad global
+FE -> BE : GET /events
+BE -> GW : evaluate GetAllEvents()
+GW -> CC : Todos los eventos de todos los documentos
+CC --> BE : Eventos (sin orden garantizado)
+BE -> BE : Ordenar por fecha; conservar los 200 más recientes
+BE -> DB : Nombres de los usuarios
+BE --> FE : 200 [documentId, acción, usuario, TxID, fecha, resultado]
+FE -> FE : Cruza documentId con el listado para mostrar el nombre del archivo
+FE --> Verificador : Tabla de trazabilidad (más reciente primero)
 @enduml

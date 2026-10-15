@@ -5,58 +5,82 @@ skinparam node {
 
 actor Usuario
 
-node "VM Azure (Linux)" as VM {
+node "Equipo de desarrollo (Windows + Docker Desktop)" as Host {
 
-  node "Docker Engine (docker-compose)" as Docker {
+  node "Navegador web" as Browser
 
-    node "Contenedor: frontend\n(Nginx + build de React)" as N_Front {
-      component [SPA React] as App_Front
-    }
+  node "Docker Engine — red bridge fabric_test" as Docker {
 
-    node "Contenedor: backend\n(Node.js + Express)" as N_Back {
-      component [API REST] as App_Back
-      component [Fabric SDK] as App_SDK
-    }
-
-    node "Contenedor: mongodb" as N_Mongo {
-      folder "Volumen: mongo-data" as V_Mongo
-      database "MongoDB" as DB_Mongo
-    }
-
-    package "Red Hyperledger Fabric (contenedores Docker)" {
-      node "Contenedor: ca.org1" as N_CA
-      node "Contenedor: orderer.example.com" as N_Orderer
-      node "Contenedor: peer0.org1" as N_Peer {
-        folder "Volumen: ledger del peer" as V_Peer
-        component [Chaincode (Go)] as CC
-        database "CouchDB\n(state database)" as CouchDB
+    package "Aplicación (docker/compose.app.yml)" {
+      node "Contenedor: frontend\nnginx:alpine + build de React\n127.0.0.1:5173 → 80" as N_Front {
+        component [SPA React] as App_Front
       }
-      note as N_Canal
-        Canal: <nombre de tu canal>
-        Chaincode: <nombre del chaincode>
-      end note
+
+      node "Contenedor: backend\nnode:20-alpine (Express)\n127.0.0.1:8080" as N_Back {
+        component [API REST] as App_Back
+        component [Fabric Gateway SDK] as App_SDK
+        folder "/crypto (solo lectura)\nidentidad Admin Org1" as V_Crypto
+      }
+
+      node "Contenedor: mongo\nmongo:7.0.41\n127.0.0.1:27017" as N_Mongo {
+        database "MongoDB" as DB_Mongo
+        folder "Volumen: contratos_mongo_data" as V_Mongo
+      }
+    }
+
+    package "Red Hyperledger Fabric 2.5.16 (docker/network-up.sh) — canal contratoschannel" {
+      node "Contenedor: orderer.example.com\nRaft · :7050 / :7053 / :9443" as N_Orderer {
+        folder "Volumen: compose_orderer.example.com" as V_Ord
+      }
+
+      node "Contenedor: peer0.org1.example.com\nOrg1MSP · :7051 / :9444" as N_Peer1 {
+        database "Ledger + world state\n(LevelDB)" as L1
+        folder "Volumen: compose_peer0.org1.example.com" as V_P1
+      }
+      node "Contenedor: dev-peer0.org1…contracts_1.0" as N_CC1 {
+        component [Chaincode contracts (Go)] as CC1
+      }
+
+      node "Contenedor: peer0.org2.example.com\nOrg2MSP · :9051 / :9445" as N_Peer2 {
+        database "Ledger + world state\n(LevelDB)" as L2
+        folder "Volumen: compose_peer0.org2.example.com" as V_P2
+      }
+      node "Contenedor: dev-peer0.org2…contracts_1.0" as N_CC2 {
+        component [Chaincode contracts (Go)] as CC2
+      }
+
+      node "Contenedor: ca_org1\nFabric CA 1.5.22 · :7054" as N_CA1
+      node "Contenedor: ca_org2\nFabric CA 1.5.22 · :8054" as N_CA2
+      node "Contenedor: ca_orderer\nFabric CA 1.5.22 · :9054" as N_CAO
     }
   }
 }
 
-cloud "Servidor SMTP\n(correo)" as SMTP
+cloud "Brevo\nsmtp-relay.sendinblue.com" as SMTP
+cloud "Buzón de correo\ndel usuario" as Inbox
 
-Usuario --> App_Front : HTTPS :443
-App_Front --> App_Back : REST/JSON (HTTPS) :3000
-App_Back --> DB_Mongo : Driver MongoDB :27017
+Usuario --> Browser
+Browser --> App_Front : HTTP :5173
+Browser --> App_Back : REST/JSON (HTTP) :8080\n(VITE_API_URL)
+App_Back --> DB_Mongo : driver MongoDB :27017
 App_Back --> App_SDK
-App_Back --> SMTP : SMTP/TLS (envio token 2FA)
-App_SDK --> N_Peer : gRPC :7051 (invoke / query)
-App_SDK --> N_Orderer : gRPC :7050 (envio de transacciones)
-N_Peer --> CouchDB : :5984
-N_CA --> N_Peer : emision de certificados (MSP) :7054
-N_CA --> N_Orderer : emision de certificados (MSP) :7054
+App_Back --> SMTP : SMTP + STARTTLS :587\n(código OTP)
+SMTP --> Inbox
+App_SDK --> N_Peer1 : gRPC + TLS :7051\n(evaluate / submit)
+N_Peer1 --> N_Peer2 : endoso (política MAJORITY:\nfirman ambas organizaciones)
+N_Peer1 --> N_Orderer : transacción endosada
+N_Orderer --> N_Peer1 : bloque
+N_Orderer --> N_Peer2 : bloque
+N_Peer1 --> CC1
+N_Peer2 --> CC2
+N_CA1 ..> N_Peer1 : identidades X.509
+N_CA2 ..> N_Peer2 : identidades X.509
+N_CAO ..> N_Orderer : identidades X.509
 
 note bottom
-  RNF-021: todos los componentes se ejecutan
-  como contenedores Docker orquestados con
-  Docker Compose, sobre una VM Azure durante
-  1 mes (topologia de una sola organizacion,
-  segun el alcance del MVP).
+  RNF-021: todo se levanta con Docker Compose en una sola orden
+  (bash docker/up.sh). Solo el backend accede a Fabric y a MongoDB
+  (RNF-020). El material criptográfico se regenera en cada ciclo
+  down/up. Despliegue en VM de Azure: pendiente (mismo esquema).
 end note
 @enduml

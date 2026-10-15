@@ -1,85 +1,93 @@
 @startuml 07-secuencia-rol-administrador
 actor Administrador
-participant "Frontend" as FE
-participant "Backend\nAdmin Controller" as BE
-participant "Fabric Gateway\n(SDK)" as SDK
-participant "Chaincode (Go)" as CC
-database "MongoDB" as DB
+participant "Frontend\n(Panel / Usuarios /\nDocumentos / Trazabilidad)" as FE
+participant "Backend\nroutes/users · routes/documents ·\nroutes/events + services" as BE
+participant "fabric/gateway.ts\n(Fabric Gateway SDK)" as GW
+participant "Chaincode contracts\n(Go)" as CC
+database "MongoDB\nusers · sessions · documents" as DB
 
 note over BE
-  En cada solicitud /admin/* el backend valida
-  el JWT y el rol = Administrador (RBAC).
+  Todas las rutas pasan por requireAuth (JWT + sesión + RBAC).
+  /users/* y /documents/summary: solo rol Administrador.
 end note
 
-== Panel general ==
-Administrador -> FE : Accede al panel general (RF-041)
-FE -> BE : GET /admin/dashboard
-BE -> BE : Validar JWT y rol = Administrador (RBAC)
-BE -> DB : Agregar conteos por estado
-DB --> BE : Total, verificados, pendientes, alterados (RF-042)
-BE --> FE : 200 OK
-FE --> Administrador : Muestra panel consolidado
+== Panel general (RF-041, RF-042) ==
+Administrador -> FE : Abre el panel
+FE -> BE : GET /documents/summary
+BE -> DB : aggregate: conteo de documents por estado
+DB --> BE : {total, pendiente, verificado, alterado}
+BE --> FE : 200
+FE -> BE : GET /events (actividad reciente)
+BE -> GW : evaluate GetAllEvents()
+GW -> CC : Consulta
+CC --> BE : Eventos
+BE --> FE : 200
+FE --> Administrador : Totales + últimos eventos
 
-== Gestion de usuarios ==
-Administrador -> FE : Consultar usuarios (RF-043)
-FE -> BE : GET /admin/usuarios
-BE -> DB : Buscar usuarios
-DB --> BE : Lista [id, nombre, rol, correo, estado] (RF-044)
-BE --> FE : 200 OK
-FE --> Administrador : Tabla de usuarios
+== Gestión de usuarios (RF-043 a RF-047) ==
+Administrador -> FE : Usuarios
+FE -> BE : GET /users
+BE -> DB : Listar usuarios
+BE --> FE : 200 [id, nombre, correo, rol, estado] (nunca la contraseña) (RF-044)
 
-Administrador -> FE : Crear usuario (RF-045)
-FE -> BE : POST /admin/usuarios {datos}
+Administrador -> FE : Crear usuario {nombre, correo, rol} (RF-045)
+FE -> BE : POST /users
 alt correo ya registrado
-    BE --> FE : 409 Conflict
-    FE --> Administrador : Mensaje de error claro
-else datos validos
-    BE -> DB : Insertar usuario (password con hash + salt)
-    DB --> BE : Usuario creado
-    BE -> SDK : invoke RegistrarEvento(null, "GestionUsuario", admin, "Usuario creado")
-    SDK -> CC : Transaccion RegistrarEvento
-    CC --> SDK : txID
-    SDK --> BE : txID
-    BE --> FE : 201 Created
-    FE --> Administrador : Usuario creado
+    BE --> FE : 409
+    FE --> Administrador : Mensaje de error (el formulario no se cierra)
+else datos válidos
+    BE -> DB : Insertar usuario Activo con contraseña temporal (bcrypt + sal)
+    BE --> FE : 201 {user, temporaryPassword}
+    FE --> Administrador : Aviso con la contraseña temporal para comunicarla
 end
 
-Administrador -> FE : Editar usuario (RF-046)
-FE -> BE : PUT /admin/usuarios/{id}
-BE -> DB : Actualizar nombre / correo / rol
-DB --> BE : OK
-BE -> SDK : invoke RegistrarEvento(null, "GestionUsuario", admin, "Usuario editado (incluye cambio de rol)")
-SDK -> CC : Transaccion RegistrarEvento
-CC --> SDK : txID
-SDK --> BE : txID
-BE --> FE : 200 OK
-FE --> Administrador : Usuario actualizado
+Administrador -> FE : Editar nombre / correo / rol (RF-046)
+FE -> BE : PUT /users/{id}
+alt intenta quitarse su propio rol
+    BE --> FE : 400
+else correo usado por otro usuario
+    BE --> FE : 409
+else válido
+    BE -> DB : Actualizar usuario
+    opt el rol cambió
+        BE -> DB : Borrar todas las sesiones de ese usuario\n(el rol nuevo aplica desde su siguiente ingreso)
+    end
+    BE --> FE : 200 {user}
+end
 
-Administrador -> FE : Desactivar usuario (RF-047)
-FE -> BE : PATCH /admin/usuarios/{id}/desactivar
-BE -> DB : Marcar estado = Inactivo (baja logica, sin eliminar)
-DB --> BE : OK
-BE -> SDK : invoke RegistrarEvento(null, "GestionUsuario", admin, "Usuario desactivado")
-SDK -> CC : Transaccion RegistrarEvento
-CC --> SDK : txID
-SDK --> BE : txID
-BE --> FE : 200 OK
-FE --> Administrador : Usuario desactivado (historico preservado)
+Administrador -> FE : Desactivar usuario (con confirmación) (RF-047)
+FE -> BE : POST /users/{id}/deactivate
+alt intenta desactivarse a sí mismo
+    BE --> FE : 400
+else válido
+    BE -> DB : status = Inactivo (baja lógica, no se borra nada)
+    BE -> DB : Borrar todas sus sesiones (pierde el acceso al instante)
+    BE --> FE : 204
+    FE --> Administrador : Usuario desactivado (su trazabilidad se conserva)
+end
 
-== Consulta administrativa de documentos y trazabilidad ==
-Administrador -> FE : Consultar documentos (RF-048)
-FE -> BE : GET /admin/documentos
-BE -> DB : Buscar documentos
-DB --> BE : Lista [nombre, id, usuario, fecha, estado, huella] (RF-049)
-BE --> FE : 200 OK
-FE --> Administrador : Vista administrativa de documentos
+note right of BE
+  La gestión de usuarios NO se registra en el ledger:
+  el chaincode solo guarda eventos de documentos
+  (registro y verificación). Cambio respecto al diseño
+  inicial, que proponía eventos "GestionUsuario".
+end note
 
-Administrador -> FE : Consultar trazabilidad administrativa (RF-050)
-FE -> BE : GET /admin/trazabilidad
-BE -> SDK : query ConsultarTrazabilidad()
-SDK -> CC : Consulta del historico completo
-CC --> SDK : Eventos [docId, accion, usuario, txID, fecha, resultado]
-SDK --> BE : Eventos
-BE --> FE : 200 OK (RF-051)
-FE --> Administrador : Tabla de trazabilidad administrativa
+== Consulta administrativa de documentos (RF-048, RF-049) ==
+Administrador -> FE : Documentos
+FE -> BE : GET /documents
+BE -> DB : Todos los documentos (máx. 100)
+BE -> BE : Enmascarar la huella (RF-027: solo el Verificador la ve completa)
+BE --> FE : 200 [nombre, id, responsable, fecha, estado, huella parcial]
+FE --> Administrador : Vista administrativa (sin contenido del archivo)
+
+== Trazabilidad administrativa (RF-050, RF-051) ==
+Administrador -> FE : Trazabilidad
+FE -> BE : GET /events
+BE -> GW : evaluate GetAllEvents()
+GW -> CC : Todos los eventos
+CC --> BE : Eventos
+BE -> BE : Ordenar por fecha; 200 más recientes
+BE --> FE : 200 [documento, acción, usuario, TxID, fecha, resultado]\n(mismo detalle que el Verificador — HU-020 CA-02)
+FE --> Administrador : Tabla de trazabilidad
 @enduml

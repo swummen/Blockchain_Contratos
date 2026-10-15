@@ -1,0 +1,690 @@
+openapi: 3.0.3
+info:
+  title: TrazaDoc API
+  version: "1.0.0"
+  description: |
+    API REST del backend de TrazaDoc — MVP de verificación de integridad y trazabilidad
+    documental en contratos laborales con Hyperledger Fabric.
+
+    Es la **única puerta** entre el frontend y la red blockchain / MongoDB (RNF-020):
+    el backend calcula la huella SHA-256 de cada PDF, la registra en el chaincode
+    `contracts` (canal `contratoschannel`) mediante Fabric Gateway y guarda los metadatos
+    en MongoDB. **El PDF nunca se almacena.**
+
+    **Autenticación (2 pasos):**
+    1. `POST /auth/login` con correo y contraseña → se envía un código de 6 dígitos al
+       correo del usuario (por Brevo). Vence en 5 minutos.
+    2. `POST /auth/verify-otp` con el código → devuelve el `token` (JWT).
+    3. En el resto de rutas: header `Authorization: Bearer <token>`.
+
+    La sesión vence a los 60 minutos o tras 15 minutos sin actividad; `POST /auth/logout`
+    la invalida al instante. 5 intentos fallidos de login bloquean la cuenta 15 minutos.
+
+    **Roles:** `Empleado`, `Verificador`, `Administrador` (RBAC por ruta). Todos los
+    errores responden `{ "message": "..." }` en español, listo para mostrarse en la UI.
+
+    Fuente: `backend/src/routes/*.ts` y `backend/README.md` (Sprints 1-4).
+  contact:
+    name: Laura Sofia Diaz Suarez · Sofia Ortiz Daza — Universidad Católica de Colombia
+servers:
+  - url: http://localhost:8080
+    description: Docker local (bash docker/up.sh)
+
+tags:
+  - name: Diagnóstico
+    description: Estado del backend, MongoDB y la red Fabric.
+  - name: Autenticación
+    description: Login con segundo factor por correo, sesión y contraseña (RF-001 a RF-007, RF-052 a RF-054).
+  - name: Documentos
+    description: Registro, consulta y verificación de documentos (RF-008 a RF-038, RF-041/042, RF-048/049).
+  - name: Trazabilidad
+    description: Historial de eventos leído del ledger (RF-021/022, RF-039/040, RF-050/051).
+  - name: Usuarios
+    description: Gestión del ciclo de vida de usuarios por el Administrador (RF-043 a RF-047).
+
+paths:
+  /health:
+    get:
+      operationId: health
+      security: []
+      tags: [Diagnóstico]
+      summary: Estado del backend y de MongoDB
+      responses:
+        "200":
+          description: Backend y MongoDB operativos.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  mongo: { type: string, example: connected }
+        "503":
+          description: MongoDB no responde.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: error }
+                  mongo: { type: string, example: down }
+
+  /fabric/ping:
+    get:
+      operationId: fabricPing
+      security: []
+      tags: [Diagnóstico]
+      summary: Conexión real con la red Fabric
+      description: Consulta la metadata del chaincode `contracts` vía Fabric Gateway (query de sistema `GetMetadata`).
+      responses:
+        "200":
+          description: El chaincode responde en `contratoschannel`.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  result: { type: object, description: Metadata del contrato (funciones expuestas). }
+        "503":
+          description: Fabric no disponible.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: error }
+                  message: { type: string }
+
+  /auth/login:
+    post:
+      operationId: login
+      security: []
+      tags: [Autenticación]
+      summary: Primer factor — correo y contraseña
+      description: |
+        Valida las credenciales y envía un código de 6 dígitos al correo del usuario
+        (RF-002, RF-003). El rol no se envía: se toma de la cuenta. Usuario inexistente,
+        contraseña incorrecta y cuenta inactiva responden el mismo mensaje (RF-002 CA-02).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: contratosblockchain+empleado@gmail.com }
+                password: { type: string, format: password, example: Contratos123! }
+      responses:
+        "200":
+          description: Código enviado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: Código de verificación enviado. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401":
+          description: Credenciales inválidas.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: Credenciales inválidas. }
+        "423":
+          description: Cuenta bloqueada 15 minutos tras 5 intentos fallidos (RF-054).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: Cuenta bloqueada temporalmente por intentos fallidos. Intenta de nuevo en 15 minuto(s). }
+        "502":
+          description: El proveedor de correo rechazó el envío.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: No se pudo enviar el código de verificación. Intenta de nuevo. }
+
+  /auth/verify-otp:
+    post:
+      operationId: verifyOtp
+      security: []
+      tags: [Autenticación]
+      summary: Segundo factor — código por correo
+      description: Valida el código (5 minutos, máximo 5 intentos) y abre la sesión (RF-004, RF-005).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email: { type: string, format: email, example: contratosblockchain+empleado@gmail.com }
+                code: { type: string, example: "482913" }
+      responses:
+        "200":
+          description: Sesión abierta.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string, description: JWT para el header Authorization. }
+                  user: { $ref: "#/components/schemas/User" }
+        "400":
+          description: Datos faltantes, código vencido, incorrecto o intentos agotados.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              examples:
+                vencido: { value: { message: Código inválido o vencido. } }
+                incorrecto: { value: { message: Código incorrecto. } }
+                agotado: { value: { message: Demasiados intentos. Vuelve a iniciar sesión para recibir un código nuevo. } }
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [Autenticación]
+      summary: Usuario de la sesión actual
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Usuario autenticado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [Autenticación]
+      summary: Cerrar sesión (RF-007)
+      description: Borra la sesión; el token deja de servir aunque no haya vencido (RNF-007).
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Sesión cerrada. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [Autenticación]
+      summary: Cambiar la contraseña propia (RF-052, RF-053)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string, format: password }
+                newPassword: { type: string, format: password, minLength: 8 }
+      responses:
+        "200":
+          description: Contraseña actualizada (bcrypt + sal, RNF-001).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: Contraseña actualizada. }
+        "400":
+          description: Contraseña actual incorrecta, nueva muy corta o igual a la actual.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              examples:
+                actual: { value: { message: La contraseña actual es incorrecta. } }
+                corta: { value: { message: La nueva contraseña debe tener al menos 8 caracteres. } }
+                igual: { value: { message: La nueva contraseña debe ser diferente a la actual. } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /documents:
+    post:
+      operationId: registerDocument
+      tags: [Documentos]
+      summary: Registrar un documento (solo Empleado)
+      description: |
+        Valida el PDF (firma real `%PDF-`, ≤ 20 MB, un solo archivo), calcula su huella
+        SHA-256, la registra en el ledger (`RegisterDocument`, estado Pendiente) y **después**
+        guarda los metadatos en MongoDB (RF-008 a RF-017, RNF-013). Si el ledger falla no se
+        guarda nada.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [document]
+              properties:
+                document: { type: string, format: binary, description: Un único PDF de hasta 20 MB. }
+      responses:
+        "201":
+          description: Registrado en el ledger y en MongoDB.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documentId: { type: string, format: uuid }
+        "400":
+          description: Sin archivo, más de uno, no es PDF o supera 20 MB.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              examples:
+                noPdf: { value: { message: El archivo no es un PDF válido. } }
+                tamano: { value: { message: El archivo debe ser un único PDF de hasta 20MB. } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: El mismo Empleado ya tiene este mismo archivo registrado y Pendiente.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: "Ya tienes este documento registrado y pendiente de verificación (ID: 3e6ea574-…). Solo puedes volver a subirlo una vez que se verifique." }
+        "500":
+          description: El ledger registró el documento pero MongoDB falló después (inconsistencia registrada en el servidor).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "502":
+          description: El chaincode rechazó el registro o Fabric no respondió (nada se guardó).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: No se pudo registrar el documento en la blockchain. Intenta de nuevo. }
+    get:
+      operationId: listDocuments
+      tags: [Documentos]
+      summary: Listar documentos (según el rol)
+      description: |
+        `Empleado`: solo los suyos (RF-018). `Verificador` y `Administrador`: todos
+        (RF-037, RF-048). Últimos 100, del más reciente al más antiguo. La huella llega
+        completa solo al Verificador; enmascarada al resto (RF-027).
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Lista de documentos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DocumentSummary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /documents/summary:
+    get:
+      operationId: getDocumentsSummary
+      tags: [Documentos]
+      summary: Totales por estado — panel del Administrador (RF-041, RF-042)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Totales (cuenta todos los documentos, sin el tope de 100).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer, example: 12 }
+                  pendiente: { type: integer, example: 5 }
+                  verificado: { type: integer, example: 6 }
+                  alterado: { type: integer, example: 1 }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /documents/{id}:
+    get:
+      operationId: getDocument
+      tags: [Documentos]
+      summary: Consultar un documento registrado (RF-025, RF-026)
+      description: |
+        La huella y el estado se leen del ledger (`GetDocument`); nombre, responsable y
+        fecha de MongoDB. Cualquier rol puede consultar; solo el Verificador recibe la
+        huella completa (RF-027).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Documento.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/DocumentNotFound" }
+        "502": { $ref: "#/components/responses/LedgerError" }
+
+  /documents/{id}/events:
+    get:
+      operationId: getDocumentEvents
+      tags: [Trazabilidad]
+      summary: Trazabilidad de un documento (RF-021, RF-022)
+      description: |
+        Eventos del documento leídos del ledger (`GetDocumentEvents`) en orden cronológico.
+        Un Empleado solo puede consultar sus propios documentos (HU-009 CA-02); el dueño se
+        toma del evento "registro" del ledger.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Historial del documento.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Event" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/DocumentNotFound" }
+        "502": { $ref: "#/components/responses/LedgerError" }
+
+  /documents/{id}/verifications:
+    post:
+      operationId: verifyDocument
+      tags: [Documentos]
+      summary: Verificar la integridad de un documento (solo Verificador)
+      description: |
+        Recalcula la huella SHA-256 del PDF cargado y la compara con la registrada en el
+        ledger (RF-028 a RF-033). Registra el resultado con `RecordVerification`, que cambia
+        el estado a Verificado (coinciden) o Alterado (difieren) — única vía de cambio de
+        estado (RF-034) — y agrega un evento con su TxID (RF-035). Luego actualiza MongoDB.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [document]
+              properties:
+                document: { type: string, format: binary, description: PDF a comparar (≤ 20 MB). }
+      responses:
+        "200":
+          description: Resultado de la verificación.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [Verificado, Alterado] }
+                  matches: { type: boolean }
+                  registeredHash: { type: string, description: Huella registrada (completa). }
+                  computedHash: { type: string, description: Huella del archivo cargado (completa). }
+        "400":
+          description: Archivo inválido.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/DocumentNotFound" }
+        "500":
+          description: El ledger registró la verificación pero MongoDB falló después.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "502":
+          description: No se pudo registrar la verificación en el ledger (MongoDB no se toca).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: No se pudo registrar la verificación en la blockchain. Intenta de nuevo. }
+
+  /events:
+    get:
+      operationId: getAllEvents
+      tags: [Trazabilidad]
+      summary: Trazabilidad general (Verificador y Administrador)
+      description: |
+        Eventos de todos los documentos leídos del ledger (`GetAllEvents`), ordenados
+        cronológicamente; los 200 más recientes. Mismo detalle para ambos roles
+        (RF-039/040, RF-050/051, HU-020 CA-02).
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Eventos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Event" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502": { $ref: "#/components/responses/LedgerError" }
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [Usuarios]
+      summary: Listar usuarios (RF-043, RF-044)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Usuarios (nunca incluye la contraseña).
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createUser
+      tags: [Usuarios]
+      summary: Crear usuario (RF-045)
+      description: Crea el usuario Activo con una contraseña temporal que debe comunicarse y luego cambiarse.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserInput" }
+      responses:
+        "201":
+          description: Usuario creado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/User" }
+                  temporaryPassword: { type: string, example: Contratos123! }
+        "400": { $ref: "#/components/responses/InvalidUser" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/DuplicateEmail" }
+
+  /users/{id}:
+    put:
+      operationId: updateUser
+      tags: [Usuarios]
+      summary: Editar nombre, correo y rol (RF-046)
+      description: Si el rol cambia, se cierran todas las sesiones abiertas de ese usuario. El Administrador no puede quitarse su propio rol.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserInput" }
+      responses:
+        "200":
+          description: Usuario actualizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/User" }
+        "400":
+          description: Datos inválidos o intento de quitarse el propio rol.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              examples:
+                datos: { value: { message: "name, email y role (Empleado|Verificador|Administrador) son obligatorios." } }
+                propioRol: { value: { message: No puedes cambiar tu propio rol. } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/UserNotFound" }
+        "409": { $ref: "#/components/responses/DuplicateEmail" }
+
+  /users/{id}/deactivate:
+    post:
+      operationId: deactivateUser
+      tags: [Usuarios]
+      summary: Desactivar usuario — baja lógica (RF-047)
+      description: Marca el usuario como Inactivo (no se borra nada ni su trazabilidad) y cierra sus sesiones al instante. El Administrador no puede desactivarse a sí mismo.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204": { description: Usuario desactivado. }
+        "400":
+          description: Intento de desactivarse a sí mismo.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: No puedes desactivar tu propia cuenta. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/UserNotFound" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token obtenido en `POST /auth/verify-otp`.
+
+  parameters:
+    DocumentId:
+      name: id
+      in: path
+      required: true
+      description: Identificador del documento (UUID generado al registrarlo).
+      schema: { type: string, format: uuid }
+    UserId:
+      name: id
+      in: path
+      required: true
+      description: Identificador del usuario (p. ej. U001).
+      schema: { type: string }
+
+  schemas:
+    Message:
+      type: object
+      properties:
+        message: { type: string }
+    Role:
+      type: string
+      enum: [Empleado, Verificador, Administrador]
+    DocumentStatus:
+      type: string
+      enum: [Pendiente, Verificado, Alterado]
+    User:
+      type: object
+      properties:
+        userId: { type: string, example: U001 }
+        name: { type: string, example: María López }
+        email: { type: string, format: email }
+        role: { $ref: "#/components/schemas/Role" }
+        status: { type: string, enum: [Activo, Inactivo] }
+    UserInput:
+      type: object
+      required: [name, email, role]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { $ref: "#/components/schemas/Role" }
+    DocumentSummary:
+      type: object
+      properties:
+        documentId: { type: string, format: uuid }
+        name: { type: string, example: contrato.pdf }
+        responsibleUser: { type: string, example: U001 }
+        responsibleName: { type: string, example: María López }
+        registeredAt: { type: string, format: date-time }
+        hash: { type: string, description: "SHA-256: completa solo para el Verificador; enmascarada (8…8 caracteres) para el resto." }
+        status: { $ref: "#/components/schemas/DocumentStatus" }
+    DocumentView:
+      type: object
+      properties:
+        documentId: { type: string, format: uuid }
+        name: { type: string }
+        responsibleUser: { type: string }
+        registeredAt: { type: string, format: date-time }
+        hash: { type: string, description: Huella leída del ledger (completa solo para el Verificador). }
+        status: { $ref: "#/components/schemas/DocumentStatus" }
+    Event:
+      type: object
+      description: Evento de trazabilidad anclado en el ledger (inmutable, con TxID de Fabric).
+      properties:
+        documentId: { type: string, format: uuid }
+        action: { type: string, enum: [registro, verificacion] }
+        user: { type: string, example: U003 }
+        userName: { type: string, example: Pedro Gómez }
+        txId: { type: string, description: Identificador de la transacción en Hyperledger Fabric. }
+        timestamp: { type: string, format: date-time }
+        result: { type: string, enum: [confirmada, comprometida], description: Solo en eventos de verificación. }
+
+  responses:
+    BadRequest:
+      description: Datos faltantes o inválidos.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+    Unauthorized:
+      description: Sin token, token inválido o sesión cerrada/vencida (logout, 15 min de inactividad, cambio de rol o desactivación).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+          examples:
+            sinToken: { value: { message: No autenticado. } }
+            sesionVencida: { value: { message: Sesión inválida o vencida. } }
+    Forbidden:
+      description: El rol de la sesión no tiene permiso para esta acción (RBAC).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+          example: { message: No tienes permiso para esta acción. }
+    DocumentNotFound:
+      description: El documento no está registrado en el ledger.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+          example: { message: El documento no está registrado. }
+    LedgerError:
+      description: No se pudo consultar la red Fabric.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+    InvalidUser:
+      description: Faltan nombre, correo o un rol válido.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+          example: { message: "name, email y role (Empleado|Verificador|Administrador) son obligatorios." }
+    DuplicateEmail:
+      description: Ya existe un usuario con ese correo.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+          example: { message: Ya existe un usuario con ese correo. }
+    UserNotFound:
+      description: El usuario no existe.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+          example: { message: El usuario no existe. }

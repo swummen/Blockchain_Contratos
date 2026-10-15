@@ -100,7 +100,8 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 ## P4 — Entregables documentales (OBJETIVO 3 + DoD)
 
 - [ ] `README.md` raíz (R5): qué es, estructura, cómo levantarlo, que el chaincode es solo Go.
-- [ ] Documentación de la API: `openapi.yaml` o colección de Postman + capturas de las llamadas.
+- [x] Documentación de la API: `docs/api/openapi.yaml` (18 endpoints, validada con Redocly y contrastada con el backend real) + guía de Postman en `docs/api/README.md`.
+- [ ] Capturas de las llamadas funcionando (lista sugerida de 11 en `docs/api/README.md`) — **Sofia/Laura**.
 - [ ] Guía de despliegue y configuración (prerrequisitos, `.env`, Brevo, problemas conocidos de Windows) → alimenta el manual de usuario y operación.
 - [ ] Registro de sprints: HU comprometidas vs. aprobadas y % por sprint (KPI ≥ 80 %).
 - [ ] Matriz de trazabilidad HU ↔ RF ↔ endpoint/pantalla.

@@ -42,7 +42,7 @@ frontend (React)  ──HTTP──>  backend (Node.js + Express + Fabric Gateway
 | Carpeta | Contenido |
 |---|---|
 | [`chaincode/`](chaincode/README.md) | Smart contract en Go: `RegisterDocument`, `GetDocument`, `RecordVerification`, `GetDocumentEvents`, `GetAllEvents`. |
-| [`backend/`](backend/README.md) | API REST (Express + TypeScript): autenticación, documentos, verificación, trazabilidad, usuarios. Contrato completo de cada endpoint en su README. |
+| [`backend/`](backend/README.md) | API REST (Express + TypeScript): autenticación, documentos, verificación, trazabilidad, usuarios. Especificación OpenAPI en [`docs/api/`](docs/api/README.md). |
 | [`frontend/`](frontend/) | SPA React 19 + Vite + Tailwind + shadcn/ui, una sección por rol. |
 | [`docker/`](docker/README.md) | Scripts para levantar la red Fabric, desplegar el chaincode y correr Mongo/backend/frontend en contenedores. |
 | [`docs/`](docs/) | Documentación del trabajo de grado (SRS, backlog, matrices, UML, prototipos); conversión a texto en `docs/md/`. |
@@ -92,4 +92,5 @@ Puertos, problemas conocidos en Windows y detalle de cada script:
 - Alcance, requisitos (RF/RNF/HU), arquitectura y decisiones: [`claude_docs/SPEC.md`](claude_docs/SPEC.md).
 - Plan y resultado de cada sprint: [`claude_docs/tasks/`](claude_docs/tasks/).
 - Lo que falta del MVP: [`claude_docs/tasks/plan-trabajo-pendiente.md`](claude_docs/tasks/plan-trabajo-pendiente.md).
+- API (OpenAPI / Swagger, importable en Postman): [`docs/api/`](docs/api/README.md).
 - Diagramas UML: [`docs/uml/`](docs/uml/README.md).

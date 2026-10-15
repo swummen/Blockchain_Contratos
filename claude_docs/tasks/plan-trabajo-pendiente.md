@@ -105,7 +105,7 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 - [x] Evidencia de integración con Fabric: `docs/evidencias/integracion-fabric.md` (registro, consulta, 2 verificaciones, TxID contrastados en los bloques 9‑11) + scripts para reproducirla.
 - [ ] Guía de despliegue y configuración (prerrequisitos, `.env`, Brevo, problemas conocidos de Windows) → alimenta el manual de usuario y operación.
 - [x] Registro de sprints: `docs/registro-sprints.md` (HU comprometidas, % terminado por sprint, DoD y lecciones). Falta que el tutor registre su aprobación (criterio 5) para el % oficial.
-- [ ] Matriz de trazabilidad HU ↔ RF ↔ endpoint/pantalla.
+- [x] Matriz de trazabilidad HU ↔ RF ↔ código: `docs/Matriz_Trazabilidad_HU_RF_Codigo.xlsx` (+ `docs/md/`): 24 HU y 55 RF con pantalla, endpoint, servicio, chaincode, MongoDB, pruebas y evidencia.
 - [ ] Registro de cambios respecto al diseño (OE2): p. ej. login sin selector de rol, selección en dos pasos, Brevo, CouchDB → LevelDB (OBJETIVO 3 pedía CouchDB en el script de red).
 - [ ] Actualizar los diagramas UML de `docs/uml/` a lo implementado (sus nombres de servicios eran una propuesta previa al código; su README cita un `SRS_v2_Requerimientos (2).md` que no existe).
 - [ ] Convertir a `docs/md/` los documentos nuevos de Laura (`Matriz_ASRS y Utility tree.xlsx`, `Prototipo alta fidelidad.pdf`, `Wireframes baja fidelidad.pdf`), retirar los obsoletos (`Rol administrador.md`, `roles mock up.md`) y comparar el prototipo de alta fidelidad con las pantallas actuales.

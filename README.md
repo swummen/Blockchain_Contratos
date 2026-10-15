@@ -86,6 +86,7 @@ Puertos, problemas conocidos en Windows y detalle de cada script:
 | chaincode | `cd chaincode && go test ./...` | `go test` (mocks, sin red) |
 | frontend | `cd frontend && npm run build && npm run lint` | `tsc` + oxlint |
 | entorno completo | `bash docker/smoke-test.sh` | Bash (HU‑021) |
+| latencia de verificación | `node tests/perf/latencia-verificacion.mjs --document <id> --file <pdf>` | Node.js ([guía](tests/perf/README.md), KPI P95 ≤ 3 s) |
 
 ## Documentación
 

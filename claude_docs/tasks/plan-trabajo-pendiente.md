@@ -104,7 +104,7 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 - [ ] Capturas de las llamadas funcionando (lista sugerida de 11 en `docs/api/README.md`) — **Sofia/Laura**.
 - [x] Evidencia de integración con Fabric: `docs/evidencias/integracion-fabric.md` (registro, consulta, 2 verificaciones, TxID contrastados en los bloques 9‑11) + scripts para reproducirla.
 - [ ] Guía de despliegue y configuración (prerrequisitos, `.env`, Brevo, problemas conocidos de Windows) → alimenta el manual de usuario y operación.
-- [ ] Registro de sprints: HU comprometidas vs. aprobadas y % por sprint (KPI ≥ 80 %).
+- [x] Registro de sprints: `docs/registro-sprints.md` (HU comprometidas, % terminado por sprint, DoD y lecciones). Falta que el tutor registre su aprobación (criterio 5) para el % oficial.
 - [ ] Matriz de trazabilidad HU ↔ RF ↔ endpoint/pantalla.
 - [ ] Registro de cambios respecto al diseño (OE2): p. ej. login sin selector de rol, selección en dos pasos, Brevo, CouchDB → LevelDB (OBJETIVO 3 pedía CouchDB en el script de red).
 - [ ] Actualizar los diagramas UML de `docs/uml/` a lo implementado (sus nombres de servicios eran una propuesta previa al código; su README cita un `SRS_v2_Requerimientos (2).md` que no existe).

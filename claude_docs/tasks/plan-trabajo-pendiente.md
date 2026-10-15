@@ -102,6 +102,7 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 - [ ] `README.md` raíz (R5): qué es, estructura, cómo levantarlo, que el chaincode es solo Go.
 - [x] Documentación de la API: `docs/api/openapi.yaml` (18 endpoints, validada con Redocly y contrastada con el backend real) + guía de Postman en `docs/api/README.md`.
 - [ ] Capturas de las llamadas funcionando (lista sugerida de 11 en `docs/api/README.md`) — **Sofia/Laura**.
+- [x] Evidencia de integración con Fabric: `docs/evidencias/integracion-fabric.md` (registro, consulta, 2 verificaciones, TxID contrastados en los bloques 9‑11) + scripts para reproducirla.
 - [ ] Guía de despliegue y configuración (prerrequisitos, `.env`, Brevo, problemas conocidos de Windows) → alimenta el manual de usuario y operación.
 - [ ] Registro de sprints: HU comprometidas vs. aprobadas y % por sprint (KPI ≥ 80 %).
 - [ ] Matriz de trazabilidad HU ↔ RF ↔ endpoint/pantalla.

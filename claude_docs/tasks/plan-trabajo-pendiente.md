@@ -35,7 +35,7 @@ configure.
 **Origen:** indicación del tutor (2026‑10‑14): usar, por ahora, un proveedor de correo
 externo ("vendor") para las pruebas de verificación por correo. El tutor no fijó cuál.
 
-**Decisión propuesta: Brevo (SMTP relay)** — no requiere código nuevo ni dependencias
+**Decisión (tomada 2026‑10‑14): Brevo (SMTP relay)** — no requiere código nuevo ni dependencias
 (nodemailer ya habla SMTP) y no exige un dominio propio.
 
 | Proveedor | Plan gratis | ¿Sirve sin dominio propio? | Nota |
@@ -47,29 +47,29 @@ externo ("vendor") para las pruebas de verificación por correo. El tutor no fij
 
 **Tareas:**
 
-- [ ] **1.1.a — Cuenta y remitente (Sofia, fuera del repo).** Crear cuenta en Brevo,
+- [x] **1.1.a — Cuenta y remitente (Sofia, fuera del repo).** Crear cuenta en Brevo,
   verificar el remitente (el correo que aparecerá en "De:"), generar una *SMTP key* en
   *SMTP & API*. Anotar: login SMTP, SMTP key, correo remitente.
-- [ ] **1.1.b — Pasar las variables al contenedor.** `docker/compose.app.yml`, servicio
+- [x] **1.1.b — Pasar las variables al contenedor.** `docker/compose.app.yml`, servicio
   `backend`: agregar `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`
   leídas de `docker/.env` (vacías por defecto → se conserva el modo consola). Documentarlas
   comentadas en `docker/.env.example` y `backend/.env.example` con los valores de Brevo
   (sin la clave real; `.env` ya está en `.gitignore`).
-- [ ] **1.1.c — Soporte de puerto 465.** En `emailService.ts`, `secure: port === 465`
+- [x] **1.1.c — Soporte de puerto 465.** En `emailService.ts`, `secure: port === 465`
   (una línea). El 587 (STARTTLS) ya funciona tal cual.
-- [ ] **1.1.d — Correo en español y claro (RNF‑18).** Asunto "TrazaDoc — Código de
+- [x] **1.1.d — Correo en español y claro (RNF‑18).** Asunto "TrazaDoc — Código de
   verificación", texto con el código, vigencia (5 min) y "si no fuiste tú, ignora este
   correo". Versión HTML simple opcional.
-- [ ] **1.1.e — Errores.** Si el proveedor rechaza el envío, ya responde `502` "no se pudo
+- [x] **1.1.e — Errores.** Si el proveedor rechaza el envío, ya responde `502` "no se pudo
   enviar el correo" (Sprint 1). Confirmar que nunca se loguea el código cuando SMTP sí
   está configurado (solo en modo desarrollo).
-- [ ] **1.1.f — Tests.** Un test de `emailService` con `nodemailer` mockeado: con
+- [x] **1.1.f — Tests.** Un test de `emailService` con `nodemailer` mockeado: con
   `SMTP_HOST` llama a `sendMail` con el `from`/`to` correctos; sin `SMTP_HOST` no lo llama.
 - [ ] **1.1.g — Prueba real.** `up.sh` con `docker/.env` configurado → login de un usuario
   sembrado cuyo `email` sea un buzón real → el OTP llega (revisar también spam) → acceso
   concedido. Para esto, cambiar el correo de un usuario de prueba desde la pantalla de
   Usuarios del Administrador (los del seed son `@empresa.com`, no existen).
-- [ ] **1.1.h — Documentación.** `backend/README.md` ("Probar sin SMTP real" → "Envío
+- [x] **1.1.h — Documentación.** `backend/README.md` ("Probar sin SMTP real" → "Envío
   real con Brevo"), SPEC §2 (fila Autenticación: proveedor SMTP) y pregunta abierta #1
   (canal del 2FA).
 

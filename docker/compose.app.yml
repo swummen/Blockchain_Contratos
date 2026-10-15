@@ -51,6 +51,14 @@ services:
       # que MONGO_ROOT_PASSWORD arriba.
       JWT_SECRET: ${JWT_SECRET:-contratos-dev-secret-cambiar-en-produccion}
       JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-60}
+      # Envío real del OTP por un proveedor SMTP externo (Brevo). Con
+      # SMTP_HOST vacío el código se loguea en `docker logs backend`
+      # (modo desarrollo, ver backend/src/services/emailService.ts).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@contratos.local}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     volumes:

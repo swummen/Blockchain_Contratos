@@ -85,7 +85,7 @@ Conflictos entre documentos resueltos aquí (decisión de proyecto, 2026‑09‑
 | UI | Tailwind CSS v4 + shadcn/ui (`radix-nova`), Radix UI, lucide | Tailwind 4 | Sin archivo de config Tailwind (plugin `@tailwindcss/vite`). |
 | Lint frontend | oxlint | 1.x | **No** ESLint. |
 | Backend | Node.js + Express | Node 20 LTS | Gateway único hacia Fabric (RNF‑20). |
-| Autenticación | **JWT de sesión + OTP de un solo uso por correo corporativo (2FA)** | — | SRS exige 2FA por correo (RF‑03/04); Tabla 2 del trabajo de grado menciona JWT. Se usan **ambos**: JWT para la sesión, OTP por correo como segundo factor. Contraseñas con hash + salt (RNF‑01). |
+| Autenticación | **JWT de sesión + OTP de un solo uso por correo corporativo (2FA)** | — | SRS exige 2FA por correo (RF‑03/04); Tabla 2 del trabajo de grado menciona JWT. Se usan **ambos**: JWT para la sesión, OTP por correo como segundo factor. Contraseñas con hash + salt (RNF‑01). **Nota de cambio (2026‑10‑14, indicación del tutor):** el OTP se envía por un proveedor de correo externo, **Brevo** (SMTP relay vía `nodemailer`, sin dependencia nueva); sin SMTP configurado, se loguea en consola (modo desarrollo). |
 | Blockchain | Hyperledger Fabric | **2.5** | Red permisionada en Docker. |
 | Chaincode | **Go (Golang)** | Go 1.22+ | Decisión fija. La fase 3 del trabajo de grado decía "Node.js/Go"; se usa Go. |
 | Persistencia off‑chain | MongoDB | 7.x | Metadatos y estado operativo. Consistencia con el ledger: RNF‑13. |

@@ -55,21 +55,42 @@ const SEED_USERS: Array<Omit<UserDoc, "passwordHash">> = [
   },
 ];
 
+// Con SEED_EMAIL=buzon@gmail.com, cada usuario sembrado recibe
+// buzon+<alias>@gmail.com: direcciones distintas para el índice único, pero
+// todas llegan al mismo buzón real (subaddressing de Gmail), así el OTP
+// enviado por el proveedor SMTP se puede leer de verdad. Sin SEED_EMAIL se
+// conservan los correos ficticios @empresa.com.
+const SEED_ALIASES: Record<string, string> = {
+  U001: "empleado",
+  U002: "empleado2",
+  U003: "verificador",
+  U005: "admin",
+};
+
+export function seedEmail(userId: string, fallback: string, base = process.env.SEED_EMAIL): string {
+  const [local, domain] = (base ?? "").trim().split("@");
+  if (!local || !domain) return fallback;
+  return `${local}+${SEED_ALIASES[userId]}@${domain}`;
+}
+
 async function main() {
   await connectMongo();
   await ensureIndexes();
 
   const passwordHash = await bcrypt.hash(DEV_PASSWORD, env.bcryptRounds);
   for (const user of SEED_USERS) {
-    await insertUserIfMissing({ ...user, passwordHash });
-    console.log(`Usuario listo: ${user.email} (${user.role})`);
+    const email = seedEmail(user._id, user.email);
+    await insertUserIfMissing({ ...user, email, passwordHash });
+    console.log(`Usuario listo: ${email} (${user.role})`);
   }
 
   console.log(`\nContraseña de desarrollo para los ${SEED_USERS.length}: "${DEV_PASSWORD}" (ver backend/README.md)`);
   await closeMongo();
 }
 
-main().catch((err) => {
-  console.error("Fallo al sembrar usuarios:", err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error("Fallo al sembrar usuarios:", err);
+    process.exit(1);
+  });
+}

@@ -135,12 +135,25 @@ usado todavía, ningún endpoint de Sprint 1 lo necesita).
   mientras dure el bloqueo, sin comparar la contraseña. El contador vive en el propio
   usuario (`failedLoginAttempts`/`lockedUntil`) y se reinicia con un login exitoso.
 
-### Probar sin SMTP real
+### Envío real del OTP (Brevo) y modo sin SMTP
 
-Si `SMTP_HOST` no está seteada, `src/services/emailService.ts` loguea el código OTP a
-consola (`[dev] SMTP no configurado — código OTP para <email>: <código>`) en vez de
-enviarlo — buscalo en `docker logs backend` (o la consola de `npm run dev`). Nunca es un
-fallback silencioso.
+Por indicación del tutor, el OTP sale por un proveedor de correo externo: **Brevo**
+(SMTP relay, plan gratis de 300 correos/día, remitente verificado
+`contratosblockchain@gmail.com`). Se configura con `SMTP_*` en `docker/.env` (ver
+`docker/.env.example`; `compose.app.yml` se las pasa al contenedor). Usar
+`SMTP_HOST=smtp-relay.sendinblue.com`: con `smtp-relay.brevo.com` el relay que responde
+desde Colombia presenta un certificado de `*.sendinblue.com` y TLS falla. Cada persona
+del equipo usa su propia *SMTP key* (Brevo → ⚙️ → SMTP & API), nunca versionada.
+
+Para que los códigos lleguen a un buzón real, `npm run seed` lee `SEED_EMAIL` de
+`backend/.env`: con `SEED_EMAIL=contratosblockchain@gmail.com` siembra
+`contratosblockchain+empleado@`, `+empleado2@`, `+verificador@` y `+admin@gmail.com` —
+todos llegan al mismo buzón (subaddressing de Gmail).
+
+Si `SMTP_HOST` está vacía, `src/services/emailService.ts` loguea el código OTP a consola
+(`[dev] SMTP no configurado — código OTP para <email>: <código>`) en vez de enviarlo —
+buscalo en `docker logs backend` (o la consola de `npm run dev`). Nunca es un fallback
+silencioso, y con SMTP configurado el código nunca se loguea.
 
 ## `documents` (Sprint 2, T1-T6 — completo)
 

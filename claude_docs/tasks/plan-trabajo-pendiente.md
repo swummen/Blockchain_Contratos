@@ -46,6 +46,19 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 
 ---
 
+### 1.4 OE2 — Artefactos de diseño y aprobación del tutor (KPI: 4 de 4 dominios)
+
+- [x] Matriz de infraestructura: `docs/Matriz_Infraestructura.xlsx` (+ `docs/md/`),
+  generada desde la configuración real y verificada con el stack corriendo.
+- [ ] Decidir la observación OBS-01 de la matriz: la política de endoso real es
+  **MAJORITY** (firman las 2 organizaciones), no `OR` como dicen D2 (Sprint 0) y D7
+  (Sprint 2). Opciones: corregir la documentación, o redesplegar con `OR` ("Ask first":
+  cambia la topología).
+- [ ] Revisión y aprobación del tutor de los 4 dominios (UX/UI, software, infraestructura,
+  chaincode/red) — hoja "8. Aprobación" de la matriz. **Lo hacen Sofia y Laura.**
+
+---
+
 ## P2 — Requisitos que faltan construir
 
 ### 2.1 RF‑055 / HU‑023 — Aceptación de la política de tratamiento de datos (Must, no existe nada)

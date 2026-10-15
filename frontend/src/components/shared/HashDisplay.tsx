@@ -5,7 +5,7 @@ interface HashDisplayProps {
   hash: string
   /**
    * Único interruptor que decide si se imprime el hash completo o enmascarado.
-   * RF-27/RNF-08: la huella completa solo puede verla Verificador y Administrador.
+   * RF-27/RNF-08: la huella completa solo puede verla el Verificador.
    * Ninguna pantalla debe interpolar `document.hash` fuera de este componente.
    */
   canViewFull: boolean
@@ -32,8 +32,7 @@ export function HashDisplay({
       </code>
       {!canViewFull && (
         <p className="text-xs text-muted-foreground">
-          La huella completa es gestionada por el Verificador y el Administrador
-          (RF-27).
+          La huella completa solo la ve el Verificador (RF-27).
         </p>
       )}
     </div>

@@ -116,6 +116,9 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 
 ## Historial
 
+- **Cambio 2026‑10‑15 (prueba manual de Sofia):** la huella completa solo la ve el
+  Verificador; el Administrador la recibe enmascarada (RF‑27, nota de cambio en el SPEC).
+  OTP por Brevo confirmado en uso real (llega con algo de demora).
 - **Cerrado 2026‑10‑15:** R3 (smoke test PASS tras reinicio desde cero), R4 (8 textos
   con voseo → tuteo), R5 (README raíz), R7 (entorno reiniciado: sin datos de prueba,
   usuarios sembrados con `SEED_EMAIL`); guía de configuración de Laura en

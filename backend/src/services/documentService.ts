@@ -203,11 +203,14 @@ export async function listDocuments(role: Role, userId: string): Promise<Documen
   }));
 }
 
-// RF-27/RNF-08: el hash completo solo lo ve Verificador/Administrador. Mismo
+// RF-27/RNF-08: el hash completo solo lo ve el Verificador (nota de cambio
+// 2026-10-15, pedido de Sofia: el Administrador también lo recibe enmascarado —
+// RF-49 "respetando las restricciones de privacidad"; él gobierna el sistema,
+// no compara huellas). Mismo
 // algoritmo que `frontend/src/lib/mask-hash.ts` (primeros/últimos 8
 // caracteres visibles) — se enmascara server-side, no solo en la UI, porque
 // este es un endpoint de negocio real que un cliente arbitrario puede llamar.
-const ROLES_WITH_FULL_HASH: Role[] = ["Verificador", "Administrador"];
+const ROLES_WITH_FULL_HASH: Role[] = ["Verificador"];
 
 export function maskHash(hash: string): string {
   if (hash.length <= 20) return hash;

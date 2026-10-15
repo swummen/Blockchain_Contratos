@@ -51,7 +51,7 @@ export default function DocumentosPage() {
             <DocumentListItem
               key={doc.documentId}
               document={doc}
-              canViewFullHash
+              canViewFullHash={false}
               showResponsible
               copyableId
             />

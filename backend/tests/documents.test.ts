@@ -262,13 +262,13 @@ describe("GET /documents/:id", () => {
     expect(queryChaincode).toHaveBeenCalledWith("GetDocument", "doc1");
   });
 
-  it("Administrador: 200 con el hash completo", async () => {
+  it("Administrador: 200 con el hash enmascarado (solo el Verificador lo ve completo)", async () => {
     const res = await request(createApp())
       .get("/documents/doc1")
       .set("Authorization", `Bearer ${token("Administrador")}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.hash).toBe(FULL_HASH);
+    expect(res.body.hash).toBe(MASKED_HASH);
   });
 
   it("Empleado: 200 con el hash enmascarado (RF-27/RNF-08)", async () => {
@@ -523,14 +523,16 @@ describe("GET /documents", () => {
     expect(res.body[0].hash).toBe(maskHash(FULL_HASH));
   });
 
-  it("Administrador: 200 (mismo acceso que Verificador)", async () => {
-    (listDocuments as jest.Mock).mockResolvedValue([]);
+  it("Administrador: 200, todos los documentos pero con el hash enmascarado", async () => {
+    (listDocuments as jest.Mock).mockResolvedValue([twoDocs[0]]);
 
     const res = await request(createApp())
       .get("/documents")
       .set("Authorization", `Bearer ${token("Administrador")}`);
 
     expect(res.status).toBe(200);
+    expect(listDocuments).toHaveBeenCalledWith(undefined);
+    expect(res.body[0].hash).toBe(maskHash(FULL_HASH));
   });
 
   it("sin documentos: 200 con un arreglo vacío", async () => {

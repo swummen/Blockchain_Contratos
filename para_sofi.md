@@ -6,9 +6,8 @@ encontramos y qué falta. No es la documentación formal (esa vive en
 `claude_docs/SPEC.md` y en `claude_docs/tasks/`) — esto es para que tengas el
 panorama completo en un solo lugar, sin tener que ir sprint por sprint.
 
-Última actualización: 2026-10-15, después de cerrar Sprint 4 (T10), pasar el
-código de verificación a Brevo y dejar la guía para configurarle todo a Laura
-(sección 7).
+Última actualización: 2026-10-15 (noche), con el estado del Objetivo 3: qué
+entregables ya están hechos y qué falta para cerrarlo (sección 8).
 
 ---
 
@@ -441,3 +440,50 @@ los tiene: hay que crearlos en su computador. Pasos:
   y `npm run seed`.
 - **Si las dos prueban a la vez con el mismo rol**, llegan dos códigos al mismo
   buzón casi juntos: usar el más reciente.
+
+---
+
+## 8. Objetivo 3 (OE3): qué ya está hecho y qué falta
+
+El Objetivo 3 es **desarrollar el MVP integrado con Hyperledger Fabric**. Lo que
+exige y recomienda está en `claude_docs/OBJETIVO 3.md`. Este es el estado al
+2026-10-15.
+
+### ✅ Ya está hecho
+
+| Entregable | Dónde quedó | Qué contiene |
+|---|---|---|
+| **Código fuente del MVP** | El repositorio (`frontend/`, `backend/`, `chaincode/`, `docker/`) + [`README.md`](README.md) | Las 3 partes funcionando de punta a punta; el README dice claramente que el chaincode es **solo en Go**. |
+| **Script de despliegue de la red** | `docker/up.sh` (+ `stop.sh`, `start.sh`, `down.sh`) | Un solo comando levanta la red Fabric, instala el chaincode, arranca Mongo/backend/frontend y crea los usuarios de prueba. |
+| **Guía de despliegue y configuración** | [`INSTALACION.md`](INSTALACION.md) | Desde cero: programas a instalar (con `winget`), configuración, encender/apagar, usuarios, 17 problemas frecuentes y de dónde sale la configuración del canal (`configtx.yaml`). |
+| **API de integración (documentación)** | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) + [`docs/api/README.md`](docs/api/README.md) | Los 18 endpoints en formato Swagger/OpenAPI, validado y comparado contra el backend real. Se importa directo en Postman. |
+| **Evidencia de integración con Fabric** | [`docs/evidencias/integracion-fabric.md`](docs/evidencias/integracion-fabric.md) | Registro, consulta y dos verificaciones reales; los TxID ubicados en los bloques 9, 10 y 11 del ledger, firmados por las 2 organizaciones. Con scripts para repetirla. |
+| **Registro de sprints** (y base del KPI de HU aprobadas) | [`docs/registro-sprints.md`](docs/registro-sprints.md) | Fechas, HU comprometidas, puntos, Definición de Terminado y lecciones de cada sprint. **21 de 21 HU terminadas técnicamente (100 %)**. |
+| **Matriz de trazabilidad HU ↔ RF ↔ código** | [`docs/Matriz_Trazabilidad_HU_RF_Codigo.xlsx`](docs/Matriz_Trazabilidad_HU_RF_Codigo.xlsx) | Las 24 HU y los 55 RF con su pantalla, endpoint, función del backend, función del chaincode y pruebas. **53 de 55 RF implementados.** |
+| **Registro de cambios respecto al diseño** | [`docs/uml/README.md`](docs/uml/README.md) + hoja "Observaciones" de [`docs/Matriz_Infraestructura.xlsx`](docs/Matriz_Infraestructura.xlsx) | 13 cambios entre lo diseñado y lo implementado (LevelDB en vez de CouchDB, 2 organizaciones, Brevo, selección en dos pasos, etc.). Los 8 diagramas UML ya reflejan el código real. |
+| **Script de medición de latencia** | [`tests/perf/latencia-verificacion.mjs`](tests/perf/latencia-verificacion.mjs) + [`tests/perf/README.md`](tests/perf/README.md) | Hace las 50 verificaciones y genera el reporte que pide el KPI (método, entorno, las 50 mediciones, P95). **Corrida de prueba: P95 = 2040 ms → PASS** (meta ≤ 3000 ms). |
+| **Las 2 observaciones del documento** | README y reporte de latencia | "El chaincode es solo Go": dicho en el README. "Anotar el entorno en cada medición": el reporte de latencia lo escribe solo (Docker local, equipo, versiones). |
+
+### ⏳ Lo que falta (todo les toca a ustedes)
+
+| # | Qué falta | Para qué entregable | Cómo hacerlo |
+|---|---|---|---|
+| 1 | **Confirmar las fechas de las semanas S11 y S13** | KPI de latencia | Mirar el cronograma (Tabla 5 del trabajo de grado). Es una imagen, por eso no se pudo leer automáticamente. |
+| 2 | **Las 2 mediciones oficiales de latencia** (una en S11 y otra en S13) | KPI de latencia | Seguir [`tests/perf/README.md`](tests/perf/README.md): subir un PDF **realista (1-5 MB)** como Empleado, correr el script, **tomar captura** y hacer commit del reporte que genera. |
+| 3 | **Capturas de las llamadas a la API funcionando** | API de integración | En Postman, con la lista de **11 capturas sugeridas** de [`docs/api/README.md`](docs/api/README.md) (registro, verificación confirmada y alterada, 403 por rol, etc.). |
+| 4 | **Aprobación del tutor de cada sprint** (criterio 5 de la Definición de Terminado) | KPI de HU aprobadas | Registrar la fecha de la sesión de revisión en la última columna de [`docs/registro-sprints.md`](docs/registro-sprints.md). **Sin esto no hay porcentaje oficial**, aunque todo esté terminado. |
+| 5 | **Pull requests de revisión** (criterio 1) | Definición de Terminado | Abrir los PR que faltan o dejar escrita la excepción por sprint (hoy solo el frontend de Laura entró por PR). |
+| 6 | **Decidir la observación OBS-01** (política de endorsement) | Registro de cambios | La red exige la firma de **las 2 organizaciones** (MAJORITY), pero los planes de Sprint 0 y 2 dicen que bastaba una ("OR"). Recomendado: dejar MAJORITY (ya está probado y es más seguro) y que Claude corrija los planes. |
+
+### Opcional pero recomendable
+
+- Una **captura de la evidencia de Fabric** (el documento con sus TxID en la
+  aplicación) para la tesis: la evidencia escrita ya está, la captura la refuerza.
+- Antes de cualquier demo: `bash docker/down.sh && bash docker/up.sh` para tener
+  el sistema limpio (los usuarios de prueba se crean solos).
+- **Cambiar la clave SMTP de Brevo** (la actual quedó escrita en el chat) y
+  generarle la suya a Laura (sección 7).
+
+**En una frase:** todo lo que se podía construir y documentar del Objetivo 3 ya
+está; lo que falta son **fechas, capturas, mediciones oficiales y la aprobación
+del tutor**.

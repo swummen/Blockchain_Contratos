@@ -78,7 +78,7 @@ export function requireAuth(...allowedRoles: Role[]) {
     }
 
     if (allowedRoles.length > 0 && !allowedRoles.includes(role as Role)) {
-      res.status(403).json({ message: "No tenés permiso para esta acción." });
+      res.status(403).json({ message: "No tienes permiso para esta acción." });
       return;
     }
 

@@ -419,7 +419,7 @@ export async function getDocumentEvents(
     // pasar — RegisterDocument siempre lo planta primero).
     const registro = events.find((evt) => evt.action === "registro");
     if (registro?.user !== userId) {
-      return { ok: false, status: 403, message: "No tenés permiso para esta acción." };
+      return { ok: false, status: 403, message: "No tienes permiso para esta acción." };
     }
   }
 

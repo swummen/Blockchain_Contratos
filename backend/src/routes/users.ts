@@ -53,7 +53,7 @@ usersRouter.put("/users/:id", requireAuth("Administrador"), async (req, res) => 
   // revertirlo desde la app. Quien llega acá ya es Administrador
   // (requireAuth), así que cualquier otro rol sería un cambio.
   if (req.params.id === req.user?.sub && input.role !== "Administrador") {
-    res.status(400).json({ message: "No podés cambiar tu propio rol." });
+    res.status(400).json({ message: "No puedes cambiar tu propio rol." });
     return;
   }
 
@@ -70,7 +70,7 @@ usersRouter.post("/users/:id/deactivate", requireAuth("Administrador"), async (r
   // propia cuenta (p. ej. por error durante una demo) sin forma de revertirlo
   // salvo entrar a la base a mano — no hay endpoint de reactivación (D8).
   if (req.params.id === req.user?.sub) {
-    res.status(400).json({ message: "No podés desactivar tu propia cuenta." });
+    res.status(400).json({ message: "No puedes desactivar tu propia cuenta." });
     return;
   }
 

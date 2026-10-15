@@ -6,8 +6,9 @@ encontramos y qué falta. No es la documentación formal (esa vive en
 `claude_docs/SPEC.md` y en `claude_docs/tasks/`) — esto es para que tengas el
 panorama completo en un solo lugar, sin tener que ir sprint por sprint.
 
-Última actualización: 2026-10-12, después de conectar el frontend de los 3
-roles (Sprint 4 T6-T9) y resolver el problema del ID (selección en dos pasos).
+Última actualización: 2026-10-15, después de cerrar Sprint 4 (T10), pasar el
+código de verificación a Brevo y dejar la guía para configurarle todo a Laura
+(sección 7).
 
 ---
 
@@ -319,9 +320,8 @@ código) o gracias a una revisión de código adversarial:
 - ~~**El selector de rol en el login no sabe cuál es tu rol real**~~ →
   **Resuelto:** el login ya no pide el rol (cambio de la rama de Laura); el
   backend lo determina solo contra la cuenta.
-- **Pendiente de verificar en navegador por vos:** todo lo de Sprint 4 y el
-  flujo nuevo del ID se probó con Playwright (automatizado) contra el stack
-  real, pero falta tu visto bueno a mano.
+- ~~**Pendiente de verificar en navegador por vos**~~ → **Hecho (2026-10-14):**
+  lo probaste y todo funciona; Sprint 4 quedó cerrado (T10).
 - **El tope de 100 del listado y la falta de buscador/paginación** siguen
   pendientes para cuando haya volumen real (alcance completo de RF‑37…40).
 - **RNF-10 y RNF-14** (benchmarks formales de performance): están marcados
@@ -338,3 +338,100 @@ código) o gracias a una revisión de código adversarial:
 para decirte que tambien quitar lo de selcción de rol, las 2 pantalls faltantes, la de inicio y la de sesion cerrada con exito y eso de que no deberia poder subir el mismo archivo o contrato si aun sigue pendiente, solo se debe subir si ya se verificó.
 la inactividad e intentos de inicio de sesion hay que revisarlo.
 POR FAVOR MURAR COMO HACEMOS LO DEL ID QUE SEA MÁS SENCILO PARA EL USUARIO Y ESO AJAJJA.
+
+> **Respuesta (2026-10-15):** todo lo de esta nota quedó hecho — el login ya no
+> pide el rol, existen las pantallas de inicio y de sesión cerrada, no se puede
+> volver a subir un archivo mientras siga Pendiente (`409`), el cierre por
+> inactividad (15 min) y el bloqueo tras 5 intentos (15 min) funcionan (los
+> revisaste en navegador), y lo del ID quedó en la selección en dos pasos
+> (persona → contrato, sección 3).
+
+Lo que sigue pendiente, en orden: `claude_docs/tasks/plan-trabajo-pendiente.md`.
+
+---
+
+## 7. Cómo configurarle el proyecto a Laura (correo de verificación con Brevo)
+
+El código de verificación (OTP) sale por **Brevo** desde
+`contratosblockchain@gmail.com`. La configuración vive en dos archivos `.env`
+que **no se suben a git**, así que cuando Laura clone o actualice el repo no
+los tiene: hay que crearlos en su computador. Pasos:
+
+### Lo que haces tú (Sofia), una sola vez
+
+1. Entra a Brevo → ⚙️ → **SMTP & API** → pestaña **SMTP** →
+   **Generar nueva clave SMTP**: nombre `laura-local`, variante **Estándar**,
+   vencimiento 1 año. Copia la clave en ese momento (no se vuelve a mostrar).
+2. Pásale a Laura **por un medio privado** (WhatsApp, en persona — nunca por
+   el repo ni por un chat compartido):
+   - la clave SMTP `laura-local`,
+   - el **login SMTP** de la cuenta (el `xxxx@smtp-brevo.com` que aparece en esa
+     misma pestaña — no es un correo de verdad, es el usuario de Brevo),
+   - la contraseña de `contratosblockchain@gmail.com`, para que pueda leer los
+     códigos que llegan ahí.
+
+   Cada una con su propia clave: si una se filtra, se borra solo esa en Brevo y
+   la otra sigue funcionando.
+
+### Lo que hace Laura en su computador
+
+1. Actualizar el repo (`git pull`).
+2. **Si ya tenía levantada la red de un clon anterior**, borrar esos restos
+   antes de nada (ver "Después de re-clonar el repo" en `docker/README.md`).
+3. Crear `docker/.env` desde el ejemplo y completar el bloque de correo:
+
+   ```bash
+   cp docker/.env.example docker/.env
+   ```
+
+   ```
+   SMTP_HOST=smtp-relay.sendinblue.com
+   SMTP_PORT=587
+   SMTP_USER=<login SMTP de Brevo, el xxxx@smtp-brevo.com>
+   SMTP_PASSWORD=<su clave laura-local>
+   SMTP_FROM=contratosblockchain@gmail.com
+   ```
+
+   Ojo: `SMTP_HOST` es `smtp-relay.sendinblue.com`, **no** el
+   `smtp-relay.brevo.com` que muestra Brevo — con ese, desde Colombia, la
+   conexión falla por un error de certificado.
+4. Crear `backend/.env` desde el ejemplo y ajustar dos líneas:
+
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+
+   ```
+   MONGO_URI=mongodb://root:changeme@localhost:27017/?authSource=admin
+   SEED_EMAIL=contratosblockchain@gmail.com
+   ```
+
+5. Levantar todo y sembrar los usuarios:
+
+   ```bash
+   bash docker/up.sh
+   cd backend && npm install && npm run seed
+   ```
+
+   El seed tiene que mostrar los 4 usuarios como
+   `contratosblockchain+empleado@gmail.com`, `+empleado2@`, `+verificador@` y
+   `+admin@`.
+6. Probar: entrar en <http://localhost:5173> con
+   `contratosblockchain+empleado@gmail.com` / `Contratos123!` → el código llega
+   a `contratosblockchain@gmail.com` (la primera vez, revisar **spam** y marcar
+   "No es spam").
+
+### Si algo falla
+
+- **El código no llega y aparece en `docker logs backend`** → `docker/.env` no
+  tiene `SMTP_HOST` (o se levantó el stack antes de crearlo): completar y
+  correr `bash docker/up.sh` de nuevo.
+- **Al iniciar sesión sale "No se pudo enviar el código de verificación"** →
+  la clave o el login SMTP están mal copiados (el detalle real queda en
+  `docker logs backend`), o la clave venció (vence al año, **o a los 90
+  días sin usarse**). Generar otra en Brevo.
+- **Los usuarios del seed salen como `@empresa.com`** → falta `SEED_EMAIL` en
+  `backend/.env`. Agregarlo y repetir `bash docker/down.sh && bash docker/up.sh`
+  y `npm run seed`.
+- **Si las dos prueban a la vez con el mismo rol**, llegan dos códigos al mismo
+  buzón casi juntos: usar el más reciente.

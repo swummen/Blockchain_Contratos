@@ -1,133 +1,126 @@
 # Plan de trabajo — lo que falta del MVP (orden de prioridad)
 
-> Fuente de verdad: `claude_docs/SPEC.md`. Estado de partida (2026‑10‑14): Sprints 0‑3
-> cerrados; Sprint 4 con T1‑T9 hechas (falta T10 + confirmación en navegador).
+> Fuente de verdad: `claude_docs/SPEC.md`. Actualizado **2026‑10‑14**, después del cierre
+> de Sprint 4 (T10) y del envío del OTP por Brevo.
 > No hay commit automático — solo mensajes redactados.
 
-Criterio de orden: **(1)** cerrar lo que está a medias antes de abrir algo nuevo,
-**(2)** requisitos Must sin construir, **(3)** evidencia de la Fase 4 (OE4) que la tesis
-exige medir, **(4)** entregables documentales, **(5)** deuda técnica opcional.
+## Dónde estamos
+
+- **Hecho:** Sprints 0‑4 cerrados. Los 53 RF del SPEC están implementados; las pantallas
+  de los 3 roles usan el backend real; el OTP llega por correo real (Brevo,
+  `contratosblockchain@gmail.com`); bloqueo por intentos (RF‑054) y cierre por
+  inactividad (RNF‑07) funcionando.
+- **Falta:** sincronizar el SPEC con el backlog (55 RF / 24 HU), dos requisitos nuevos
+  sin construir (RF‑055 y el registro de intentos fallidos), **toda la Fase 4 (OE4)**
+  y los entregables documentales.
+
+Criterio de orden: **(0)** revisiones rápidas y de seguridad, **(1)** que el SPEC diga la
+verdad, **(2)** requisitos Must sin construir, **(3)** evidencia de la Fase 4 que la tesis
+exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opcional.
 
 ---
 
-## P0 — Cerrar Sprint 4 (empezar aquí)
+## P0 — Por revisar (rápido, antes de seguir)
+
+| # | Qué revisar | Quién | Por qué |
+|---|---|---|---|
+| R1 | **Cambiar la SMTP key de Brevo** (la actual quedó escrita en el chat): generar una nueva, borrar `sofias-local` y actualizar `docker/.env`. | Sofia | Seguridad: la clave se expuso. |
+| R2 | **Configurar a Laura**: su propia SMTP key (`laura-local`) + sus `docker/.env` y `backend/.env` (no viajan con el repo). Guía paso a paso en `para_sofi.md` §7. Confirmar que a ella también le llega el OTP. | Sofia + Laura | Que no dependa de un solo computador. |
+| R3 ✅ | **Correr `bash docker/smoke-test.sh`** con el stack arriba — no se corrió en el cierre de T10 (Docker estaba apagado). | Claude | Evidencia de no regresión de HU‑021. |
+| R4 ✅ | **Corregir el voseo en textos de usuario** (5 mensajes: "No podés…", "No tenés permiso…", "ingresá…", "¿No lo encontrás?") → tuteo, como el resto de la app. Están en `backend/src/routes/users.ts`, `middlewares/auth.ts`, `services/documentService.ts` y `VerificarIntegridadPage.tsx`. | Claude | Consistencia del español de la UI (RNF‑16/18). |
+| R5 ✅ | **Root `README.md` está vacío** (el commit "completo readme contratos" actualizó los otros README, no el de la raíz). | Claude | Entregable explícito de OBJETIVO 3. |
+| R6 | **Confirmar las fechas reales de S11 y S13** en el cronograma (Tabla 5 del trabajo de grado — es una imagen, no se puede leer desde `docs/md/`). | Sofia | El benchmark de RNF‑10 (2.1) tiene que correrse en esas dos semanas. |
+| R7 ✅ | **Limpiar datos de prueba antes de cualquier demo**: quedan `CONTRATO FALSO.pdf` (c.ruiz) y el usuario `Prueba T9 Editada`. `bash docker/down.sh && bash docker/up.sh && npm run seed` deja todo limpio. | Sofia | Una demo con datos de prueba sueltos se ve desordenada. |
+| R8 | **Correos en spam**: si los OTP siguen cayendo en spam, marcar "No es spam" en `contratosblockchain@gmail.com`. Recordar que la SMTP key vence en 1 año **o tras 90 días sin uso**. | Sofia | Que la demo no falle por el correo. |
+| R9 | **DoD pendiente en todos los sprints**: PR revisado (criterio 1) y aceptación del director/codirectora (criterio 5). Llevar el acta. | Sofia + Laura | Sin esto ninguna HU cuenta como "terminada" para el KPI de HU aprobadas. |
+
+---
+
+## P1 — Que el SPEC diga la verdad
 
 | # | Tarea | Quién | Verificar |
 |---|---|---|---|
-| 0.1 ✅ | Probar en navegador las pantallas de Sprint 4 (3 roles), la selección persona → contrato, el cierre por inactividad (15 min) y el bloqueo tras 5 intentos (15 min). | Sofia | Checklist de `todo-sprint4-administration.md` (checkpoint "de punta a punta") |
-| 0.2 ✅ | **T10** de Sprint 4: `backend/README.md` (fila `GET /documents` desactualizada, endpoints `/events`, `/documents/summary`, `/users/*`), `chaincode/README.md`, §3 del SPEC con el cierre de Sprint 4. | Claude | Ciclo `down.sh` → `up.sh` + `smoke-test.sh` en PASS |
-| 0.3 | **Sincronizar el SPEC con el backlog fuente**: hoy son **55 RF / 24 HU** (el SPEC dice 53 / 21). Agregar RF‑054, RF‑055, HU‑022, HU‑023, HU‑024 y sus Gherkin; marcar RF‑054 como implementado; cerrar preguntas abiertas #3 (2 orgs) y #4 (UML y prototipos ya existen). | Claude | Conteo RF/HU del SPEC = backlog |
-| 0.4 ✅ | Limpieza: borrar `AppDataContext.tsx` (sin consumidores) y su provider en `main.tsx`. | Claude | `npm run build` + `npm run lint` |
-| 0.5 | Commit(s) de cierre de Sprint 4 + PR (DoD 1). | Sofia | PR abierto |
+| 1.1 | **Sincronizar el SPEC con el backlog fuente**: 55 RF / 24 HU (el SPEC dice 53 / 21). Agregar RF‑054, RF‑055, HU‑022, HU‑023, HU‑024 con sus Gherkin (~9 escenarios nuevos); marcar RF‑054 y HU‑024 como implementados; HU‑022 parcial (falta CA‑03). | Claude | Conteo RF/HU/Gherkin del SPEC = backlog |
+| 1.2 | **Cerrar preguntas abiertas del SPEC §18**: #3 (topología: 2 orgs, endorsement OR — ya decidido en Sprint 0), #4 (UML en `docs/uml/` y prototipos en `docs/` ya existen). Revisar #1 (¿el OTP debe ir solo a correo corporativo?) con el tutor. | Claude (+ tutor para #1) | §18 sin preguntas ya resueltas |
+| 1.3 | **Nombre del producto**: la app ya dice "TrazaDoc", el SPEC no lo nombra (hallazgo #4 de `Inconsistencias_Mockup_Roles.txt`). Anotarlo en el SPEC. | Claude | — |
 
 ---
 
-## P1 — Requisitos que faltan construir
+## P2 — Requisitos que faltan construir
 
-### 1.1 Códigos de verificación (OTP) por un proveedor de correo externo ("vendor")
+### 2.1 RF‑055 / HU‑023 — Aceptación de la política de tratamiento de datos (Must, no existe nada)
 
-**Situación actual.** `backend/src/services/emailService.ts` ya usa `nodemailer` por SMTP;
-si `SMTP_HOST` está vacío, el código se imprime en los logs del backend (modo
-desarrollo). **Además, `docker/compose.app.yml` no le pasa ninguna variable `SMTP_*` al
-contenedor `backend`**, así que dentro de Docker el correo nunca puede salir, aunque se
-configure.
-
-**Origen:** indicación del tutor (2026‑10‑14): usar, por ahora, un proveedor de correo
-externo ("vendor") para las pruebas de verificación por correo. El tutor no fijó cuál.
-
-**Decisión (tomada 2026‑10‑14): Brevo (SMTP relay)** — no requiere código nuevo ni dependencias
-(nodemailer ya habla SMTP) y no exige un dominio propio.
-
-| Proveedor | Plan gratis | ¿Sirve sin dominio propio? | Nota |
-|---|---|---|---|
-| **Brevo** (recomendado) | 300 correos/día, permanente | **Sí** — basta verificar un remitente (p. ej. un Gmail) | `smtp-relay.brevo.com:587`, usuario = login SMTP de Brevo, clave = *SMTP key* |
-| Resend | 3.000/mes (100/día) | **No** — sin dominio verificado solo envía al correo del dueño de la cuenta | Mejor API, pero obliga a comprar/verificar un dominio |
-| Mailgun | 100/día | No (sandbox limitado a destinatarios autorizados) | — |
-| SendGrid | Sin plan gratis (prueba de 60 días) | — | Descartado |
-
-**Tareas:**
-
-- [x] **1.1.a — Cuenta y remitente (Sofia, fuera del repo).** Crear cuenta en Brevo,
-  verificar el remitente (el correo que aparecerá en "De:"), generar una *SMTP key* en
-  *SMTP & API*. Anotar: login SMTP, SMTP key, correo remitente.
-- [x] **1.1.b — Pasar las variables al contenedor.** `docker/compose.app.yml`, servicio
-  `backend`: agregar `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`
-  leídas de `docker/.env` (vacías por defecto → se conserva el modo consola). Documentarlas
-  comentadas en `docker/.env.example` y `backend/.env.example` con los valores de Brevo
-  (sin la clave real; `.env` ya está en `.gitignore`).
-- [x] **1.1.c — Soporte de puerto 465.** En `emailService.ts`, `secure: port === 465`
-  (una línea). El 587 (STARTTLS) ya funciona tal cual.
-- [x] **1.1.d — Correo en español y claro (RNF‑18).** Asunto "TrazaDoc — Código de
-  verificación", texto con el código, vigencia (5 min) y "si no fuiste tú, ignora este
-  correo". Versión HTML simple opcional.
-- [x] **1.1.e — Errores.** Si el proveedor rechaza el envío, ya responde `502` "no se pudo
-  enviar el correo" (Sprint 1). Confirmar que nunca se loguea el código cuando SMTP sí
-  está configurado (solo en modo desarrollo).
-- [x] **1.1.f — Tests.** Un test de `emailService` con `nodemailer` mockeado: con
-  `SMTP_HOST` llama a `sendMail` con el `from`/`to` correctos; sin `SMTP_HOST` no lo llama.
-- [x] **1.1.g — Prueba real.** `up.sh` con `docker/.env` configurado → login de un usuario
-  sembrado cuyo `email` sea un buzón real → el OTP llega (revisar también spam) → acceso
-  concedido. Para esto, cambiar el correo de un usuario de prueba desde la pantalla de
-  Usuarios del Administrador (los del seed son `@empresa.com`, no existen).
-- [x] **1.1.h — Documentación.** `backend/README.md` ("Probar sin SMTP real" → "Envío
-  real con Brevo"), SPEC §2 (fila Autenticación: proveedor SMTP) y pregunta abierta #1
-  (canal del 2FA).
-
-Riesgos: un remitente Gmail enviado por Brevo sin DKIM propio puede caer en spam
-(aceptable para el MVP; se mitiga con un dominio propio + DKIM si se llega a desplegar).
-Límite de 300/día: de sobra para pruebas y demo.
-
-### 1.2 RF‑055 / HU‑023 — Aceptación de la política de tratamiento de datos (Must, no existe nada)
-
-- [ ] Backend: campo en el usuario (`policyAcceptance: {version, acceptedAt}`), endpoint
-  `POST /auth/accept-policy`, y `requireAuth` bloquea (403) cualquier otra ruta hasta
-  aceptar la versión vigente (HU‑023 CA‑03).
+- [ ] **Texto de la política** (Ley 1581/2012) con un número de versión — **lo redactan
+  Sofia/Laura**. Bloquea el resto.
+- [ ] Backend: guardar en el usuario `policyAcceptance: {version, acceptedAt}`; endpoint
+  `POST /auth/accept-policy`; `requireAuth` responde `403` en cualquier otra ruta hasta
+  aceptar la versión vigente (CA‑03).
 - [ ] Frontend: pantalla de la política tras el primer login; sin aceptar no se entra al
   panel (CA‑01/CA‑02).
-- [ ] Texto de la política (Ley 1581/2012) — **lo redactan Sofia/Laura**.
-- Cambia el esquema de Mongo → "Ask first" del SPEC: confirmar antes de implementar.
+- [ ] Tests + prueba en navegador.
+- Cambia el esquema de Mongo → "Ask first" del SPEC: confirmar el diseño antes.
 
-### 1.3 HU‑022 CA‑03 — Registrar los intentos fallidos de login
+### 2.2 HU‑022 CA‑03 — Registrar los intentos fallidos de login
 
-- [ ] Colección `login_attempts` (correo, fecha/hora, motivo; **nunca** la contraseña),
-  escrita desde `authService.login` en cada fallo. Con índice TTL si no se necesita
-  conservarla para siempre.
+- [ ] Colección `login_attempts` (correo ingresado, fecha/hora, motivo; **nunca** la
+  contraseña), escrita desde `authService.login` en cada fallo. Hoy solo existe el
+  contador del bloqueo.
+- [ ] Decidir si el Administrador lo ve en pantalla (ningún RF lo pide — por defecto no).
 
 ---
 
-## P2 — Evidencia de la Fase 4 / OE4 (KPIs de la tesis)
+## P3 — Fase 4 / OE4: evidencia que la tesis tiene que medir
 
 | # | Tarea | KPI / RNF | Nota |
 |---|---|---|---|
-| 2.1 | **Benchmark de verificación**: script (k6 o autocannon) con 50 peticiones consecutivas a `POST /documents/:id/verifications` en Docker local → P95 y reporte (método, 50 mediciones, captura). **Correrlo dos veces: semanas S11 y S13.** | RNF‑10, P95 ≤ 3000 ms | Tiene fecha fija — no dejarlo para el final |
-| 2.2 | **Set de 20 documentos sintéticos** (12 contratos + 8 NDA, según el benchmarking) + script de mutación + corrida que confirme 100 % de detección. | RNF‑14 | `tests/integrity/` |
-| 2.3 | **Plan de Pruebas (PPS)**: un caso por escenario Gherkin (ahora ~50), ejecución y % PASS. | RNF‑28, ≥ 90 % PASS | Automatizar los críticos |
-| 2.4 | Prueba de trazabilidad: historial del ledger vs. acciones realizadas. | RNF‑26/27 | Reusa `GET /events` |
+| 3.1 | **Benchmark de verificación**: script (k6 o autocannon) con 50 peticiones consecutivas a `POST /documents/:id/verifications` en Docker local → P95 + reporte (método, herramienta, las 50 mediciones, captura, entorno). **Correrlo dos veces: S11 y S13** (ver R6). | RNF‑10, P95 ≤ 3000 ms | Nueva dependencia de prueba → "Ask first". Anotar siempre que es Docker local, no Azure. |
+| 3.2 | **Set de 20 documentos sintéticos** (12 contratos + 8 NDA, según el benchmarking) + script de mutación + corrida que confirme 100 % de detección. | RNF‑14, 100 % | `tests/integrity/` |
+| 3.3 | **Plan de Pruebas de Software (PPS)**: un caso por escenario Gherkin (~51 tras P1.1), ejecución y % PASS; automatizar los críticos. | RNF‑28, ≥ 90 % PASS | Base de la matriz de cumplimiento |
+| 3.4 | Prueba de trazabilidad/inmutabilidad: historial del ledger vs. acciones realizadas. | RNF‑26/27 | Reusa `GET /events` |
+| 3.5 | Prueba de consistencia Mongo ↔ ledger (documentId, hash, estado). | RNF‑13 | Script de comparación |
 
 ---
 
-## P3 — Entregables documentales (OBJETIVO 3 + Definición de Terminado)
+## P4 — Entregables documentales (OBJETIVO 3 + DoD)
 
-- [ ] `README.md` raíz (hoy vacío): qué es, estructura, cómo levantarlo, que el chaincode es solo Go.
-- [ ] Documentación de la API: colección de Postman o `openapi.yaml` + capturas.
-- [ ] Guía de despliegue (prerrequisitos, `.env`, problemas conocidos de Windows) → alimenta el manual de operación.
-- [ ] Registro de sprints (HU comprometidas vs. aprobadas, % por sprint — KPI ≥ 80 %).
+- [ ] `README.md` raíz (R5): qué es, estructura, cómo levantarlo, que el chaincode es solo Go.
+- [ ] Documentación de la API: `openapi.yaml` o colección de Postman + capturas de las llamadas.
+- [ ] Guía de despliegue y configuración (prerrequisitos, `.env`, Brevo, problemas conocidos de Windows) → alimenta el manual de usuario y operación.
+- [ ] Registro de sprints: HU comprometidas vs. aprobadas y % por sprint (KPI ≥ 80 %).
 - [ ] Matriz de trazabilidad HU ↔ RF ↔ endpoint/pantalla.
-- [ ] Convertir a `docs/md/` los documentos nuevos de Laura (`Matriz_ASRS y Utility tree.xlsx`, `Prototipo alta fidelidad.pdf`, `Wireframes baja fidelidad.pdf`) y retirar los obsoletos (`Rol administrador.md`, `roles mock up.md`, referencias en `Inconsistencias_Mockup_Roles.txt` y `docs/uml/README.md`).
-- [ ] Despliegue en Azure (DoD 4) — solo después de P2.1 (las mediciones son en Docker local).
+- [ ] Registro de cambios respecto al diseño (OE2): p. ej. login sin selector de rol, selección en dos pasos, Brevo, CouchDB → LevelDB (OBJETIVO 3 pedía CouchDB en el script de red).
+- [ ] Actualizar los diagramas UML de `docs/uml/` a lo implementado (sus nombres de servicios eran una propuesta previa al código; su README cita un `SRS_v2_Requerimientos (2).md` que no existe).
+- [ ] Convertir a `docs/md/` los documentos nuevos de Laura (`Matriz_ASRS y Utility tree.xlsx`, `Prototipo alta fidelidad.pdf`, `Wireframes baja fidelidad.pdf`), retirar los obsoletos (`Rol administrador.md`, `roles mock up.md`) y comparar el prototipo de alta fidelidad con las pantallas actuales.
+- [ ] Despliegue en Azure (DoD 4) — después de 3.1.
+- [ ] Manual de usuario.
 
 ---
 
-## P4 — Deuda técnica conocida (solo si sobra tiempo)
+## P5 — Deuda técnica conocida (solo si sobra tiempo)
 
 - Idempotencia de la carga (un reintento tras timeout puede anclar el mismo archivo dos veces).
-- `verifyDocument` descarta el `txID`/timestamp real de la verificación.
+- `verifyDocument` descarta el `txID`/timestamp real de la verificación (la evidencia usa la hora del navegador).
 - Paginación/búsqueda de listados (topes de 100 documentos / 200 eventos).
+- Sin reactivación de usuarios ni invitación por correo (decisiones D7b/D8, ningún RF las pide).
 
 ---
 
 ## Por dónde empezar
 
-1. **Hoy:** 0.1 (tú en el navegador) en paralelo con 0.2–0.4 (yo).
-2. **Siguiente:** 1.1 (Brevo) — necesito que hagas 1.1.a; el resto es ~1 tarea pequeña.
-3. Luego 1.2 y 1.3, y en cuanto haya fecha de S11, 2.1.
+1. **Ya mismo (Sofia):** R1 (cambiar la clave), R6 (fechas de S11/S13) y empezar el
+   texto de la política de datos (bloquea 2.1).
+2. **Ya mismo (Claude):** R3–R5 y P1 (SPEC al día).
+3. **Siguiente:** 2.2 (chico) mientras llega el texto de la política; luego 2.1.
+4. **En paralelo, según las fechas de R6:** 3.1 → 3.2 → 3.3.
+5. **Al final:** P4, con lo medido en P3.
+
+## Historial
+
+- **Cerrado 2026‑10‑15:** R3 (smoke test PASS tras reinicio desde cero), R4 (8 textos
+  con voseo → tuteo), R5 (README raíz), R7 (entorno reiniciado: sin datos de prueba,
+  usuarios sembrados con `SEED_EMAIL`); guía de configuración de Laura en
+  `para_sofi.md` §7; nota en `docker/README.md` sobre restos de red tras re-clonar.
+- **Cerrado 2026‑10‑14:** cierre de Sprint 4 (T10 + limpieza del mock); OTP por
+  proveedor externo (Brevo, por indicación del tutor) — `SMTP_*` en Docker, puerto 465,
+  correo en español, `SEED_EMAIL`, tests, host `smtp-relay.sendinblue.com` (el de
+  `brevo.com` falla TLS desde Colombia).

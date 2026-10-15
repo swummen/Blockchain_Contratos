@@ -207,7 +207,7 @@ export default function VerificarIntegridadPage() {
                           disabled={lookupLoading}
                         >
                           <SelectTrigger id="person-select">
-                            <SelectValue placeholder="Elegí a la persona que registró el documento..." />
+                            <SelectValue placeholder="Elige a la persona que registró el documento..." />
                           </SelectTrigger>
                           <SelectContent>
                             {people.map((person) => (
@@ -234,7 +234,7 @@ export default function VerificarIntegridadPage() {
                             disabled={lookupLoading}
                           >
                             <SelectTrigger id="document-select">
-                              <SelectValue placeholder="Elegí el contrato a verificar..." />
+                              <SelectValue placeholder="Elige el contrato a verificar..." />
                             </SelectTrigger>
                             <SelectContent>
                               {selectedPerson.documents.map((doc) => (
@@ -251,7 +251,7 @@ export default function VerificarIntegridadPage() {
 
                   {documentsError && (
                     <p className="text-xs text-muted-foreground">
-                      No se pudo cargar el listado ({documentsError}) — ingresá el identificador abajo.
+                      No se pudo cargar el listado ({documentsError}) — ingresa el identificador abajo.
                     </p>
                   )}
 
@@ -264,7 +264,7 @@ export default function VerificarIntegridadPage() {
                         onClick={() => setManualOpen(true)}
                         className="text-xs text-primary hover:underline"
                       >
-                        ¿No lo encontrás? Ingresar el identificador a mano
+                        ¿No lo encuentras? Ingresa el identificador a mano
                       </button>
                     ) : (
                       <form

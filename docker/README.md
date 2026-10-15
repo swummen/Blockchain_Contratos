@@ -110,6 +110,15 @@ suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas 
   `docker container prune -f` los limpiaría, pero afecta contenedores detenidos de
   **cualquier** proyecto en la máquina, no solo este — hacerlo a mano, bajo tu propio
   criterio, nunca automatizado en un script del repo).
+- **Después de re-clonar el repo, `down.sh` no baja la red vieja.** La red Fabric de un
+  clon anterior queda en Docker, pero el clon nuevo todavía no tiene
+  `docker/fabric-samples/`, así que `network-down.sh` responde "Nada que bajar" y
+  `up.sh` aborta con "Ya hay contenedores de una corrida anterior". Hay que borrar esos
+  restos por nombre (solo los de este proyecto, nunca un `prune`):
+  `docker rm -f orderer.example.com peer0.org1.example.com peer0.org2.example.com ca_orderer ca_org1 ca_org2`
+  (más los `dev-peer0.org*-contracts_*`), `docker volume rm compose_orderer.example.com
+  compose_peer0.org1.example.com compose_peer0.org2.example.com` y
+  `docker network rm fabric_test`; después `bash docker/up.sh` funciona normal.
 - **`up.sh` no "resume" una corrida a medias.** Si `network-up.sh` quedó a medio camino
   (por ejemplo, se interrumpió `up.sh` en el paso 1), el guard existente de
   `network-up.sh` (detecta contenedores de una corrida anterior) hace que `up.sh` aborte

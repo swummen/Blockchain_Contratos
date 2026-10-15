@@ -170,6 +170,24 @@ mínimo (decisión D8 del plan, `GET /documents`, sin filtros/búsqueda/paginaci
 por Sofia para no obligar a memorizar un `documentId`) para elegir qué verificar; el
 resto (búsqueda, trazabilidad general) sigue para Sprint 4.
 
+`administration` + consultas restantes (Sprint 4) completo (actualizado 2026‑10‑14) —
+**RF‑18…22, RF‑37…51 y RNF‑03, 06, 08, 09, 26, 27 implementados y verificados**, con lo
+que **los 53 RF de este documento quedan implementados**. Chaincode con
+`GetDocumentEvents`/`GetAllEvents` (la trazabilidad se lee del ledger, el backend la
+ordena cronológicamente); `GET /documents` acotado por rol (el Empleado solo ve lo suyo),
+`GET /documents/:id/events` (403 a un Empleado sobre un documento ajeno, dueño tomado
+del ledger), `GET /events`, `GET /documents/summary` y gestión de usuarios
+(`GET/POST /users`, `PUT /users/:id`, `POST /users/:id/deactivate` — baja lógica; cambiar
+el rol o desactivar corta las sesiones abiertas). Las pantallas de los 3 roles usan el
+backend real (ya no queda ningún mock en el frontend) y la selección del documento a
+verificar es en dos pasos (RF‑24, nota de cambio). Probado por Sofia en navegador;
+detalle en `claude_docs/tasks/todo-sprint4-administration.md`. Fuera de los 53 RF, ya
+existen también el bloqueo por intentos fallidos y el cierre por inactividad (RF‑054 /
+RNF‑07 del backlog fuente). **Siguen parciales:** RNF‑10 y RNF‑14 (benchmarks formales
+sin correr) y la búsqueda/paginación de RF‑37…40 (topes defensivos de 100 documentos /
+200 eventos). **Pendiente de sincronizar:** el backlog fuente creció a 55 RF / 24 HU
+(RF‑054, RF‑055, HU‑022…024) — ver `claude_docs/tasks/plan-trabajo-pendiente.md` (P0.3).
+
 Cada módulo se especifica en su propio `claude_docs/SPEC-<id>.md` **solo si** su diseño
 necesita más detalle del que cabe aquí. El mapa de arriba es el índice de lo que existe.
 
@@ -743,7 +761,9 @@ Ley 1581/2012. Estado: **13/13 disposiciones aplicables al MVP cubiertas (100 %)
 
 ---
 
-*Última actualización: 2026‑09‑20 (T8, Sprint 1 `identity`: trazabilidad de RF‑01…07/52/53
+*Última actualización: 2026‑10‑14 (T10, cierre de Sprint 4 `administration`: §3 con
+RF‑18…22/37…51 implementados; §2 con el proveedor de correo del OTP, Brevo).
+Anterior: 2026‑09‑20 (T8, Sprint 1 `identity`: trazabilidad de RF‑01…07/52/53
 y RNF‑01/02/03/07 marcada como implementada; preguntas abiertas #1 y #2 de la sección 18
 resueltas con las decisiones D1/D2 del plan de Sprint 1). Anterior: 2026‑09‑06. Al cambiar
 alcance o diseño, edita este archivo primero y deja nota de cambio; luego implementa.*

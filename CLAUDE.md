@@ -4,15 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-`frontend/` has real tooling and, since Sprint 1/2, real business logic too — `identity`
-(login/OTP/sesión/RBAC, see `backend/README.md`) and the Sprint 2 document-upload flow
-(`CargarDocumentoPage`) talk to the real backend; the other role screens
-(Verificador/Administrador, "Mis documentos") still run on hardcoded mocks from
-`src/data/*.ts` until Sprint 3/4 add read endpoints. `docker/`, `backend/` and
-`chaincode/` all have real tooling: Sprint 0 (`infra`: Fabric network, Mongo, backend
-walking skeleton), Sprint 1 (`identity`), Sprint 2 (`documents`+`ledger`: real Go
-chaincode, `POST /documents`) — see `claude_docs/tasks/todo-sprint2-documents-ledger.md`
-for current status.
+Sprints 0–4 are closed: `infra`, `identity`, `documents`+`ledger`, `verification` and
+`administration` are all real end to end — every screen of the 3 roles talks to the real
+backend (no mocks left in `frontend/`). The OTP is sent through an external SMTP
+provider (Brevo, `SMTP_*` in `docker/.env`). What is still missing, in priority order,
+lives in `claude_docs/tasks/plan-trabajo-pendiente.md` (SPEC sync to 55 RF / 24 HU,
+RF‑055 data-policy acceptance, Phase 4 / OE4 benchmarks and test plan, deliverables).
 
 Source of truth for scope/design/planning is **`claude_docs/SPEC.md`** — it
 consolidates every `docs/md/*` doc (53 RF, 30 RNF, 21 HU, 42 Gherkin scenarios,
@@ -68,7 +65,7 @@ configured.
 | `npm run dev` | dev server (`tsx watch`) |
 | `npm run build` | `tsc -p tsconfig.json` |
 | `npm start` | run the build (`dist/server.js`) |
-| `npm run seed` | seed dev users (`identity`, one per role — see `backend/README.md`) |
+| `npm run seed` | seed dev users (`identity`, one per role; `SEED_EMAIL` in `backend/.env` routes their OTPs to a real inbox — see `backend/README.md`) |
 | `npm test` | Jest (`npx jest <file>` for a single test) |
 | `npm run lint` | oxlint (same linter as `frontend/`, not ESLint) |
 

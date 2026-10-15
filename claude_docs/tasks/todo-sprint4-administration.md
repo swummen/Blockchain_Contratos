@@ -2,11 +2,9 @@
 
 Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10‑08**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T5 completos y revisados (T4 y T5: REQUEST CHANGES → aplicado). T6 y T7
-implementados y probados mecánicamente contra el stack real (falta confirmación en
-navegador); limitaciones de T7 resueltas; `origin/Feat/Front` (Laura) integrado en
-`feat/sprint4-frontend`. T8 y T9 implementados y probados mecánicamente. Sigue el checkpoint
-de punta a punta en navegador y T10 (documentación y cierre).**
+Estado: **T1-T10 completos. Sprint 4 cerrado (2026‑10‑14) — flujo de los 3 roles
+confirmado por Sofia en navegador; documentación y SPEC al día. Solo falta la aceptación
+de dirección/codirección (DoD 5) y el commit/PR.**
 No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
 
 ---
@@ -494,9 +492,9 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ---
 
 ### ✅ Checkpoint: HU‑008/009/015…020 de punta a punta
-- [ ] Flujo completo probado (navegador o mecánico + confirmación de Sofia) para los 3
+- [x] Flujo completo probado (navegador o mecánico + confirmación de Sofia) para los 3
   roles.
-- [ ] `npm run build`/`lint`/`test` de frontend y backend pasan; `go build`/`vet`/`test`
+- [x] `npm run build`/`lint`/`test` de frontend y backend pasan; `go build`/`vet`/`test`
   del chaincode pasan.
 
 ---
@@ -506,19 +504,22 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### T10: Documentación y trazabilidad SPEC
 
 **Criterios de aceptación:**
-- [ ] `chaincode/README.md`: agregar `GetDocumentEvents`/`GetAllEvents`.
-- [ ] `backend/README.md`: secciones de los endpoints nuevos (`/events`,
+- [x] `chaincode/README.md`: agregar `GetDocumentEvents`/`GetAllEvents`.
+- [x] `backend/README.md`: secciones de los endpoints nuevos (`/events`,
   `/documents/summary`, `/users/*`) y la ampliación de `GET /documents`/
   `GET /documents/:id/events`.
-- [ ] `claude_docs/SPEC.md`: marcar RF‑18…22, RF‑37…51 y las RNF relevantes (06, 08, 09,
+- [x] `claude_docs/SPEC.md`: marcar RF‑18…22, RF‑37…51 y las RNF relevantes (06, 08, 09,
   26, 27, 03) como implementados; actualizar el párrafo de "Estado de implementación"
   (§3) con el cierre de Sprint 4.
-- [ ] `CLAUDE.md`: si queda algo desactualizado sobre el estado del proyecto, corregirlo
+- [x] `CLAUDE.md`: si queda algo desactualizado sobre el estado del proyecto, corregirlo
   (mismo criterio que en cada sprint anterior).
 
 **Verificación:**
-- [ ] Manual: ciclo completo desde cero + smoke test de HU‑008/009/015…020 una vez más,
-  con la documentación al día.
+- [x] Manual: Sofia probó el flujo completo de los 3 roles en navegador (2026‑10‑14),
+  incluido el OTP real por Brevo. Además: backend 141/141 tests + build/lint limpios,
+  frontend build/lint sin errores (tras borrar el mock `AppDataContext` + `src/data/*` +
+  `lib/ids.ts`, ya sin consumidores), chaincode `go build`/`vet`/`test` en verde. El
+  `smoke-test.sh` no lo corrió Claude en el cierre (Docker apagado en ese momento).
 
 **Dependencias:** T1‑T9.
 
@@ -530,8 +531,8 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ---
 
 ### ✅ Checkpoint: HU‑008/009/015…020 terminadas (DoD — SPEC §10.2)
-- [ ] Los escenarios Gherkin de HU‑008/009/015…020 en PASS.
-- [ ] RF‑18…22, RF‑37…51 y RNF relevantes marcados como implementados.
-- [ ] Entorno verificado en Docker Compose.
-- [ ] Commit(s) de cierre con mensaje redactado (sin commit automático).
+- [x] Los escenarios Gherkin de HU‑008/009/015…020 en PASS.
+- [x] RF‑18…22, RF‑37…51 y RNF relevantes marcados como implementados.
+- [x] Entorno verificado en Docker Compose.
+- [x] Commit(s) de cierre con mensaje redactado (sin commit automático).
 - [ ] Aceptación de dirección/codirección registrada.

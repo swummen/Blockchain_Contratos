@@ -7,8 +7,10 @@ PDF** (RNF‑04) — solo la huella que el backend ya calculó off-chain.
 
 ## Qué hace (`contract/smartcontract.go`)
 
-- `ContractsContract` — el contrato (`contractapi.Contract`), 3 funciones de negocio:
-  `RegisterDocument`, `GetDocument` y `RecordVerification`.
+- `ContractsContract` — el contrato (`contractapi.Contract`), 5 funciones de negocio:
+  `RegisterDocument`, `GetDocument`, `RecordVerification` (Sprints 2‑3) y
+  `GetDocumentEvents`, `GetAllEvents` (Sprint 4, lectura de trazabilidad — ver
+  "Modelo de datos" abajo).
 - `RegisterDocument(ctx, documentID, sha256Hex, user) (*Event, error)`: valida que
   `documentID`/`user` no estén vacíos y que `sha256Hex` tenga formato hex de 64
   caracteres (SHA‑256); rechaza un `documentID` ya registrado; usa
@@ -30,10 +32,10 @@ PDF** (RNF‑04) — solo la huella que el backend ya calculó off-chain.
 - No valida identidad/MSPID dentro del chaincode — es deliberado: el backend ya gatekeepea
   con JWT + OTP + RBAC antes de llamar a Fabric (decisión D6b,
   `claude_docs/tasks/plan-sprint2-documents-ledger.md`).
-- Sigue sin ninguna función que **liste** documentos o eventos (D6 de Sprint 2, todavía
-  vigente: ese alcance completo es RF‑37…40, Sprint 4). El listado mínimo que sí existe
-  desde Sprint 3 (`GET /documents` del backend) lee de MongoDB, nunca del chaincode —
-  ver `backend/README.md`. `backend/src/routes/fabric.ts` usa la query de sistema
+- No tiene ninguna función que **liste documentos**: el listado (`GET /documents` del
+  backend) lee de MongoDB, nunca del chaincode — ver `backend/README.md`. Los **eventos**
+  sí se leen del ledger (`GetDocumentEvents`/`GetAllEvents`, Sprint 4).
+  `backend/src/routes/fabric.ts` usa la query de sistema
   `org.hyperledger.fabric:GetMetadata` (la expone cualquier chaincode de `contractapi`
   automáticamente) para su diagnóstico, no una función de este contrato.
 
@@ -90,7 +92,7 @@ ya corregidos: `docker/README.md`.
 
 ## Tests unitarios (`contract/smartcontract_test.go`)
 
-24 tests, mocks `counterfeiter` copiados de `asset-transfer-basic` (`ChaincodeStub`,
+34 tests, mocks `counterfeiter` copiados de `asset-transfer-basic` (`ChaincodeStub`,
 `TransactionContext`, `StateQueryIterator`) — sin red, sin Docker.
 - `RegisterDocument`: registro exitoso (confirma las dos escrituras de `PutState` y la
   clave compuesta del evento), documento ya existente, hash con formato inválido,
@@ -102,10 +104,12 @@ ya corregidos: `docker/README.md`.
   `"comprometida"` (`Status→"Alterado"`), documento no encontrado, `result` inválido (sin
   siquiera leer el estado), `documentID`/`user` vacíos, y los mismos 5 fallos inyectados
   que ya cubre `RegisterDocument`.
+- `GetDocumentEvents`/`GetAllEvents` (Sprint 4): éxito con 2 y con 0 eventos, eventos de
+  2 documentos distintos (confirma la clave parcial vacía `[]string{}`), `documentID`
+  vacío, fallo de la query, fallo de `iterator.Next()` a mitad de camino (el iterador se
+  cierra igual, nunca se devuelve una lista parcial) y fallo de unmarshal.
 
-## Qué no hace todavía
+## Qué no hace
 
-Ninguna función que **liste documentos** (distinto de sus eventos) — el listado mínimo
-que existe desde Sprint 3 vive en MongoDB, vía el backend, no en este chaincode (D8 del
-plan de Sprint 3; ver `backend/README.md`). `GetAllEvents` (Sprint 4, arriba) sí cubre el
-listado de **eventos**.
+Ninguna función que **liste documentos** (distinto de sus eventos) — el listado vive en
+MongoDB, vía el backend (D8 del plan de Sprint 3; ver `backend/README.md`).

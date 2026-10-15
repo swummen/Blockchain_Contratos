@@ -14,10 +14,10 @@ exige medir, **(4)** entregables documentales, **(5)** deuda técnica opcional.
 
 | # | Tarea | Quién | Verificar |
 |---|---|---|---|
-| 0.1 | Probar en navegador las pantallas de Sprint 4 (3 roles), la selección persona → contrato, el cierre por inactividad (15 min) y el bloqueo tras 5 intentos (15 min). | Sofia | Checklist de `todo-sprint4-administration.md` (checkpoint "de punta a punta") |
-| 0.2 | **T10** de Sprint 4: `backend/README.md` (fila `GET /documents` desactualizada, endpoints `/events`, `/documents/summary`, `/users/*`), `chaincode/README.md`, §3 del SPEC con el cierre de Sprint 4. | Claude | Ciclo `down.sh` → `up.sh` + `smoke-test.sh` en PASS |
+| 0.1 ✅ | Probar en navegador las pantallas de Sprint 4 (3 roles), la selección persona → contrato, el cierre por inactividad (15 min) y el bloqueo tras 5 intentos (15 min). | Sofia | Checklist de `todo-sprint4-administration.md` (checkpoint "de punta a punta") |
+| 0.2 ✅ | **T10** de Sprint 4: `backend/README.md` (fila `GET /documents` desactualizada, endpoints `/events`, `/documents/summary`, `/users/*`), `chaincode/README.md`, §3 del SPEC con el cierre de Sprint 4. | Claude | Ciclo `down.sh` → `up.sh` + `smoke-test.sh` en PASS |
 | 0.3 | **Sincronizar el SPEC con el backlog fuente**: hoy son **55 RF / 24 HU** (el SPEC dice 53 / 21). Agregar RF‑054, RF‑055, HU‑022, HU‑023, HU‑024 y sus Gherkin; marcar RF‑054 como implementado; cerrar preguntas abiertas #3 (2 orgs) y #4 (UML y prototipos ya existen). | Claude | Conteo RF/HU del SPEC = backlog |
-| 0.4 | Limpieza: borrar `AppDataContext.tsx` (sin consumidores) y su provider en `main.tsx`. | Claude | `npm run build` + `npm run lint` |
+| 0.4 ✅ | Limpieza: borrar `AppDataContext.tsx` (sin consumidores) y su provider en `main.tsx`. | Claude | `npm run build` + `npm run lint` |
 | 0.5 | Commit(s) de cierre de Sprint 4 + PR (DoD 1). | Sofia | PR abierto |
 
 ---
@@ -65,7 +65,7 @@ externo ("vendor") para las pruebas de verificación por correo. El tutor no fij
   está configurado (solo en modo desarrollo).
 - [x] **1.1.f — Tests.** Un test de `emailService` con `nodemailer` mockeado: con
   `SMTP_HOST` llama a `sendMail` con el `from`/`to` correctos; sin `SMTP_HOST` no lo llama.
-- [ ] **1.1.g — Prueba real.** `up.sh` con `docker/.env` configurado → login de un usuario
+- [x] **1.1.g — Prueba real.** `up.sh` con `docker/.env` configurado → login de un usuario
   sembrado cuyo `email` sea un buzón real → el OTP llega (revisar también spam) → acceso
   concedido. Para esto, cambiar el correo de un usuario de prueba desde la pantalla de
   Usuarios del Administrador (los del seed son `@empresa.com`, no existen).

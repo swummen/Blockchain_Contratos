@@ -13,8 +13,10 @@ se valida, se registra su huella SHA‑256 en el chaincode real y se guarda en M
 Sprint 3 (`verification`, T1-T6) agregó la primera función de **lectura** del chaincode
 y la comparación real de huellas: el Verificador consulta un documento registrado, sube
 un PDF a comparar, y el sistema determina y registra si la integridad está confirmada o
-comprometida — ver las secciones "`identity`", "`documents`" y "`verification`" más
-abajo para el contrato completo de cada una.
+comprometida. Sprint 4 (`administration`, T1-T10) agregó las consultas: listado de
+documentos acotado por rol, trazabilidad por documento y general (leída del ledger),
+panel de totales y gestión de usuarios — ver las secciones "`identity`", "`documents`",
+"`verification`" y "`administration`" más abajo para el contrato completo de cada una.
 
 - Express + TypeScript, compilado con `tsc` (CommonJS, no ESM — evita fricción con Jest).
 - `GET /health` — hace un `ping` real a Mongo en cada request (no un flag cacheado de
@@ -179,7 +181,7 @@ registrado") no viaja en `.message` sino en `.details[0].message`
 
 | Ruta | Auth | Body | Respuesta 201 | Errores |
 |---|---|---|---|---|
-| `POST /documents` | sí, solo `Empleado` (`requireAuth("Empleado")` — primer uso real de la variante con roles) | `multipart/form-data`, campo `document` (un PDF) | `{documentId}` | `400` sin archivo/más de uno/no-PDF (firma real, no `Content-Type`)/archivo > 20MB · `401` sin sesión válida · `403` rol distinto de Empleado · `502` el chaincode rechazó el registro (ver RNF‑13 abajo) · `500` el ledger anotó el registro pero Mongo falló después |
+| `POST /documents` | sí, solo `Empleado` (`requireAuth("Empleado")` — primer uso real de la variante con roles) | `multipart/form-data`, campo `document` (un PDF) | `{documentId}` | `400` sin archivo/más de uno/no-PDF (firma real, no `Content-Type`)/archivo > 20MB · `401` sin sesión válida · `403` rol distinto de Empleado · `409` el mismo Empleado ya tiene ese mismo archivo (mismo hash) registrado y todavía `Pendiente` — solo se puede volver a subir una vez verificado · `502` el chaincode rechazó el registro (ver RNF‑13 abajo) · `500` el ledger anotó el registro pero Mongo falló después |
 
 ### Por qué nunca hay un éxito a medias (RNF‑13, HU‑007‑CA‑02)
 
@@ -236,7 +238,7 @@ de negocio).
 
 | Ruta | Auth | Body | Respuesta 200 | Errores |
 |---|---|---|---|---|
-| `GET /documents` | sí, `Verificador`/`Administrador` (enumera documentos de **todos** los usuarios — un Empleado no lo necesita, RF‑18 en Sprint 4 le va a dar su propio listado acotado a lo suyo) | — | `[{documentId, name, responsibleUser, responsibleName, registeredAt, hash, status}, ...]` (últimos 100, sin paginación — D8, ver abajo; `hash` completo para `Verificador`/`Administrador`, enmascarado para `Empleado` — RF‑27; `responsibleName` cae al userId si el usuario no existe. Desde Sprint 4 también lo usa el `Empleado`, acotado a sus documentos) | `401` sin sesión válida · `403` rol sin permiso |
+| `GET /documents` | sí, cualquier rol (Sprint 4, D3): `Verificador`/`Administrador` reciben los documentos de **todos** los usuarios; el `Empleado`, solo los suyos (`responsibleUser === req.user.sub`, RF‑18) | — | `[{documentId, name, responsibleUser, responsibleName, registeredAt, hash, status}, ...]` (últimos 100, sin paginación — D8, ver abajo; `hash` completo para `Verificador`/`Administrador`, enmascarado para `Empleado` — RF‑27; `responsibleName` cae al userId si el usuario no existe) | `401` sin sesión válida |
 | `GET /documents/:id` | sí, cualquier rol (lo que varía por rol es el enmascarado del hash, no el acceso — RF‑27/RNF‑08) | — | `{documentId, name?, responsibleUser?, registeredAt?, hash, status}` (`hash` completo solo para `Verificador`/`Administrador`, enmascarado el resto vía `maskHash` — mismo algoritmo que `frontend/src/lib/mask-hash.ts`, copiado, no importado: son paquetes npm separados) | `401` sin sesión · `404` no existe (HU‑010‑CA‑02) · `502` falla el chaincode |
 | `POST /documents/:id/verifications` | sí, solo `Verificador` (RF‑23) | `multipart/form-data`, campo `document` (el PDF a comparar) | `{status: "Verificado"\|"Alterado", matches, registeredHash, computedHash}` (hash siempre completo — quien pregunta ya es Verificador) | `400` archivo inválido · `401`/`403` · `404` el `documentId` de la URL no existe · `502` falla `RecordVerification` (nunca toca Mongo) · `500` el ledger anotó la verificación pero Mongo falló después |
 
@@ -275,6 +277,43 @@ registro porque `RecordVerification` solo toca `Status`.) `VerificarIntegridadPa
 selector; elegir un documento de la lista dispara la misma consulta real (`GetDocument`)
 que ya hacía la búsqueda manual por id — la lista nunca es la fuente de la verdad.
 
+## `administration` (Sprint 4, T1-T10 — completo)
+
+Consultas de documentos y trazabilidad para los 3 roles, panel del Administrador y
+gestión de usuarios (RF‑18…22, RF‑37…51, HU‑008/009/015…020). Decisiones completas en
+`claude_docs/tasks/plan-sprint4-administration.md` (D1‑D8); estado tarea por tarea en
+`claude_docs/tasks/todo-sprint4-administration.md`.
+
+### Contratos nuevos
+
+| Ruta | Auth | Body | Respuesta | Errores |
+|---|---|---|---|---|
+| `GET /documents/:id/events` | sí, cualquier rol; un `Empleado` solo sobre **sus** documentos (RF‑21, HU‑009‑CA‑02) | — | `200` `[{documentId, action, user, userName, txId, timestamp, result?}, ...]` en orden cronológico | `401` · `403` Empleado sobre un documento ajeno · `404` no existe · `502` falla el chaincode |
+| `GET /events` | sí, `Verificador`/`Administrador` (mismo detalle para los dos, HU‑020‑CA‑02) | — | `200` mismos campos que arriba, eventos de **todos** los documentos, los 200 más recientes en orden cronológico | `401` · `403` · `502` |
+| `GET /documents/summary` | sí, solo `Administrador` (RF‑41/42) | — | `200` `{total, pendiente, verificado, alterado}` (cuenta **todos** los documentos, no el tope de 100 del listado) | `401` · `403` |
+| `GET /users` | sí, solo `Administrador` (RF‑43/44) | — | `200` `[{userId, name, email, role, status}, ...]` (nunca `passwordHash`) | `401` · `403` |
+| `POST /users` | sí, solo `Administrador` (RF‑45) | `{name, email, role}` | `201` `{user, temporaryPassword}` — contraseña temporal fija `Contratos123!` (D7b, el usuario la cambia con `/auth/change-password`) | `400` datos inválidos · `401` · `403` · `409` correo ya registrado |
+| `PUT /users/:id` | sí, solo `Administrador` (RF‑46) | `{name, email, role}` | `200` `{user}`; si cambió el rol, se cortan las sesiones abiertas de ese usuario | `400` datos inválidos / quitarse el propio rol · `401` · `403` · `404` · `409` correo ya usado |
+| `POST /users/:id/deactivate` | sí, solo `Administrador` (RF‑47) | — | `204`; baja lógica (`status: "Inactivo"`, nunca se borra nada) y se cortan sus sesiones abiertas al instante | `400` desactivarse a sí mismo · `401` · `403` · `404` |
+
+### Detalles que importan
+
+- **Trazabilidad desde el ledger, no desde Mongo.** Los eventos salen del chaincode
+  (`GetDocumentEvents`/`GetAllEvents`); el chaincode no los ordena por tiempo, el backend
+  los ordena por `timestamp` (D2). El dueño de un documento para el `403` se toma del
+  evento `"registro"` del ledger, no de la copia de Mongo — una desincronización de Mongo
+  nunca bloquea al dueño real.
+- `userName`/`responsibleName` se resuelven en Mongo con una sola consulta por respuesta;
+  si el id no es un usuario registrado, se muestra el id.
+- `GET /documents/summary` está registrada **antes** de `GET /documents/:id` en el router
+  (si no, Express tomaría `summary` como un id) — hay un test dedicado.
+- Topes defensivos sin paginación: 100 documentos en `GET /documents`, 200 eventos en
+  `GET /events`. Con más de 100 documentos, el total del panel y el listado dejan de
+  coincidir a simple vista (búsqueda/paginación reales: trabajo futuro).
+- No hay reactivación de usuarios ni invitación por correo (D7b/D8, ningún RF las pide).
+- CORS: `/documents` permite `GET, POST, OPTIONS`; `/events` y `/users` tienen su propio
+  bloque acotado a `FRONTEND_ORIGIN` (ver comentario en `server.ts`).
+
 ## Referencias
 
 - `claude_docs/SPEC.md` — arquitectura, modelo de dominio, límites (Always/Ask
@@ -289,6 +328,11 @@ que ya hacía la búsqueda manual por id — la lista nunca es la fuente de la v
 - `claude_docs/tasks/plan-sprint3-verification.md` / `todo-sprint3-verification.md` —
   plan, decisiones (D1‑D8) y tareas del sprint de `verification` (consulta de huella,
   comparación real, listado mínimo de documentos), completo.
+- `claude_docs/tasks/plan-sprint4-administration.md` / `todo-sprint4-administration.md` —
+  plan, decisiones (D1‑D8) y tareas del sprint de `administration` (consultas, panel,
+  usuarios), completo.
+- `claude_docs/tasks/plan-trabajo-pendiente.md` — lo que falta del MVP, en orden de
+  prioridad.
 - `chaincode/README.md` — qué hace el contrato Go, modelo de datos, cómo
   compilarlo/testearlo/desplegarlo.
 - `docker/README.md` — cómo levantar la red Fabric y Mongo, puertos, prerrequisitos.

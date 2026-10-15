@@ -103,7 +103,7 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 - [x] Documentación de la API: `docs/api/openapi.yaml` (18 endpoints, validada con Redocly y contrastada con el backend real) + guía de Postman en `docs/api/README.md`.
 - [ ] Capturas de las llamadas funcionando (lista sugerida de 11 en `docs/api/README.md`) — **Sofia/Laura**.
 - [x] Evidencia de integración con Fabric: `docs/evidencias/integracion-fabric.md` (registro, consulta, 2 verificaciones, TxID contrastados en los bloques 9‑11) + scripts para reproducirla.
-- [ ] Guía de despliegue y configuración (prerrequisitos, `.env`, Brevo, problemas conocidos de Windows) → alimenta el manual de usuario y operación.
+- [x] Guía de instalación y despliegue: `INSTALACION.md` (requisitos, programas con `winget`, configuración, `up.sh`/`stop.sh`/`start.sh`/`down.sh`, usuarios, problemas frecuentes, origen de `configtx.yaml`). README principal simplificado. `up.sh` ahora siembra los usuarios (ya no hace falta Node para usar el sistema). Probado: ciclo completo desde cero + apagar/encender sin perder datos, smoke test PASS.
 - [x] Registro de sprints: `docs/registro-sprints.md` (HU comprometidas, % terminado por sprint, DoD y lecciones). Falta que el tutor registre su aprobación (criterio 5) para el % oficial.
 - [x] Matriz de trazabilidad HU ↔ RF ↔ código: `docs/Matriz_Trazabilidad_HU_RF_Codigo.xlsx` (+ `docs/md/`): 24 HU y 55 RF con pantalla, endpoint, servicio, chaincode, MongoDB, pruebas y evidencia.
 - [ ] Registro de cambios respecto al diseño (OE2): p. ej. login sin selector de rol, selección en dos pasos, Brevo, CouchDB → LevelDB (OBJETIVO 3 pedía CouchDB en el script de red).

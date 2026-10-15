@@ -23,20 +23,24 @@ if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
-echo "==> [1/3] Red Fabric + canal contratoschannel..."
+echo "==> [1/4] Red Fabric + canal contratoschannel..."
 bash network-up.sh
 
 echo
-echo "==> [2/3] Chaincode real del proyecto (contracts)..."
+echo "==> [2/4] Chaincode real del proyecto (contracts)..."
 bash deploy-cc.sh
 
 echo
-echo "==> [3/3] Mongo + backend + frontend..."
+echo "==> [3/4] Mongo + backend + frontend..."
 # --build a propósito (no solo "up -d" como en el comando suelto que documenta
 # docker/README.md): el proyecto sigue en desarrollo activo, así que up.sh
 # siempre reconstruye backend/frontend en vez de arriesgarse a dejar una
 # imagen vieja corriendo con código que ya cambió.
 docker compose --env-file .env -f compose.app.yml up -d --build mongo backend frontend
+
+echo
+echo "==> [4/4] Usuarios de prueba (idempotente: no toca los que ya existen)..."
+docker exec backend node dist/scripts/seedUsers.js
 
 echo
 echo "==> Todo arriba:"

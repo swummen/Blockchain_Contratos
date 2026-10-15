@@ -1,5 +1,8 @@
 # docker/
 
+> **¿Solo quieres instalar y usar el sistema?** Sigue [`INSTALACION.md`](../INSTALACION.md).
+> Este archivo es la referencia técnica de los scripts.
+
 Infraestructura del MVP: red Hyperledger Fabric (test-network de `fabric-samples`) +
 MongoDB + contenedores de `backend`/`frontend`. Fuente de verdad: `claude_docs/SPEC.md`
 (arquitectura) y `claude_docs/tasks/plan.md` (decisiones D1‑D9 del módulo `infra`).
@@ -44,7 +47,9 @@ suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas 
 
 | Comando | Qué hace |
 |---|---|
-| `bash docker/up.sh` | Orquesta todo el stack: red Fabric → chaincode real del proyecto (`contracts`, Sprint 2) → Mongo/backend/frontend. Crea `docker/.env` desde `.env.example` si no existe. Verifica `go` y `jq` en el `PATH` antes de arrancar. A diferencia de la fila de `compose up` de abajo, usa `--build` siempre — reconstruye las imágenes de `backend`/`frontend` aunque ya existan, para no quedarse con una imagen vieja mientras el proyecto sigue en desarrollo activo. Seguro de correr desde un checkout limpio. |
+| `bash docker/up.sh` | Orquesta todo el stack: red Fabric → chaincode real del proyecto (`contracts`, Sprint 2) → Mongo/backend/frontend → usuarios de prueba (`node dist/scripts/seedUsers.js` dentro del contenedor `backend`, con `SEED_EMAIL` de `docker/.env`; idempotente). Crea `docker/.env` desde `.env.example` si no existe. Verifica `go` y `jq` en el `PATH` antes de arrancar. A diferencia de la fila de `compose up` de abajo, usa `--build` siempre — reconstruye las imágenes de `backend`/`frontend` aunque ya existan, para no quedarse con una imagen vieja mientras el proyecto sigue en desarrollo activo. Seguro de correr desde un checkout limpio. |
+| `bash docker/stop.sh` | Apaga todos los contenedores del proyecto **sin borrar nada** (datos, blockchain y certificados se conservan). |
+| `bash docker/start.sh` | Vuelve a encender lo que apagó `stop.sh` o un reinicio del computador: primero la red Fabric y luego Mongo/backend/frontend (el backend se reinicia para reconectarse al peer). Falla con un mensaje claro si nunca se corrió `up.sh`. |
 | `bash docker/down.sh` | Inversa de `up.sh`: baja Mongo/backend/frontend (con `-v`, borra también el volumen de Mongo) y la red Fabric. Deja el checkout listo para volver a `up.sh`. |
 | `bash docker/network-up.sh` | 1ª vez: descarga `fabric-samples` + binarios + imágenes Docker fijadas en Fabric 2.5.16 / CA 1.5.22. Luego levanta la test-network con Fabric CA (`-ca`) y crea/une el canal `contratoschannel` con LevelDB como state DB (decisión D3). |
 | `bash docker/network-down.sh` | Baja la red: elimina contenedores, volúmenes y material criptográfico. Deja el entorno limpio para volver a `network-up.sh`. |

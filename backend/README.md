@@ -147,8 +147,10 @@ Por indicación del tutor, el OTP sale por un proveedor de correo externo: **Bre
 desde Colombia presenta un certificado de `*.sendinblue.com` y TLS falla. Cada persona
 del equipo usa su propia *SMTP key* (Brevo → ⚙️ → SMTP & API), nunca versionada.
 
-Para que los códigos lleguen a un buzón real, `npm run seed` lee `SEED_EMAIL` de
-`backend/.env`: con `SEED_EMAIL=contratosblockchain@gmail.com` siembra
+Para que los códigos lleguen a un buzón real, el seed lee `SEED_EMAIL`. `bash docker/up.sh`
+ya lo corre al final dentro del contenedor (`docker exec backend node dist/scripts/seedUsers.js`,
+leyendo `SEED_EMAIL` de `docker/.env`); `npm run seed` desde el host lo lee de
+`backend/.env`. Con `SEED_EMAIL=contratosblockchain@gmail.com` siembra
 `contratosblockchain+empleado@`, `+empleado2@`, `+verificador@` y `+admin@gmail.com` —
 todos llegan al mismo buzón (subaddressing de Gmail).
 

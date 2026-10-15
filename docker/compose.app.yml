@@ -59,6 +59,8 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-no-reply@contratos.local}
+      # Buzón real para los usuarios de prueba que siembra up.sh (buzon+rol@...).
+      SEED_EMAIL: ${SEED_EMAIL:-}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     volumes:

@@ -1,97 +1,143 @@
 # TrazaDoc — Verificación de integridad de contratos laborales con blockchain
 
-MVP de un sistema web que registra la **huella SHA‑256** de contratos laborales en PDF en
-una blockchain permisionada (**Hyperledger Fabric 2.5**) y permite, después, comprobar si
-un documento fue alterado y consultar la trazabilidad completa de quién hizo qué y cuándo.
+TrazaDoc guarda la **huella digital (SHA‑256)** de cada contrato laboral en PDF en una
+blockchain permisionada (**Hyperledger Fabric**). Después, cualquier Verificador puede
+comprobar si un contrato **fue alterado**, aunque sea en una sola letra, y consultar el
+**historial completo**: quién registró o verificó cada documento, cuándo y con qué
+identificador de transacción.
+
+**El PDF nunca se guarda**, ni en la blockchain ni en la base de datos: solo su huella.
 
 Trabajo de grado — Laura Sofia Diaz Suarez · Sofia Ortiz Daza, Universidad Católica de
 Colombia.
 
-## Qué hace
+---
+
+## 🚀 Cómo ponerlo a funcionar
+
+> **Guía completa paso a paso: [INSTALACION.md](INSTALACION.md)** — qué programas
+> instalar, cómo configurarlo, encenderlo, apagarlo y qué hacer si algo falla.
+
+**1. Instala los programas** (una sola vez, en PowerShell como administrador, y luego
+reinicia el computador):
+
+```powershell
+winget install -e --id Docker.DockerDesktop
+winget install -e --id Git.Git
+winget install -e --id GoLang.Go
+winget install -e --id jqlang.jq
+```
+
+**2. Descarga y configura** (en **Git Bash**, fuera de OneDrive):
+
+```bash
+cd /c/proyectos
+git clone https://github.com/swummen/Blockchain_Contratos.git
+cd Blockchain_Contratos
+cp docker/.env.example docker/.env     # completar el correo (Brevo) y SEED_EMAIL — ver INSTALACION.md §5
+```
+
+**3. Enciende todo** (con Docker Desktop abierto):
+
+```bash
+bash docker/up.sh
+```
+
+La primera vez tarda 10‑20 minutos; las siguientes, unos 2. Cuando diga
+**`Todo arriba`**, abre **<http://localhost:5173>**.
+
+### Usuarios de prueba
+
+Contraseña de todos: **`Contratos123!`** · El código de verificación llega a
+`contratosblockchain@gmail.com` (revisa spam la primera vez).
+
+| Rol | Correo |
+|---|---|
+| Empleado | `contratosblockchain+empleado@gmail.com` |
+| Verificador | `contratosblockchain+verificador@gmail.com` |
+| Administrador | `contratosblockchain+admin@gmail.com` |
+
+### Comandos del día a día (en Git Bash, carpeta del proyecto)
+
+| Quiero… | Comando |
+|---|---|
+| Encender por primera vez / desde cero | `bash docker/up.sh` |
+| Apagar sin perder datos | `bash docker/stop.sh` |
+| Encender de nuevo (o tras reiniciar el PC) | `bash docker/start.sh` |
+| Borrar todo y empezar limpio | `bash docker/down.sh` y luego `bash docker/up.sh` |
+| Comprobar que todo funciona | `bash docker/smoke-test.sh` |
+
+¿Algo falló? → [INSTALACION.md §10, Problemas frecuentes](INSTALACION.md#10-problemas-frecuentes-y-soluciones).
+
+---
+
+## Qué hace cada rol
 
 | Rol | Puede |
 |---|---|
-| **Empleado** | Subir su contrato en PDF (≤ 20 MB), ver sus documentos, su estado y su trazabilidad. |
-| **Verificador** | Elegir un documento registrado, subir el PDF a comparar y obtener *Integridad confirmada* o *comprometida*; ver todos los documentos y la trazabilidad general. |
-| **Administrador** | Panel con totales por estado, gestión de usuarios (crear, editar, desactivar), consulta de documentos y trazabilidad. |
+| **Empleado** | Subir su contrato en PDF (máx. 20 MB), ver sus documentos con su estado (*Pendiente, Verificado, Alterado*) y su historial. |
+| **Verificador** | Elegir un contrato (primero la persona, luego el contrato), subir el PDF a comparar y obtener *Integridad confirmada* o *comprometida*; ver todos los documentos y el historial general. Es el único que ve la huella completa. |
+| **Administrador** | Panel con totales por estado, gestión de usuarios (crear, editar, desactivar), consulta de documentos y del historial. |
 
-Acceso con correo + contraseña + **código de verificación por correo** (2FA, enviado por
-Brevo), sesión JWT, control de acceso por rol, bloqueo tras 5 intentos fallidos y cierre
-por inactividad.
+Seguridad: contraseña + **código de 6 dígitos por correo** (enviado por Brevo), acceso por
+rol, bloqueo de 15 minutos tras 5 intentos fallidos y cierre de sesión tras 15 minutos de
+inactividad.
 
-**El PDF nunca se guarda**, ni en la blockchain ni en la base de datos: solo su huella.
-
-## Arquitectura
+## Cómo funciona por dentro
 
 ```
-frontend (React)  ──HTTP──>  backend (Node.js + Express + Fabric Gateway)
-                                   │                       │
-                              MongoDB                Hyperledger Fabric
-                     (metadatos, usuarios,     (chaincode en Go: huellas,
-                      sesiones)                 estados y eventos con TxID)
+ Navegador ──> Aplicación web (React) ──HTTP──> Backend (Node.js + Express)
+                                                   │                    │
+                                              MongoDB            Hyperledger Fabric
+                                    (usuarios, nombres,      (contrato inteligente en Go:
+                                     fechas; nunca el PDF)    huellas, estados e historial)
 ```
 
-- El frontend **solo** habla con el backend; nunca con Fabric ni con MongoDB.
-- Toda escritura va primero a la blockchain y solo después a MongoDB.
-- Red Fabric: 2 organizaciones (1 peer cada una), 1 orderer, 3 Fabric CA, canal
-  `contratoschannel`, base de estado LevelDB.
-- El chaincode (`contracts`) está escrito **únicamente en Go**.
+- La aplicación web **solo** habla con el backend; nunca directamente con la blockchain
+  ni con la base de datos.
+- Al registrar o verificar, el backend escribe **primero en la blockchain** y después en
+  MongoDB.
+- Red Fabric: 2 organizaciones (un peer cada una, ambas firman cada transacción), 1
+  orderer (Raft), 3 autoridades certificadoras, canal `contratoschannel`.
+- El contrato inteligente (`contracts`) está escrito **solo en Go**.
+- Todo corre en contenedores Docker en tu computador.
 
-## Estructura
+## Estructura del proyecto
 
-| Carpeta | Contenido |
+| Carpeta / archivo | Qué hay |
 |---|---|
-| [`chaincode/`](chaincode/README.md) | Smart contract en Go: `RegisterDocument`, `GetDocument`, `RecordVerification`, `GetDocumentEvents`, `GetAllEvents`. |
-| [`backend/`](backend/README.md) | API REST (Express + TypeScript): autenticación, documentos, verificación, trazabilidad, usuarios. Especificación OpenAPI en [`docs/api/`](docs/api/README.md). |
-| [`frontend/`](frontend/) | SPA React 19 + Vite + Tailwind + shadcn/ui, una sección por rol. |
-| [`docker/`](docker/README.md) | Scripts para levantar la red Fabric, desplegar el chaincode y correr Mongo/backend/frontend en contenedores. |
-| [`docs/`](docs/) | Documentación del trabajo de grado (SRS, backlog, matrices, UML, prototipos); conversión a texto en `docs/md/`. |
-| [`claude_docs/`](claude_docs/SPEC.md) | `SPEC.md` (fuente de verdad de alcance y diseño) y los planes de cada sprint en `tasks/`. |
-
-## Cómo levantarlo
-
-**Requisitos:** Docker Desktop corriendo, Git Bash (o WSL2), Go 1.22+, `jq`, Node.js 20.
-La primera vez se descargan ~2‑3 GB de imágenes de Hyperledger Fabric.
-
-```bash
-# 1. Configuración (una sola vez)
-cp docker/.env.example docker/.env      # datos SMTP de Brevo (opcional, ver abajo)
-cp backend/.env.example backend/.env    # para el seed (ajustar MONGO_URI a localhost)
-
-# 2. Todo el stack: red Fabric + chaincode + Mongo + backend + frontend
-bash docker/up.sh
-
-# 3. Usuarios de prueba (uno por rol)
-cd backend && npm install && npm run seed
-
-# 4. Comprobar que todo responde
-bash docker/smoke-test.sh
-```
-
-- Aplicación: <http://localhost:5173> · API: <http://localhost:8080>
-- Contraseña de los usuarios de prueba: `Contratos123!`
-- **Código de verificación:** con los datos SMTP de Brevo en `docker/.env` llega por
-  correo (con `SEED_EMAIL` en `backend/.env`, todos los usuarios de prueba reciben en un
-  mismo buzón). Sin SMTP, el código aparece en `docker logs backend`.
-- Para bajar todo (borra los datos): `bash docker/down.sh`.
-
-Puertos, problemas conocidos en Windows y detalle de cada script:
-[`docker/README.md`](docker/README.md).
+| [`INSTALACION.md`](INSTALACION.md) | Guía completa de instalación, uso y solución de problemas |
+| [`frontend/`](frontend/) | Aplicación web (React 19 + Vite + Tailwind), una sección por rol |
+| [`backend/`](backend/README.md) | API REST (Node.js + Express + TypeScript) |
+| [`chaincode/`](chaincode/README.md) | Contrato inteligente en Go (5 funciones) |
+| [`docker/`](docker/README.md) | Scripts para levantar la red Fabric y la aplicación |
+| [`tests/perf/`](tests/perf/README.md) | Medición de latencia de la verificación (KPI) |
+| [`docs/`](docs/) | Documentación del trabajo de grado: requisitos, matrices, UML, API, evidencias |
+| [`claude_docs/`](claude_docs/SPEC.md) | Especificación técnica (`SPEC.md`) y planes de cada sprint |
 
 ## Pruebas
 
-| Componente | Comando | Herramienta |
+| Qué | Comando | Resultado esperado |
 |---|---|---|
-| backend | `cd backend && npm test` | Jest + supertest |
-| chaincode | `cd chaincode && go test ./...` | `go test` (mocks, sin red) |
-| frontend | `cd frontend && npm run build && npm run lint` | `tsc` + oxlint |
-| entorno completo | `bash docker/smoke-test.sh` | Bash (HU‑021) |
-| latencia de verificación | `node tests/perf/latencia-verificacion.mjs --document <id> --file <pdf>` | Node.js ([guía](tests/perf/README.md), KPI P95 ≤ 3 s) |
+| Todo el sistema | `bash docker/smoke-test.sh` | `PASS` |
+| Backend | `cd backend && npm install && npm test` | 141 pruebas en verde |
+| Contrato inteligente | `cd chaincode && go test ./...` | 34 pruebas en verde |
+| Frontend | `cd frontend && npm install && npm run build && npm run lint` | sin errores |
+| Latencia de verificación | ver [`tests/perf/README.md`](tests/perf/README.md) | P95 ≤ 3000 ms |
+
+(Las pruebas de backend, frontend y latencia requieren **Node.js 20+**:
+`winget install -e --id OpenJS.NodeJS.LTS`.)
 
 ## Documentación
 
-- Alcance, requisitos (RF/RNF/HU), arquitectura y decisiones: [`claude_docs/SPEC.md`](claude_docs/SPEC.md).
-- Plan y resultado de cada sprint: [`claude_docs/tasks/`](claude_docs/tasks/).
-- Lo que falta del MVP: [`claude_docs/tasks/plan-trabajo-pendiente.md`](claude_docs/tasks/plan-trabajo-pendiente.md).
-- API (OpenAPI / Swagger, importable en Postman): [`docs/api/`](docs/api/README.md).
-- Diagramas UML: [`docs/uml/`](docs/uml/README.md).
+| Documento | Dónde |
+|---|---|
+| Instalación y uso | [`INSTALACION.md`](INSTALACION.md) |
+| API (OpenAPI / Swagger, importable en Postman) | [`docs/api/`](docs/api/README.md) |
+| Diagramas UML y cambios respecto al diseño | [`docs/uml/`](docs/uml/README.md) |
+| Matriz de infraestructura | [`docs/Matriz_Infraestructura.xlsx`](docs/Matriz_Infraestructura.xlsx) |
+| Matriz de trazabilidad HU ↔ RF ↔ código | [`docs/Matriz_Trazabilidad_HU_RF_Codigo.xlsx`](docs/Matriz_Trazabilidad_HU_RF_Codigo.xlsx) |
+| Registro de sprints | [`docs/registro-sprints.md`](docs/registro-sprints.md) |
+| Evidencia de integración con Fabric | [`docs/evidencias/integracion-fabric.md`](docs/evidencias/integracion-fabric.md) |
+| Requisitos, decisiones y alcance | [`claude_docs/SPEC.md`](claude_docs/SPEC.md) |
+| Lo que falta del MVP | [`claude_docs/tasks/plan-trabajo-pendiente.md`](claude_docs/tasks/plan-trabajo-pendiente.md) |

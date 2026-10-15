@@ -65,16 +65,17 @@ configured.
 | `npm run dev` | dev server (`tsx watch`) |
 | `npm run build` | `tsc -p tsconfig.json` |
 | `npm start` | run the build (`dist/server.js`) |
-| `npm run seed` | seed dev users (`identity`, one per role; `SEED_EMAIL` in `backend/.env` routes their OTPs to a real inbox — see `backend/README.md`) |
+| `npm run seed` | seed dev users from the host (`identity`, one per role; `SEED_EMAIL` in `backend/.env`). Not needed with Docker: `docker/up.sh` already seeds inside the `backend` container |
 | `npm test` | Jest (`npx jest <file>` for a single test) |
 | `npm run lint` | oxlint (same linter as `frontend/`, not ESLint) |
 
-`docker/` (run from repo root) — see `docker/README.md` for the full list, ports, and
+`docker/` (run from repo root) — user-facing install guide: `INSTALACION.md`; see `docker/README.md` for the full list, ports, and
 env-file gotcha:
 
 | | |
 |---|---|
-| `bash docker/up.sh` | whole stack in one shot (T7): Fabric network + real project chaincode (`contracts`) + Mongo/backend/frontend |
+| `bash docker/up.sh` | whole stack in one shot (T7): Fabric network + real project chaincode (`contracts`) + Mongo/backend/frontend + seed users |
+| `bash docker/stop.sh` / `bash docker/start.sh` | stop / start every project container without losing data (start = after a PC reboot) |
 | `bash docker/down.sh` | inverse of `up.sh`: tear down everything, volumes included |
 | `bash docker/network-up.sh` | Fabric network + `contratoschannel` channel only |
 | `bash docker/network-down.sh` | tear down the Fabric network only |

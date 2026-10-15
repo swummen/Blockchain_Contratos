@@ -352,6 +352,12 @@ Lo que sigue pendiente, en orden: `claude_docs/tasks/plan-trabajo-pendiente.md`.
 
 ## 7. Cómo configurarle el proyecto a Laura (correo de verificación con Brevo)
 
+> **Actualizado (2026-10-15):** la guía completa para cualquier computador está en
+> [`INSTALACION.md`](INSTALACION.md). Cambio importante: ya **no hace falta**
+> `backend/.env` ni `npm run seed` — `bash docker/up.sh` crea los usuarios solo, leyendo
+> `SEED_EMAIL` de `docker/.env`. Lo único que Laura necesita es su `docker/.env` (con su
+> clave SMTP y `SEED_EMAIL`) y seguir la guía.
+
 El código de verificación (OTP) sale por **Brevo** desde
 `contratosblockchain@gmail.com`. La configuración vive en dos archivos `.env`
 que **no se suben a git**, así que cuando Laura clone o actualice el repo no

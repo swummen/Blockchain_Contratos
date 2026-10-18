@@ -111,8 +111,7 @@ describe("requireAuth(), unidad", () => {
   });
 
   it("401 con un JWT bien firmado pero sin sub/jti (payload incompleto)", async () => {
-    // jwt.sign sin subject/jwtid: firma válida, pero el payload no trae lo
-    // que requireAuth necesita, no debería llegar a consultar Mongo.
+    // Firma válida pero sin subject ni jwtid: se rechaza sin consultar Mongo.
     const malformed = jwt.sign({ role: "Empleado" }, authConfig.jwtSecret, { expiresIn: 3600 });
     const req = fakeReq(`Bearer ${malformed}`);
     const res = fakeRes();

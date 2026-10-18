@@ -65,9 +65,7 @@ func TestRegisterDocument_Success(t *testing.T) {
 	require.Equal(t, "event\x00doc1\x00tx1\x00", eventKey)
 	require.Contains(t, string(eventValue), `"Action":"registro"`)
 
-	// D5: la clave compuesta del evento tiene que quedar armada con
-	// (documentID, txID), es lo que un futuro GetStateByPartialCompositeKey
-	// por documentID (Sprint 3/4) va a necesitar para recuperar el historial.
+	// La clave (documentID, txID) es la que usa GetDocumentEvents para el historial.
 	objType, attrs := stub.CreateCompositeKeyArgsForCall(0)
 	require.Equal(t, "event", objType)
 	require.Equal(t, []string{"doc1", "tx1"}, attrs)
@@ -127,8 +125,7 @@ func TestRegisterDocument_PutStateFails(t *testing.T) {
 
 func TestRegisterDocument_PutEventStateFails(t *testing.T) {
 	c, stub, ctx := newContext()
-	// La primera llamada a PutState (el documento) tiene éxito; falla recién
-	// la segunda (el evento), rama distinta a TestRegisterDocument_PutStateFails.
+	// Falla el segundo PutState (el evento), no el del documento.
 	stub.PutStateReturnsOnCall(1, errors.New("disk full"))
 
 	_, err := c.RegisterDocument(ctx, "doc1", validHash, "U001")
@@ -153,8 +150,7 @@ func TestRegisterDocument_CreateCompositeKeyFails(t *testing.T) {
 	_, err := c.RegisterDocument(ctx, "doc1", validHash, "U001")
 
 	require.EqualError(t, err, "failed to build event composite key: bad key")
-	// El documento ya se guardó (primer PutState) antes de armar la clave del
-	// evento; solo el segundo PutState (el evento) nunca llega a ejecutarse.
+	// El documento se guardó; el evento nunca llegó a escribirse.
 	require.Equal(t, 1, stub.PutStateCallCount())
 }
 
@@ -224,7 +220,7 @@ func TestRecordVerification_Success_Confirmada(t *testing.T) {
 	require.Equal(t, 2, stub.PutStateCallCount())
 	docKey, docValue := stub.PutStateArgsForCall(0)
 	require.Equal(t, "doc1", docKey)
-	// El hash no cambia; solo el Status, RF-34: nada más lo puede tocar.
+	// La verificación cambia el estado, nunca el hash.
 	require.Contains(t, string(docValue), `"Sha256Hex":"`+validHash+`"`)
 	require.Contains(t, string(docValue), `"Status":"Verificado"`)
 
@@ -261,7 +257,7 @@ func TestRecordVerification_InvalidResult(t *testing.T) {
 	_, err := c.RecordVerification(ctx, "doc1", "quizas", "U003")
 
 	require.EqualError(t, err, `result must be "confirmada" or "comprometida", got "quizas"`)
-	// Falla antes de leer el documento: ni falta que hace.
+	// Falla antes de leer el documento.
 	require.Equal(t, 0, stub.GetStateCallCount())
 }
 
@@ -340,9 +336,7 @@ func eventKV(evt contract.Event) *queryresult.KV {
 	return &queryresult.KV{Value: value}
 }
 
-// newIterator builds a mocks.StateQueryIterator that yields the given events
-// in order and reports Close() was called exactly once (asserted by the
-// caller via CloseCallCount()).
+// newIterator returns a mock iterator that yields the given events in order.
 func newIterator(events ...contract.Event) *mocks.StateQueryIterator {
 	iter := &mocks.StateQueryIterator{}
 	for i, evt := range events {
@@ -439,8 +433,7 @@ func TestGetAllEvents_Success(t *testing.T) {
 	require.Len(t, events, 2)
 	require.Equal(t, "doc1", events[0].DocumentID)
 	require.Equal(t, "doc2", events[1].DocumentID)
-	// Clave parcial SIN atributos: a diferencia de GetDocumentEvents, que la
-	// pasa con [documentID].
+	// Clave parcial sin atributos, a diferencia de GetDocumentEvents.
 	objType, attrs := stub.GetStateByPartialCompositeKeyArgsForCall(0)
 	require.Equal(t, "event", objType)
 	require.Equal(t, []string{}, attrs)

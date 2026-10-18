@@ -96,8 +96,7 @@ describe("POST /auth/login", () => {
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ message: "Credenciales inválidas." });
     expect(upsertOtp).not.toHaveBeenCalled();
-    // RF-54: un correo que no existe no tiene cuenta a la que llevarle la
-    // cuenta de intentos.
+    // Un correo inexistente no tiene contador de intentos.
     expect(registerFailedLogin).not.toHaveBeenCalled();
   });
 

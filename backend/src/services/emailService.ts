@@ -8,8 +8,7 @@ function getTransporter(): Transporter | undefined {
   transporter ??= nodemailer.createTransport({
     host: authConfig.smtp.host,
     port: authConfig.smtp.port,
-    // 465 = TLS implícito; 587 (default, Brevo) = STARTTLS, que nodemailer
-    // negocia solo con secure: false.
+    // 465 usa TLS directo; 587 (Brevo) negocia STARTTLS con secure: false.
     secure: authConfig.smtp.port === 465,
     auth: authConfig.smtp.user
       ? { user: authConfig.smtp.user, pass: authConfig.smtp.password }
@@ -18,10 +17,8 @@ function getTransporter(): Transporter | undefined {
   return transporter;
 }
 
-// D6 del plan: sin SMTP_HOST configurado, el código se loguea a consola en
-// vez de fallar, nunca en silencio, para poder probar el flujo completo en
-// desarrollo sin credenciales SMTP reales. Con SMTP configurado (proveedor
-// externo, hoy Brevo) el código nunca se loguea.
+// Sin SMTP_HOST el código se imprime en consola (modo desarrollo). Con SMTP
+// configurado nunca se imprime.
 export async function sendOtpEmail(to: string, code: string): Promise<void> {
   const transport = getTransporter();
   if (!transport) {

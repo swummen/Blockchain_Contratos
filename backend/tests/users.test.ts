@@ -142,8 +142,7 @@ describe("POST /users", () => {
     expect(res.body.user).toMatchObject({ name: "Carlos Ruiz", email: "c.ruiz@empresa.com", role: "Empleado", status: "Activo" });
     expect(res.body.user.userId).toBeTruthy();
     expect(JSON.stringify(res.body)).not.toContain("passwordHash");
-    // La contraseña temporal (D7b) viaja aparte para que el Administrador
-    // pueda comunicarla, nunca su hash.
+    // Se devuelve la contraseña temporal, nunca su hash.
     expect(res.body.temporaryPassword).toBe("Contratos123!");
 
     const inserted = (insertUser as jest.Mock).mock.calls[0][0];

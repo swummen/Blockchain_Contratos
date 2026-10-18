@@ -1,8 +1,7 @@
 import { Collection } from "mongodb";
 import { getDb } from "./mongoClient";
 
-// _id es el userId (un solo OTP activo por usuario a la vez): un login nuevo
-// reemplaza cualquier código pendiente anterior en vez de acumular varios.
+// _id es el userId: un solo código activo por usuario.
 export interface OtpDoc {
   _id: string;
   codeHash: string;
@@ -14,14 +13,12 @@ function otpCollection(): Collection<OtpDoc> {
   return getDb().collection<OtpDoc>("otp_codes");
 }
 
-// Índice TTL (D5 del plan): Mongo borra el documento solo al llegar
-// expiresAt, sin necesidad de un cron de limpieza a mano.
+// TTL: MongoDB borra solos los códigos vencidos.
 export async function ensureIndexes(): Promise<void> {
   await otpCollection().createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 }
 
-// replaceOne (no updateOne+$set) a propósito: reemplaza el documento entero,
-// así que reintentar el login reinicia también el contador de intentos.
+// replaceOne reemplaza todo el documento: un login nuevo reinicia los intentos.
 export async function upsertOtp(otp: OtpDoc): Promise<void> {
   await otpCollection().replaceOne({ _id: otp._id }, otp, { upsert: true });
 }

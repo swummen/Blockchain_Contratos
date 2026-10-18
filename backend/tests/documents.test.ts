@@ -281,10 +281,7 @@ describe("GET /documents/:id", () => {
   });
 
   it("documento inexistente: 404 (HU-010-CA-02)", async () => {
-    // Forma real de un GatewayError cuando el chaincode rechaza la propuesta
-    // (ver gatewayerror.d.ts): el mensaje real vive en .details[0].message,
-    // no en .message (ese es un texto gRPC genérico), mismo hallazgo de T3
-    // de Sprint 2.
+    // Así llega un rechazo real del chaincode: el motivo está en .details[0].message.
     const chaincodeError = Object.assign(new Error("endorsement failure"), {
       details: [{ message: "document doc1 not found" }],
     });
@@ -298,10 +295,8 @@ describe("GET /documents/:id", () => {
   });
 
   it("error de transporte/config sin .details, aunque mencione 'not found': 502, no 404", async () => {
-    // Un timeout o un canal/chaincode mal configurado nunca trae .details
-    // poblado (eso solo pasa con una respuesta real del peer), este caso
-    // prueba que el chequeo de 404 no se deja engañar por una coincidencia
-    // de texto en un error que en realidad es de infraestructura.
+    // Un error de red sin .details no debe confundirse con un 404, aunque el
+    // texto coincida.
     (queryChaincode as jest.Mock).mockRejectedValue(
       new Error("channel 'foo' not found: deadline exceeded"),
     );
@@ -554,8 +549,7 @@ describe("GET /documents", () => {
       .set("Authorization", `Bearer ${token("Empleado")}`);
 
     expect(res.status).toBe(200);
-    // token() firma siempre sub="U001", confirma que el filtro llega con
-    // el id del usuario autenticado, no sin filtro como para los otros roles.
+    // token() firma sub="U001": el filtro debe usar el id del usuario autenticado.
     expect(listDocuments).toHaveBeenCalledWith("U001");
   });
 
@@ -757,8 +751,7 @@ describe("GET /documents/summary", () => {
       .get("/documents/summary")
       .set("Authorization", `Bearer ${token("Administrador")}`);
 
-    // Si ":id" se hubiera comido "summary", esto habría intentado consultar
-    // el chaincode (GetDocument) en vez de Mongo.
+    // Si ":id" capturara "summary", se habría consultado el chaincode.
     expect(queryChaincode).not.toHaveBeenCalled();
     expect(res.status).toBe(200);
   });

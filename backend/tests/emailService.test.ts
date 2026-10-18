@@ -1,6 +1,5 @@
-// emailService: con SMTP configurado envía por el proveedor (Brevo) y nunca
-// loguea el código; sin SMTP_HOST cae al log de desarrollo. También cubre el
-// mapeo de SEED_EMAIL del seed (buzon+alias@dominio).
+// Envío por SMTP sin registrar el código, modo consola sin SMTP_HOST y el
+// armado de correos de SEED_EMAIL.
 const sendMail = jest.fn().mockResolvedValue({});
 const createTransport = jest.fn(() => ({ sendMail }));
 jest.mock("nodemailer", () => ({ __esModule: true, default: { createTransport } }));

@@ -4,8 +4,7 @@ import { authConfig } from "../config/auth";
 import { deleteSession, findSessionByJti, touchSession } from "../repositories/sessionRepository";
 import { Role, VALID_ROLES } from "../repositories/userRepository";
 
-// Augmenta el Request de Express en vez de un tipo aparte (AuthenticatedRequest):
-// así las rutas protegidas usan req.user directo, sin castear.
+// Agrega req.user al Request de Express.
 declare global {
   namespace Express {
     interface Request {
@@ -20,10 +19,8 @@ function extractBearerToken(req: Request): string | undefined {
   return header.slice("Bearer ".length);
 }
 
-// requireAuth() sin argumentos: solo exige sesión válida, cualquier rol.
-// requireAuth("Administrador", ...): además exige que el rol del JWT esté en
-// la lista (RF-05/RNF-03), un único middleware parametrizable en vez de dos
-// separados (autenticación + autorización), ya que acá siempre van juntos.
+// Sin argumentos exige solo una sesión válida; con roles, además que el rol del
+// JWT esté en la lista (RNF-03).
 export function requireAuth(...allowedRoles: Role[]) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const token = extractBearerToken(req);
@@ -34,9 +31,7 @@ export function requireAuth(...allowedRoles: Role[]) {
 
     let payload: jwt.JwtPayload;
     try {
-      // algorithms fijo (no confiar en el "alg" del header del token): sin
-      // esto, un JWT no seguiría siendo inválido solo por firma incorrecta,
-      // sino que además el algoritmo a usar quedaría a discreción del token.
+      // Algoritmo fijo: nunca confiar en el "alg" que declara el propio token.
       payload = jwt.verify(token, authConfig.jwtSecret, {
         algorithms: ["HS256"],
       }) as jwt.JwtPayload;
@@ -56,20 +51,14 @@ export function requireAuth(...allowedRoles: Role[]) {
       return;
     }
 
-    // Firma+expiración ya validadas por jwt.verify; falta confirmar que la
-    // sesión sigue viva en Mongo (D4: es lo que permite invalidarla de
-    // verdad en el logout, algo que un JWT stateless no puede hacer solo).
+    // Además de la firma, la sesión debe seguir existiendo (logout la borra).
     const session = await findSessionByJti(jti);
     if (!session) {
       res.status(401).json({ message: "Sesión inválida o vencida." });
       return;
     }
 
-    // RNF-07: 15 minutos sin ningún request autenticado cierran la sesión,
-    // aparte del tope absoluto de expiresAt (D4). Se borra el documento acá
-    // mismo (no solo se rechaza el request) para que no quede "viva" en
-    // Mongo esperando a que la limpie el índice TTL de expiresAt, que puede
-    // tardar hasta jwtExpiresMinutes más en llegar.
+    // RNF-07: cierre por inactividad. Se borra ya, sin esperar al índice TTL.
     const inactiveMs = Date.now() - session.lastSeenAt.getTime();
     if (inactiveMs > authConfig.sessionInactivityMinutes * 60_000) {
       await deleteSession(jti);
@@ -82,9 +71,7 @@ export function requireAuth(...allowedRoles: Role[]) {
       return;
     }
 
-    // No se espera a que termine (best-effort): es solo la marca de
-    // actividad para la próxima verificación de inactividad, no algo que el
-    // request actual tenga que esperar para responder.
+    // Sin await: la marca de actividad no debe demorar la respuesta.
     void touchSession(jti);
 
     req.user = { sub, role: role as Role, jti };

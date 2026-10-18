@@ -49,9 +49,7 @@ authRouter.post("/auth/verify-otp", async (req, res) => {
   res.status(200).json({ token: result.token, user: result.user });
 });
 
-// Ruta protegida real (no solo de prueba): T6 la puede usar para confirmar
-// quién es el usuario de la sesión activa. Cualquier rol autenticado puede
-// llamarla (sin lista de roles en requireAuth()).
+// Usuario de la sesión activa (cualquier rol).
 authRouter.get("/auth/me", requireAuth(), async (req, res) => {
   const user = await getPublicUserById(req.user!.sub);
   if (!user) {
@@ -81,9 +79,7 @@ authRouter.post("/auth/change-password", requireAuth(), async (req, res) => {
     return;
   }
 
-  // req.user.sub viene del JWT ya validado por requireAuth(), nunca de un id
-  // que mande el cliente en el body, así no se puede cambiar la contraseña
-  // de otro usuario pasando su id.
+  // El id sale del JWT, nunca del body: no se puede cambiar la contraseña de otro.
   const result = await changePassword(req.user!.sub, currentPassword, newPassword);
   if (!result.ok) {
     res.status(result.status).json({ message: result.message });

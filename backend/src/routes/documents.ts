@@ -12,29 +12,18 @@ import {
 
 export const documentsRouter = Router();
 
-// memoryStorage (D9): el PDF nunca se escribe a disco, ni transitoriamente, 
-// se mantiene en memoria el tiempo justo para validarlo y hashearlo, y se
-// descarta apenas termina la request (RNF-04 ya prohíbe guardarlo en
-// Mongo/blockchain; esto va un paso más allá por simplicidad, no hace falta
-// limpiar archivos temporales).
+// El PDF solo vive en memoria durante la petición: nunca se escribe a disco.
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 }, // RF-11/RNF-24
 });
 
-// Usado por POST /documents (RF-08) y POST /documents/:id/verifications
-// (RF-28/29), mismas reglas de validación de archivo en los dos.
-// upload.single(...) invocado a mano (no como middleware de array) para
-// poder mapear sus errores (tamaño excedido, más de un archivo) a la misma
-// forma {message} que ya usa el resto de la API, en vez de dejar pasar la
-// página de error HTML por defecto de Express.
+// Validación del archivo para registro y verificación. Se invoca a mano para
+// responder los errores de multer como JSON y no como página HTML.
 function handleUpload(req: Request, res: Response, next: NextFunction): void {
   upload.single("document")(req, res, (err) => {
     if (err) {
-      // Sin este log, un error real de multer (no del usuario, ej. un caso
-      // raro que no sea LIMIT_FILE_SIZE) desaparece sin rastro: el usuario
-      // solo ve "archivo inválido" y no hay nada que mirar en el servidor
-      // para diagnosticarlo.
+      // Se registra porque al usuario solo le llega "archivo inválido".
       console.error("Error de multer al procesar el upload:", err);
       res.status(400).json({ message: "El archivo debe ser un único PDF de hasta 20MB." });
       return;
@@ -67,11 +56,7 @@ documentsRouter.post(
 
 documentsRouter.get(
   "/documents",
-  // Sprint 3 (D5b) lo dejó acotado a Verificador/Administrador porque
-  // todavía exponía TODOS los documentos de TODOS los usuarios a cualquiera.
-  // Sprint 4 (D3) lo resuelve bien en vez de seguir esperando: mismo
-  // endpoint, pero el service filtra por `responsibleUser` si el rol es
-  // Empleado (RF-18, "Mis documentos"), ya no hace falta negarle el acceso.
+  // Cualquier rol: el servicio limita al Empleado a sus propios documentos.
   requireAuth(),
   async (req, res) => {
     res.status(200).json(await listDocuments(req.user!.role, req.user!.sub));
@@ -79,9 +64,7 @@ documentsRouter.get(
 );
 
 documentsRouter.get(
-  // Tiene que ir ANTES de "/documents/:id", Express matchea rutas en el
-  // orden en que se registran, así que si esta fuera después, ":id" se
-  // comería "summary" como si fuera un documentId real.
+  // Debe registrarse antes de "/documents/:id" o Express tomaría "summary" como id.
   "/documents/summary",
   requireAuth("Administrador"), // RF-41/42: el panel es solo del Administrador.
   async (_req, res) => {
@@ -91,11 +74,9 @@ documentsRouter.get(
 
 documentsRouter.get(
   "/documents/:id",
-  requireAuth(), // RF-25/26: cualquier rol autenticado puede consultar; lo que varía por rol es el enmascarado del hash (D5 del plan de Sprint 3), no el acceso.
+  requireAuth(), // RF-25/26: todos consultan; por rol solo cambia el enmascarado del hash.
   async (req, res) => {
-    // :id es un segmento fijo (no un wildcard), así que Express siempre lo
-    // resuelve a un solo string, el tipo más ancho (string | string[]) de
-    // Express 5 es por los wildcards (ej. :id*), que no aplican acá.
+    // :id no es comodín, así que siempre es un string (el tipo de Express 5 es más amplio).
     const result = await getDocument(req.params.id as string, req.user!.role);
     if (!result.ok) {
       res.status(result.status).json({ message: result.message });
@@ -107,13 +88,11 @@ documentsRouter.get(
 
 documentsRouter.get(
   "/documents/:id/events",
-  // RF-21-CA-02: un Empleado que no es el dueño del documento se queda sin
-  // acceso, el service decide el 403, no esta ruta (necesita el rol para
-  // decidir, `requireAuth()` sin lista solo exige sesión válida).
+  // El 403 para un Empleado que no es dueño lo decide el servicio (RF-21 CA-02).
   requireAuth(),
   async (req, res) => {
     const result = await getDocumentEvents(
-      req.params.id as string, // mismo motivo que las rutas de arriba: no es un wildcard.
+      req.params.id as string,
       req.user!.role,
       req.user!.sub,
     );
@@ -136,7 +115,7 @@ documentsRouter.post(
     }
 
     const result = await verifyDocument(
-      req.params.id as string, // mismo motivo que GET /documents/:id: no es un wildcard.
+      req.params.id as string,
       { originalname: req.file.originalname, buffer: req.file.buffer },
       req.user!.sub,
     );

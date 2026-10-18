@@ -1,11 +1,5 @@
-// Siembra los usuarios de prueba de Sprint 1 (identity, T1): uno por rol, con
-// contraseña de desarrollo hasheada. Reemplaza a frontend/src/data/users.ts
-// como fuente real para el login hasta que HU-018 (Sprint 4) le dé al
-// Administrador el alta real de usuarios: ver claude_docs/tasks/plan-sprint1-identity.md
-// (D9). Contraseña de desarrollo documentada en backend/README.md, nunca acá
-// como secreto real.
-//
-// Uso: npm run seed (requiere Mongo arriba y MONGO_URI configurado, ver .env.example).
+// Crea los usuarios de prueba (idempotente). La contraseña es de desarrollo,
+// no un secreto. Uso: npm run seed, o lo corre docker/up.sh dentro del contenedor.
 import bcrypt from "bcryptjs";
 import { env } from "../config/env";
 import { closeMongo, connectMongo } from "../repositories/mongoClient";
@@ -17,13 +11,7 @@ import {
 
 const DEV_PASSWORD = "Contratos123!";
 
-// Un usuario por rol alcanzaba para probar el login de Sprint 1; Sprint 4
-// (T3) agrega un segundo Empleado (mismo usuario que ya tenía mockeado
-// frontend/src/data/users.ts como U002), sin esto, el chequeo de "un
-// Empleado no puede ver la trazabilidad de otro" (RF-21-CA-02) no se podía
-// probar en vivo, solo con mocks. U004 (Verificador en el mock) sigue sin
-// sembrarse: no hace falta un segundo usuario de ese rol para nada que
-// el backend necesite probar hoy.
+// Dos Empleados para poder probar que uno no ve la trazabilidad del otro (RF-21 CA-02).
 const SEED_USERS: Array<Omit<UserDoc, "passwordHash">> = [
   {
     _id: "U001",
@@ -55,11 +43,8 @@ const SEED_USERS: Array<Omit<UserDoc, "passwordHash">> = [
   },
 ];
 
-// Con SEED_EMAIL=buzon@gmail.com, cada usuario sembrado recibe
-// buzon+<alias>@gmail.com: direcciones distintas para el índice único, pero
-// todas llegan al mismo buzón real (subaddressing de Gmail), así el OTP
-// enviado por el proveedor SMTP se puede leer de verdad. Sin SEED_EMAIL se
-// conservan los correos ficticios @empresa.com.
+// Con SEED_EMAIL=buzon@gmail.com cada usuario recibe buzon+<alias>@gmail.com:
+// correos distintos para el índice único que llegan al mismo buzón real.
 const SEED_ALIASES: Record<string, string> = {
   U001: "empleado",
   U002: "empleado2",

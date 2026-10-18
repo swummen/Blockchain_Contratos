@@ -6,8 +6,7 @@ export const eventsRouter = Router();
 
 eventsRouter.get(
   "/events",
-  // RF-39/40 (Verificador), RF-50/51 (Administrador): HU-020-CA-02 exige el
-  // mismo nivel de detalle para los dos, así que es una sola ruta, no dos.
+  // Misma respuesta para los dos roles (HU-020 CA-02).
   requireAuth("Verificador", "Administrador"),
   async (_req, res) => {
     const result = await getAllEvents();

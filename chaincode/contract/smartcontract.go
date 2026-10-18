@@ -1,7 +1,5 @@
-// Package contract implements the on-chain logic for the Contratos project:
-// anchoring a document's SHA-256 fingerprint and its traceability events in
-// Hyperledger Fabric. It never receives or stores the document's contents
-// (RNF-04): only the fingerprint the backend already computed off-chain.
+// Package contract anchors each document's SHA-256 fingerprint and its
+// traceability events. It never receives the document itself (RNF-04).
 package contract
 
 import (
@@ -18,27 +16,20 @@ type ContractsContract struct {
 	contractapi.Contract
 }
 
-// Document is the fingerprint record kept in the world state under the key
-// documentID. Fields in alphabetic order (deterministic JSON marshal across
-// endorsing peers: same convention as fabric-samples/asset-transfer-basic).
+// Document is stored under documentID. Fields stay in alphabetical order so
+// every endorsing peer marshals identical JSON.
 type Document struct {
 	DocumentID string `json:"DocumentID"`
 	Sha256Hex  string `json:"Sha256Hex"`
 	Status     string `json:"Status"`
 }
 
-// Event is one immutable traceability entry: never overwritten, one per
-// action (RNF-26/27).
+// Event is one immutable traceability entry, one per action (RNF-26/27).
 type Event struct {
 	Action     string `json:"Action"`
 	DocumentID string `json:"DocumentID"`
-	// contractapi genera un schema de la respuesta por reflection y marca todo
-	// campo exportado como obligatorio salvo que lleve `metadata:",optional"`
-	//el `omitempty` del tag json no alcanza para eso (solo controla el
-	// marshal, no la validación de schema de contractapi). Sin esta etiqueta,
-	// un RegisterDocument real fallaba con "value did not match schema:
-	// Result is required" apenas Result quedaba vacío (el caso normal en un
-	// registro, donde no hay resultado de verificación todavía).
+	// contractapi treats every exported field as required unless tagged
+	// optional; omitempty is not enough. Result is empty on every "registro".
 	Result    string `json:"Result,omitempty" metadata:",optional"`
 	Timestamp string `json:"Timestamp"`
 	TxID      string `json:"TxID"`
@@ -94,13 +85,9 @@ func (c *ContractsContract) getDocument(
 	return &doc, nil
 }
 
-// putEvent writes the document record (caller decides its Status: a fresh
-// "Pendiente" one on first registration, or an existing one with an updated
-// Status after a verification) and the event itself under its own composite
-// key: a key that's never reused, so GetStateByPartialCompositeKey(eventKeyType,
-// []string{documentID}) always returns the full chronological history. LevelDB
-// (the peer state DB fixed in Sprint 0) doesn't support rich/CouchDB queries, so
-// traceability is resolved with composite-key ranges instead of a secondary index.
+// putEvent writes the document and the event. Each event gets its own
+// composite key (event, documentID, txID), so a partial-key query returns a
+// document's full history. LevelDB has no rich queries, hence composite keys.
 func (c *ContractsContract) putEvent(
 	ctx contractapi.TransactionContextInterface,
 	doc Document,
@@ -180,8 +167,7 @@ func (c *ContractsContract) RegisterDocument(
 	return &evt, nil
 }
 
-// GetDocument returns the fingerprint record anchored by RegisterDocument. A
-// read-only query (evaluateTransaction): the first one this contract exposes.
+// GetDocument returns the record anchored by RegisterDocument (read-only).
 func (c *ContractsContract) GetDocument(
 	ctx contractapi.TransactionContextInterface,
 	documentID string,
@@ -192,11 +178,8 @@ func (c *ContractsContract) GetDocument(
 	return c.getDocument(ctx, documentID)
 }
 
-// RecordVerification anchors the outcome of comparing a document's registered
-// fingerprint against a freshly computed one. It never receives either PDF or
-// either hash: the backend already did the comparison (RNF-04); this only
-// records the result and updates Document.Status accordingly (RF-34: nothing
-// else is allowed to change it).
+// RecordVerification records the result of a comparison the backend already
+// made and updates Document.Status. It is the only way to change the status (RF-34).
 func (c *ContractsContract) RecordVerification(
 	ctx contractapi.TransactionContextInterface,
 	documentID string,
@@ -242,18 +225,9 @@ func (c *ContractsContract) RecordVerification(
 	return &evt, nil
 }
 
-// getEventsByPartialKey iterates every event whose composite key starts with
-// the given attributes: []string{documentID} for one document's history, or
-// []string{} for every event of every document (D1/D2 of Sprint 4). Only
-// those two shapes are valid for this schema: []string{""} is NOT the same
-// as []string{} (it matches documentID=="", which never exists, silently
-// zero results, not "everything"), and a second element would be read as
-// TxID, not a second documentID. Both current callers below pass hardcoded
-// literals; a future caller building `keys` dynamically must preserve this.
-// Always closes the iterator, even if unmarshaling a result fails midway. No
-// particular order is guaranteed: composite-key order groups by documentID,
-// not by Timestamp across different documents (D2: chronological ordering
-// across documents is the backend's job).
+// getEventsByPartialKey accepts only []string{documentID} or []string{}.
+// []string{""} matches nothing (not "everything"), and a second element would
+// be read as a TxID. Results are not in chronological order; the backend sorts.
 func (c *ContractsContract) getEventsByPartialKey(
 	ctx contractapi.TransactionContextInterface,
 	keys []string,

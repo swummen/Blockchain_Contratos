@@ -1,7 +1,7 @@
 # Evidencia de integración con Hyperledger Fabric
 
 Entregable recomendado de OBJETIVO 3: demostrar la conexión real entre la aplicación y la
-red blockchain — **transacción de registro, consulta y TxID** — que era el riesgo
+red blockchain (**transacción de registro, consulta y TxID**) que era el riesgo
 principal señalado en la propuesta.
 
 - **Fecha:** 2026‑10‑15, 01:05 (UTC‑5).
@@ -24,12 +24,12 @@ principal señalado en la propuesta.
 | # | Operación | Vía | Resultado | Transacción en Fabric |
 |---|---|---|---|---|
 | 1 | Registro del contrato (Empleado) | `POST /documents` | `201`, `documentId 6c9fc532-…134e`, estado **Pendiente** | Bloque **9** · `RegisterDocument` · TxID `7bd0a04d…5380` · VALID |
-| 2 | Consulta de la huella (Verificador) | `GET /documents/{id}` | `200`, huella `21399cfc…0a28` leída del ledger = SHA‑256 calculado localmente | — (consulta, no genera bloque) |
+| 2 | Consulta de la huella (Verificador) | `GET /documents/{id}` | `200`, huella `21399cfc…0a28` leída del ledger = SHA‑256 calculado localmente |: (consulta, no genera bloque) |
 | 3 | Verificación con el mismo PDF | `POST /documents/{id}/verifications` | `200`, **Verificado**, `matches: true` | Bloque **10** · `RecordVerification` · TxID `cbfa6ab9…ec1f` · VALID |
 | 4 | Verificación con el PDF alterado (1 carácter) | `POST /documents/{id}/verifications` | `200`, **Alterado**, `matches: false`, huellas distintas | Bloque **11** · `RecordVerification` · TxID `2c8345bd…eb71` · VALID |
-| 5 | Trazabilidad (Empleado dueño) | `GET /documents/{id}/events` | 3 eventos en orden cronológico con sus TxID | — |
-| 6 | Vista del Administrador | `GET /documents` | Huella **enmascarada** (`21399cfc••••e94d0a28`), estado Alterado | — |
-| 7 | Contraste directo en el ledger | CLI: `GetDocument`, `GetDocumentEvents` | Misma huella, estado **Alterado** y los mismos 3 TxID que devolvió la API | — |
+| 5 | Trazabilidad (Empleado dueño) | `GET /documents/{id}/events` | 3 eventos en orden cronológico con sus TxID | N/A |
+| 6 | Vista del Administrador | `GET /documents` | Huella **enmascarada** (`21399cfc••••e94d0a28`), estado Alterado | N/A |
+| 7 | Contraste directo en el ledger | CLI: `GetDocument`, `GetDocumentEvents` | Misma huella, estado **Alterado** y los mismos 3 TxID que devolvió la API | N/A |
 | 8 | Bloques del canal | CLI: `peer channel fetch` + `configtxlator` | Cada TxID está en su bloque, **endosado por Org1MSP + Org2MSP**, código de validación 0 (VALID) | Bloques 9, 10, 11 |
 
 ## Qué demuestra
@@ -64,16 +64,16 @@ SHA-256 local del PDF original:  21399cfcb87f641d464f83e516f72ee2babfb9b97f63673
 SHA-256 local del PDF alterado:  d9ca2830a63e487cdfe19e61e76b449a2736895c67f627ada9bd6a26b4f4f8ba
 Sesiones abiertas: Empleado, Verificador, Administrador (JWT obtenidos tras el código OTP)
 
-### 1. Registro (Empleado) — POST /documents
+### 1. Registro (Empleado): POST /documents
 {"documentId":"6c9fc532-ece0-4890-822b-a27b5313134e"}
 HTTP 201
 Altura del canal: 9 → 10 (nuevo bloque con la transacción RegisterDocument)
 
-### 2. Consulta (Verificador) — GET /documents/6c9fc532-ece0-4890-822b-a27b5313134e
+### 2. Consulta (Verificador): GET /documents/6c9fc532-ece0-4890-822b-a27b5313134e
 {"documentId":"6c9fc532-ece0-4890-822b-a27b5313134e","name":"contrato-evidencia.pdf","responsibleUser":"U001","registeredAt":"2026-10-15T06:05:28.674Z","hash":"21399cfcb87f641d464f83e516f72ee2babfb9b97f63673249b899dfe94d0a28","status":"Pendiente"}
 HTTP 200
 
-### 3. Verificación con el MISMO archivo (Verificador) — POST /documents/6c9fc532-ece0-4890-822b-a27b5313134e/verifications
+### 3. Verificación con el MISMO archivo (Verificador): POST /documents/6c9fc532-ece0-4890-822b-a27b5313134e/verifications
 {"status":"Verificado","matches":true,"registeredHash":"21399cfcb87f641d464f83e516f72ee2babfb9b97f63673249b899dfe94d0a28","computedHash":"21399cfcb87f641d464f83e516f72ee2babfb9b97f63673249b899dfe94d0a28"}
 HTTP 200
 Altura del canal: 10 → 11
@@ -83,7 +83,7 @@ Altura del canal: 10 → 11
 HTTP 200
 Altura del canal: 11 → 12
 
-### 5. Trazabilidad del documento (Empleado dueño) — GET /documents/6c9fc532-ece0-4890-822b-a27b5313134e/events
+### 5. Trazabilidad del documento (Empleado dueño): GET /documents/6c9fc532-ece0-4890-822b-a27b5313134e/events
 [
   {
     "documentId": "6c9fc532-ece0-4890-822b-a27b5313134e",
@@ -113,7 +113,7 @@ Altura del canal: 11 → 12
   }
 ]
 
-### 6. Misma consulta, vista del Administrador — GET /documents (huella enmascarada)
+### 6. Misma consulta, vista del Administrador: GET /documents (huella enmascarada)
 {
   "documentId": "6c9fc532-ece0-4890-822b-a27b5313134e",
   "name": "contrato-evidencia.pdf",

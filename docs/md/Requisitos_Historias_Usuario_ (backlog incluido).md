@@ -184,7 +184,7 @@
 | --- | --- | --- |
 | Una ficha de una página por cada requisito funcional del SRS v2, generada a partir de la hoja RF. | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (1 de 55) RF-001 — Inicio de sesión | NaN | NaN |
+| Ficha de requisito funcional (1 de 55) RF-001: Inicio de sesión | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-001 |
@@ -212,7 +212,7 @@
 | NaN | Comentarios | Nota de cambio: se elimina la selección manual de rol; el rol se determina a partir de la cuenta del usuario. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (2 de 55) RF-002 — Autenticación mediante credenciales | NaN | NaN |
+| Ficha de requisito funcional (2 de 55) RF-002: Autenticación mediante credenciales | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-002 |
@@ -237,10 +237,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-001 |
 | NaN | Requisitos hijos | RF-003 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (3 de 55) RF-003 — Autenticación de segundo factor | NaN | NaN |
+| Ficha de requisito funcional (3 de 55) RF-003: Autenticación de segundo factor | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-003 |
@@ -268,7 +268,7 @@
 | NaN | Comentarios | Pendiente de validar el canal exclusivo de correo corporativo frente a alternativas (SMS, app autenticadora); ver nota en RNF-002. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (4 de 55) RF-004 — Validación del token | NaN | NaN |
+| Ficha de requisito funcional (4 de 55) RF-004: Validación del token | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-004 |
@@ -293,10 +293,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-003 |
 | NaN | Requisitos hijos | RF-005 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (5 de 55) RF-005 — Asignación de rol y control de acceso | NaN | NaN |
+| Ficha de requisito funcional (5 de 55) RF-005: Asignación de rol y control de acceso | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-005 |
@@ -321,10 +321,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-004 |
 | NaN | Requisitos hijos | RF-006 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (6 de 55) RF-006 — Redirección según rol | NaN | NaN |
+| Ficha de requisito funcional (6 de 55) RF-006: Redirección según rol | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-006 |
@@ -349,10 +349,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-005 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (7 de 55) RF-007 — Cierre de sesión | NaN | NaN |
+| Ficha de requisito funcional (7 de 55) RF-007: Cierre de sesión | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-007 |
@@ -377,10 +377,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | Ninguna |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (8 de 55) RF-008 — Carga de documentos | NaN | NaN |
+| Ficha de requisito funcional (8 de 55) RF-008: Carga de documentos | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-008 |
@@ -405,10 +405,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-005 |
 | NaN | Requisitos hijos | RF-009, RF-010, RF-011, RF-012 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (9 de 55) RF-009 — Restricción de formato | NaN | NaN |
+| Ficha de requisito funcional (9 de 55) RF-009: Restricción de formato | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-009 |
@@ -436,7 +436,7 @@
 | NaN | Comentarios | Alineado con RNF-023 y con la limitación funcional del proyecto (solo PDF). |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (10 de 55) RF-010 — Restricción de carga individual | NaN | NaN |
+| Ficha de requisito funcional (10 de 55) RF-010: Restricción de carga individual | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-010 |
@@ -461,10 +461,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-008 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (11 de 55) RF-011 — Restricción de tamaño | NaN | NaN |
+| Ficha de requisito funcional (11 de 55) RF-011: Restricción de tamaño | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-011 |
@@ -492,7 +492,7 @@
 | NaN | Comentarios | Corresponde al umbral definido en RNF-024; es una decisión de diseño del proyecto, no proviene de una norma externa. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (12 de 55) RF-012 — Validación previa de documentos | NaN | NaN |
+| Ficha de requisito funcional (12 de 55) RF-012: Validación previa de documentos | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-012 |
@@ -517,10 +517,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-009, RF-011 |
 | NaN | Requisitos hijos | RF-013 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (13 de 55) RF-013 — Registro del documento | NaN | NaN |
+| Ficha de requisito funcional (13 de 55) RF-013: Registro del documento | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-013 |
@@ -545,10 +545,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-012 |
 | NaN | Requisitos hijos | RF-014 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (14 de 55) RF-014 — Generación de huella criptográfica | NaN | NaN |
+| Ficha de requisito funcional (14 de 55) RF-014: Generación de huella criptográfica | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-014 |
@@ -576,7 +576,7 @@
 | NaN | Comentarios | SHA-256 pertenece a la familia SHA-2 estandarizada por el NIST [34]; se eligió por ser el algoritmo utilizado internamente por Hyperledger Fabric [19]. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (15 de 55) RF-015 — Registro de la huella criptográfica | NaN | NaN |
+| Ficha de requisito funcional (15 de 55) RF-015: Registro de la huella criptográfica | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-015 |
@@ -601,10 +601,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-014 |
 | NaN | Requisitos hijos | RF-016 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (16 de 55) RF-016 — Registro en blockchain | NaN | NaN |
+| Ficha de requisito funcional (16 de 55) RF-016: Registro en blockchain | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-016 |
@@ -632,7 +632,7 @@
 | NaN | Comentarios | Corresponde a RNF-004, RNF-005 y RNF-020. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (17 de 55) RF-017 — Confirmación de registro | NaN | NaN |
+| Ficha de requisito funcional (17 de 55) RF-017: Confirmación de registro | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-017 |
@@ -657,10 +657,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-016 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (18 de 55) RF-018 — Consulta de documentos | NaN | NaN |
+| Ficha de requisito funcional (18 de 55) RF-018: Consulta de documentos | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-018 |
@@ -685,10 +685,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-013 |
 | NaN | Requisitos hijos | RF-019, RF-020 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (19 de 55) RF-019 — Información del documento | NaN | NaN |
+| Ficha de requisito funcional (19 de 55) RF-019: Información del documento | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-019 |
@@ -713,10 +713,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-018 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (20 de 55) RF-020 — Estado del documento | NaN | NaN |
+| Ficha de requisito funcional (20 de 55) RF-020: Estado del documento | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-020 |
@@ -741,10 +741,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-013, RF-034 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (21 de 55) RF-021 — Consulta de trazabilidad | NaN | NaN |
+| Ficha de requisito funcional (21 de 55) RF-021: Consulta de trazabilidad | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-021 |
@@ -769,10 +769,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-018 |
 | NaN | Requisitos hijos | RF-022 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (22 de 55) RF-022 — Información de trazabilidad | NaN | NaN |
+| Ficha de requisito funcional (22 de 55) RF-022: Información de trazabilidad | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-022 |
@@ -800,7 +800,7 @@
 | NaN | Comentarios | Nota de cambio (v2): se agrega el campo txID respecto a la v1, para dar cobertura a RNF-027. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (23 de 55) RF-023 — Acceso al módulo de verificación | NaN | NaN |
+| Ficha de requisito funcional (23 de 55) RF-023: Acceso al módulo de verificación | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-023 |
@@ -825,10 +825,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-005 |
 | NaN | Requisitos hijos | RF-024 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (24 de 55) RF-024 — Selección del documento registrado | NaN | NaN |
+| Ficha de requisito funcional (24 de 55) RF-024: Selección del documento registrado | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-024 |
@@ -853,10 +853,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-023 |
 | NaN | Requisitos hijos | RF-025 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (25 de 55) RF-025 — Validación de existencia | NaN | NaN |
+| Ficha de requisito funcional (25 de 55) RF-025: Validación de existencia | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-025 |
@@ -881,10 +881,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-024 |
 | NaN | Requisitos hijos | RF-026 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (26 de 55) RF-026 — Consulta de huella registrada | NaN | NaN |
+| Ficha de requisito funcional (26 de 55) RF-026: Consulta de huella registrada | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-026 |
@@ -909,10 +909,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-025 |
 | NaN | Requisitos hijos | RF-027 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (27 de 55) RF-027 — Restricción de visualización del hash | NaN | NaN |
+| Ficha de requisito funcional (27 de 55) RF-027: Restricción de visualización del hash | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-027 |
@@ -937,10 +937,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-026 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (28 de 55) RF-028 — Carga del documento a verificar | NaN | NaN |
+| Ficha de requisito funcional (28 de 55) RF-028: Carga del documento a verificar | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-028 |
@@ -965,10 +965,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-026 |
 | NaN | Requisitos hijos | RF-029 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (29 de 55) RF-029 — Validación del documento de comparación | NaN | NaN |
+| Ficha de requisito funcional (29 de 55) RF-029: Validación del documento de comparación | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-029 |
@@ -993,10 +993,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-028 |
 | NaN | Requisitos hijos | RF-030 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (30 de 55) RF-030 — Generación de hash del documento de comparación | NaN | NaN |
+| Ficha de requisito funcional (30 de 55) RF-030: Generación de hash del documento de comparación | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-030 |
@@ -1021,10 +1021,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-029 |
 | NaN | Requisitos hijos | RF-031 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (31 de 55) RF-031 — Comparación de huellas | NaN | NaN |
+| Ficha de requisito funcional (31 de 55) RF-031: Comparación de huellas | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-031 |
@@ -1049,10 +1049,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-026, RF-030 |
 | NaN | Requisitos hijos | RF-032 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (32 de 55) RF-032 — Resultado de la verificación | NaN | NaN |
+| Ficha de requisito funcional (32 de 55) RF-032: Resultado de la verificación | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-032 |
@@ -1077,10 +1077,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-031 |
 | NaN | Requisitos hijos | RF-033, RF-034 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (33 de 55) RF-033 — Visualización de evidencia | NaN | NaN |
+| Ficha de requisito funcional (33 de 55) RF-033: Visualización de evidencia | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-033 |
@@ -1105,10 +1105,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-032 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (34 de 55) RF-034 — Actualización del estado | NaN | NaN |
+| Ficha de requisito funcional (34 de 55) RF-034: Actualización del estado | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-034 |
@@ -1133,10 +1133,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-032 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (35 de 55) RF-035 — Registro de la verificación | NaN | NaN |
+| Ficha de requisito funcional (35 de 55) RF-035: Registro de la verificación | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-035 |
@@ -1164,7 +1164,7 @@
 | NaN | Comentarios | Nota de cambio (v2): se agrega el campo txID respecto a la v1. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (36 de 55) RF-036 — Nueva verificación | NaN | NaN |
+| Ficha de requisito funcional (36 de 55) RF-036: Nueva verificación | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-036 |
@@ -1189,10 +1189,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-035 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (37 de 55) RF-037 — Consulta de documentos registrados | NaN | NaN |
+| Ficha de requisito funcional (37 de 55) RF-037: Consulta de documentos registrados | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-037 |
@@ -1217,10 +1217,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-023 |
 | NaN | Requisitos hijos | RF-038 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (38 de 55) RF-038 — Vista de documentos del verificador | NaN | NaN |
+| Ficha de requisito funcional (38 de 55) RF-038: Vista de documentos del verificador | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-038 |
@@ -1245,10 +1245,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-037, RF-027 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (39 de 55) RF-039 — Consulta de trazabilidad general | NaN | NaN |
+| Ficha de requisito funcional (39 de 55) RF-039: Consulta de trazabilidad general | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-039 |
@@ -1273,10 +1273,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-023 |
 | NaN | Requisitos hijos | RF-040 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (40 de 55) RF-040 — Información de trazabilidad general | NaN | NaN |
+| Ficha de requisito funcional (40 de 55) RF-040: Información de trazabilidad general | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-040 |
@@ -1304,7 +1304,7 @@
 | NaN | Comentarios | Nota de cambio (v2): se agrega el campo txID respecto a la v1. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (41 de 55) RF-041 — Panel general | NaN | NaN |
+| Ficha de requisito funcional (41 de 55) RF-041: Panel general | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-041 |
@@ -1329,10 +1329,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-005 |
 | NaN | Requisitos hijos | RF-042 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (42 de 55) RF-042 — Resumen documental | NaN | NaN |
+| Ficha de requisito funcional (42 de 55) RF-042: Resumen documental | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-042 |
@@ -1357,10 +1357,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-041, RF-020 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (43 de 55) RF-043 — Consulta de usuarios | NaN | NaN |
+| Ficha de requisito funcional (43 de 55) RF-043: Consulta de usuarios | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-043 |
@@ -1388,7 +1388,7 @@
 | NaN | Comentarios | Amplía el detalle funcional textual del alcance del proyecto (2.6.1), que no menciona explícitamente la gestión de usuarios; se recomienda documentarlo en el capítulo de alcance final (ver hallazgo de verificación). |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (44 de 55) RF-044 — Información de usuarios | NaN | NaN |
+| Ficha de requisito funcional (44 de 55) RF-044: Información de usuarios | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-044 |
@@ -1413,10 +1413,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-043 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (45 de 55) RF-045 — Creación de usuarios | NaN | NaN |
+| Ficha de requisito funcional (45 de 55) RF-045: Creación de usuarios | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-045 |
@@ -1441,10 +1441,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-043 |
 | NaN | Requisitos hijos | RF-046, RF-047 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (46 de 55) RF-046 — Edición de usuarios | NaN | NaN |
+| Ficha de requisito funcional (46 de 55) RF-046: Edición de usuarios | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-046 |
@@ -1469,10 +1469,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-045 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (47 de 55) RF-047 — Desactivación de usuarios | NaN | NaN |
+| Ficha de requisito funcional (47 de 55) RF-047: Desactivación de usuarios | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-047 |
@@ -1500,7 +1500,7 @@
 | NaN | Comentarios | Nota de cambio (v2): requerimiento nuevo respecto a la v1. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (48 de 55) RF-048 — Consulta administrativa de documentos | NaN | NaN |
+| Ficha de requisito funcional (48 de 55) RF-048: Consulta administrativa de documentos | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-048 |
@@ -1525,10 +1525,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-005 |
 | NaN | Requisitos hijos | RF-049 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (49 de 55) RF-049 — Vista administrativa de documentos | NaN | NaN |
+| Ficha de requisito funcional (49 de 55) RF-049: Vista administrativa de documentos | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-049 |
@@ -1553,10 +1553,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-048 |
 | NaN | Requisitos hijos | Ninguno |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (50 de 55) RF-050 — Consulta de trazabilidad administrativa | NaN | NaN |
+| Ficha de requisito funcional (50 de 55) RF-050: Consulta de trazabilidad administrativa | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-050 |
@@ -1581,10 +1581,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-005 |
 | NaN | Requisitos hijos | RF-051 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (51 de 55) RF-051 — Registro administrativo de trazabilidad | NaN | NaN |
+| Ficha de requisito funcional (51 de 55) RF-051: Registro administrativo de trazabilidad | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-051 |
@@ -1612,7 +1612,7 @@
 | NaN | Comentarios | Nota de cambio (v2): se agregan los campos txID y Resultado respecto a la v1. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (52 de 55) RF-052 — Cambio de contraseña | NaN | NaN |
+| Ficha de requisito funcional (52 de 55) RF-052: Cambio de contraseña | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-052 |
@@ -1637,10 +1637,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Dependencias | RF-005 |
 | NaN | Requisitos hijos | RF-053 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (53 de 55) RF-053 — Validación de cambio de contraseña | NaN | NaN |
+| Ficha de requisito funcional (53 de 55) RF-053: Validación de cambio de contraseña | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-053 |
@@ -1668,7 +1668,7 @@
 | NaN | Comentarios | No existe en el SRS un requerimiento de recuperación de contraseña olvidada (sin sesión activa); se recomienda evaluar si se incluye en el MVP o se documenta como limitación (ver hallazgo de verificación). |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (54 de 55) RF-054 — Bloqueo por intentos fallidos | NaN | NaN |
+| Ficha de requisito funcional (54 de 55) RF-054: Bloqueo por intentos fallidos | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-054 |
@@ -1696,7 +1696,7 @@
 | NaN | Comentarios | Nota de cambio (v2.0): requerimiento nuevo. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito funcional (55 de 55) RF-055 — Aceptación de la política de tratamiento de datos | NaN | NaN |
+| Ficha de requisito funcional (55 de 55) RF-055: Aceptación de la política de tratamiento de datos | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RF-055 |
@@ -1728,7 +1728,7 @@
 | --- | --- | --- |
 | Una ficha de una página por cada requisito no funcional del SRS v2, generada a partir de la hoja RNF. | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (1 de 30) RNF-001 — Protección de contraseñas mediante hashing seguro | NaN | NaN |
+| Ficha de requisito no funcional (1 de 30) RNF-001: Protección de contraseñas mediante hashing seguro | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-001 |
@@ -1758,7 +1758,7 @@
 | NaN | Comentarios | BCRYPT incorpora automáticamente sal y múltiples iteraciones, según se define en el glosario del proyecto. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (2 de 30) RNF-002 — Autenticación de doble factor | NaN | NaN |
+| Ficha de requisito no funcional (2 de 30) RNF-002: Autenticación de doble factor | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-002 |
@@ -1788,7 +1788,7 @@
 | NaN | Comentarios | Pendiente de validar con el tutor si el canal exclusivo de correo corporativo es suficiente o si se debe evaluar un canal alterno. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (3 de 30) RNF-003 — Control de acceso basado en roles (RBAC) | NaN | NaN |
+| Ficha de requisito no funcional (3 de 30) RNF-003: Control de acceso basado en roles (RBAC) | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-003 |
@@ -1815,10 +1815,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-005, RF-006, RF-023, RF-027, RF-041 a RF-051 |
 | NaN | Dependencias | RNF-002 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (4 de 30) RNF-004 — No almacenamiento del contenido documental en blockchain | NaN | NaN |
+| Ficha de requisito no funcional (4 de 30) RNF-004: No almacenamiento del contenido documental en blockchain | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-004 |
@@ -1845,10 +1845,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-013, RF-016 |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (5 de 30) RNF-005 — Inmutabilidad de las huellas registradas | NaN | NaN |
+| Ficha de requisito no funcional (5 de 30) RNF-005: Inmutabilidad de las huellas registradas | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-005 |
@@ -1875,10 +1875,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-016, RF-026 |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (6 de 30) RNF-006 — Registro de operaciones relevantes | NaN | NaN |
+| Ficha de requisito no funcional (6 de 30) RNF-006: Registro de operaciones relevantes | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-006 |
@@ -1905,10 +1905,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-016, RF-035, RF-054 |
 | NaN | Dependencias | RNF-005 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (7 de 30) RNF-007 — Gestión segura de sesiones | NaN | NaN |
+| Ficha de requisito no funcional (7 de 30) RNF-007: Gestión segura de sesiones | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-007 |
@@ -1935,10 +1935,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-007 |
 | NaN | Dependencias | RNF-002 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (8 de 30) RNF-008 — Limitación de exposición de información documental | NaN | NaN |
+| Ficha de requisito no funcional (8 de 30) RNF-008: Limitación de exposición de información documental | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-008 |
@@ -1965,10 +1965,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-018, RF-027, RF-038, RF-049, RF-055 |
 | NaN | Dependencias | RNF-003 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (9 de 30) RNF-009 — Tiempo de respuesta de las operaciones principales | NaN | NaN |
+| Ficha de requisito no funcional (9 de 30) RNF-009: Tiempo de respuesta de las operaciones principales | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-009 |
@@ -1998,7 +1998,7 @@
 | NaN | Comentarios | Se alinea con el mismo umbral definido para RNF-010, tomado del KPI del proyecto (Tabla 1). |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (10 de 30) RNF-010 — Latencia de la verificación de integridad | NaN | NaN |
+| Ficha de requisito no funcional (10 de 30) RNF-010: Latencia de la verificación de integridad | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-010 |
@@ -2025,10 +2025,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-028 a RF-034 |
 | NaN | Dependencias | RNF-009 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (11 de 30) RNF-011 — Automatización del cálculo de huellas | NaN | NaN |
+| Ficha de requisito no funcional (11 de 30) RNF-011: Automatización del cálculo de huellas | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-011 |
@@ -2055,10 +2055,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-014, RF-030 |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (12 de 30) RNF-012 — Disponibilidad durante el periodo de pruebas | NaN | NaN |
+| Ficha de requisito no funcional (12 de 30) RNF-012: Disponibilidad durante el periodo de pruebas | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-012 |
@@ -2088,7 +2088,7 @@
 | NaN | Comentarios | No aplica para un entorno productivo; corresponde exclusivamente a la validación del MVP. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (13 de 30) RNF-013 — Consistencia entre MongoDB y Hyperledger Fabric | NaN | NaN |
+| Ficha de requisito no funcional (13 de 30) RNF-013: Consistencia entre MongoDB y Hyperledger Fabric | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-013 |
@@ -2118,7 +2118,7 @@
 | NaN | Comentarios | Nota de cambio (v2) respecto a la v1. |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (14 de 30) RNF-014 — Detección de alteraciones documentales | NaN | NaN |
+| Ficha de requisito no funcional (14 de 30) RNF-014: Detección de alteraciones documentales | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-014 |
@@ -2145,10 +2145,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-031, RF-032, RF-034 |
 | NaN | Dependencias | RNF-005 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (15 de 30) RNF-015 — Usabilidad sin conocimientos especializados | NaN | NaN |
+| Ficha de requisito no funcional (15 de 30) RNF-015: Usabilidad sin conocimientos especializados | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-015 |
@@ -2175,10 +2175,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-008, RF-024, RF-031 |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (16 de 30) RNF-016 — Consistencia visual y de navegación | NaN | NaN |
+| Ficha de requisito no funcional (16 de 30) RNF-016: Consistencia visual y de navegación | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-016 |
@@ -2205,10 +2205,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-006 |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (17 de 30) RNF-017 — Retroalimentación sobre el resultado de las operaciones | NaN | NaN |
+| Ficha de requisito no funcional (17 de 30) RNF-017: Retroalimentación sobre el resultado de las operaciones | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-017 |
@@ -2235,10 +2235,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-017, RF-032, RF-033 |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (18 de 30) RNF-018 — Claridad de los mensajes de error | NaN | NaN |
+| Ficha de requisito no funcional (18 de 30) RNF-018: Claridad de los mensajes de error | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-018 |
@@ -2265,10 +2265,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-009, RF-011, RF-025 |
 | NaN | Dependencias | RNF-017 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (19 de 30) RNF-019 — Separación de responsabilidades por capas | NaN | NaN |
+| Ficha de requisito no funcional (19 de 30) RNF-019: Separación de responsabilidades por capas | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-019 |
@@ -2295,10 +2295,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | Todos los módulos funcionales |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (20 de 30) RNF-020 — Integración indirecta con Hyperledger Fabric | NaN | NaN |
+| Ficha de requisito no funcional (20 de 30) RNF-020: Integración indirecta con Hyperledger Fabric | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-020 |
@@ -2325,10 +2325,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-016, RF-026, RF-031 |
 | NaN | Dependencias | RNF-019 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (21 de 30) RNF-021 — Despliegue mediante contenedores Docker | NaN | NaN |
+| Ficha de requisito no funcional (21 de 30) RNF-021: Despliegue mediante contenedores Docker | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-021 |
@@ -2355,10 +2355,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | Todos los módulos funcionales |
 | NaN | Dependencias | RNF-019 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (22 de 30) RNF-022 — Extensibilidad de la arquitectura | NaN | NaN |
+| Ficha de requisito no funcional (22 de 30) RNF-022: Extensibilidad de la arquitectura | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-022 |
@@ -2385,10 +2385,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | Ninguno directamente |
 | NaN | Dependencias | RNF-019 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (23 de 30) RNF-023 — Compatibilidad exclusiva con PDF | NaN | NaN |
+| Ficha de requisito no funcional (23 de 30) RNF-023: Compatibilidad exclusiva con PDF | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-023 |
@@ -2415,10 +2415,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-009, RF-029 |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (24 de 30) RNF-024 — Límite de tamaño de archivo | NaN | NaN |
+| Ficha de requisito no funcional (24 de 30) RNF-024: Límite de tamaño de archivo | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-024 |
@@ -2445,10 +2445,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-011, RF-029 |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (25 de 30) RNF-025 — Accesibilidad mediante navegadores modernos | NaN | NaN |
+| Ficha de requisito no funcional (25 de 30) RNF-025: Accesibilidad mediante navegadores modernos | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-025 |
@@ -2475,10 +2475,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | Todos los módulos funcionales |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (26 de 30) RNF-026 — Reconstrucción cronológica de acciones | NaN | NaN |
+| Ficha de requisito no funcional (26 de 30) RNF-026: Reconstrucción cronológica de acciones | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-026 |
@@ -2505,10 +2505,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-021, RF-022, RF-039, RF-040, RF-050, RF-051 |
 | NaN | Dependencias | RNF-006 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (27 de 30) RNF-027 — Conservación del orden y del identificador de transacción | NaN | NaN |
+| Ficha de requisito no funcional (27 de 30) RNF-027: Conservación del orden y del identificador de transacción | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-027 |
@@ -2535,10 +2535,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | RF-016, RF-022, RF-035, RF-040, RF-051 |
 | NaN | Dependencias | RNF-005 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (28 de 30) RNF-028 — Porcentaje de aprobación de la suite de pruebas | NaN | NaN |
+| Ficha de requisito no funcional (28 de 30) RNF-028: Porcentaje de aprobación de la suite de pruebas | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-028 |
@@ -2565,10 +2565,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | Todos los módulos funcionales |
 | NaN | Dependencias | Ninguna |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (29 de 30) RNF-029 — Condiciones controladas de evaluación | NaN | NaN |
+| Ficha de requisito no funcional (29 de 30) RNF-029: Condiciones controladas de evaluación | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-029 |
@@ -2595,10 +2595,10 @@
 | NaN | 4. RELACIONES | NaN |
 | NaN | Requisitos funcionales afectados | Ninguno directamente |
 | NaN | Dependencias | RNF-014, RNF-028 |
-| NaN | Comentarios | — |
+| NaN | Comentarios | N/A |
 | NaN | NaN | NaN |
 | NaN | NaN | NaN |
-| Ficha de requisito no funcional (30 de 30) RNF-030 — Alineación con controles del Anexo A de ISO/IEC 27001:2022 | NaN | NaN |
+| Ficha de requisito no funcional (30 de 30) RNF-030: Alineación con controles del Anexo A de ISO/IEC 27001:2022 | NaN | NaN |
 | NaN | NaN | NaN |
 | NaN | IDENTIFICACIÓN | NaN |
 | NaN | ID del requisito | RNF-030 |
@@ -2789,5 +2789,5 @@
 | Fuentes utilizadas para elaborar esta plantilla de requisitos que NO forman parte de la bibliografía del trabajo de grado. Las referencias que sí provienen del proyecto se citan dentro de cada requisito con el número correspondiente a la numeración vigente del documento final (por ejemplo, [23] para ISO/IEC 27001:2022, [10] para la Ley 527 de 1999, [9] para la Ley 1581 de 2012, [19] para la documentación de Hyperledger Fabric, [31] para la guía del MinTIC, [34] para NIST FIPS 202/SHA-256, [36] para el Decreto 2364 de 2012, [22] para ISO 15489-1:2016, [30] para Mier Bello et al., [7] para la Sentencia SP248-2025 de la Corte Suprema de Justicia y [8] para la Circular Externa 005 de 2017 de la Superintendencia de Industria y Comercio). | NaN | NaN |
 | NaN | NaN | NaN |
 | N.° | Referencia en formato IEEE | Uso dentro de este libro |
-| N-1 | International Organization for Standardization, ISO/IEC/IEEE 29148:2018 — Systems and software engineering — Life cycle processes — Requirements engineering, Geneva, Switzerland: ISO/IEC/IEEE, 2018. | Estructura y criterios de calidad (necesario, no ambiguo, verificable, etc.) usados para especificar y revisar cada requisito funcional y no funcional en las hojas RF y RNF. |
-| N-2 | International Organization for Standardization, ISO/IEC 25010:2023 — Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model, Geneva, Switzerland: ISO, 2023. | Modelo de características y subcaracterísticas de calidad utilizado para clasificar cada requisito no funcional en la hoja RNF (columnas Característica y Subcaracterística). |
+| N-1 | International Organization for Standardization, ISO/IEC/IEEE 29148:2018 (Systems and software engineering) Life cycle processes, Requirements engineering, Geneva, Switzerland: ISO/IEC/IEEE, 2018. | Estructura y criterios de calidad (necesario, no ambiguo, verificable, etc.) usados para especificar y revisar cada requisito funcional y no funcional en las hojas RF y RNF. |
+| N-2 | International Organization for Standardization, ISO/IEC 25010:2023 (Systems and software engineering) Systems and software Quality Requirements and Evaluation (SQuaRE), Product quality model, Geneva, Switzerland: ISO, 2023. | Modelo de características y subcaracterísticas de calidad utilizado para clasificar cada requisito no funcional en la hoja RNF (columnas Característica y Subcaracterística). |

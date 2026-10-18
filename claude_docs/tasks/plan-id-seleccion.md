@@ -8,7 +8,7 @@
 
 Hoy `VerificarIntegridadPage` ofrece una **lista plana** de documentos registrados por
 nombre de archivo (más el ingreso manual del `documentId`). Dos contratos llamados igual
-(`contrato.pdf`) de empleados distintos son indistinguibles en esa lista — el Verificador
+(`contrato.pdf`) de empleados distintos son indistinguibles en esa lista: el Verificador
 puede elegir el equivocado, y el sistema confirmaría la integridad del documento que no
 era. La comparación de huellas SHA‑256 es correcta; el hueco está en **elegir contra qué
 documento comparar**.
@@ -19,8 +19,8 @@ documento comparar**.
 ## Propuesta (acordada con Sofia)
 
 Selección en **dos pasos**:
-1. **Elegir a la persona responsable** (por nombre) — una sola vez por persona.
-2. **Elegir su contrato** — solo los contratos de esa persona, con nombre, fecha y estado.
+1. **Elegir a la persona responsable** (por nombre): una sola vez por persona.
+2. **Elegir su contrato**: solo los contratos de esa persona, con nombre, fecha y estado.
 
 Al estar acotado a una persona, no hay ambigüedad entre archivos homónimos de distintos
 empleados. El `documentId` (UUID) sigue siendo la clave real de búsqueda, pero queda
@@ -65,7 +65,7 @@ Ver `claude_docs/tasks/todo-id-seleccion.md`. Índice:
 
 | # | Título | Alcance | Depende de |
 |---|---|---|---|
-| T1 | Frontend: selección en dos pasos (persona → contrato) | M | — |
+| T1 | Frontend: selección en dos pasos (persona → contrato) | M | N/A |
 | T2 | Verificación manual del flujo nuevo contra el stack real | S | T1 |
 | T3 | Documentación y cierre | S | T2 |
 
@@ -75,4 +75,4 @@ Ver `claude_docs/tasks/todo-id-seleccion.md`. Índice:
 2. Verificar un documento (coincide / alterado / id inexistente) sigue funcionando.
 3. `npm run build`/`lint` del frontend pasan; sin cambios de backend/chaincode.
 4. RF‑24 / HU‑010 al día en `SPEC.md` (nota de cambio ya agregada).
-5. Mensaje(s) de commit redactado(s) — sin commit automático.
+5. Mensaje(s) de commit redactado(s): sin commit automático.

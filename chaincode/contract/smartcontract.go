@@ -1,7 +1,7 @@
 // Package contract implements the on-chain logic for the Contratos project:
 // anchoring a document's SHA-256 fingerprint and its traceability events in
 // Hyperledger Fabric. It never receives or stores the document's contents
-// (RNF-04) — only the fingerprint the backend already computed off-chain.
+// (RNF-04): only the fingerprint the backend already computed off-chain.
 package contract
 
 import (
@@ -20,21 +20,21 @@ type ContractsContract struct {
 
 // Document is the fingerprint record kept in the world state under the key
 // documentID. Fields in alphabetic order (deterministic JSON marshal across
-// endorsing peers — same convention as fabric-samples/asset-transfer-basic).
+// endorsing peers: same convention as fabric-samples/asset-transfer-basic).
 type Document struct {
 	DocumentID string `json:"DocumentID"`
 	Sha256Hex  string `json:"Sha256Hex"`
 	Status     string `json:"Status"`
 }
 
-// Event is one immutable traceability entry — never overwritten, one per
+// Event is one immutable traceability entry: never overwritten, one per
 // action (RNF-26/27).
 type Event struct {
 	Action     string `json:"Action"`
 	DocumentID string `json:"DocumentID"`
 	// contractapi genera un schema de la respuesta por reflection y marca todo
 	// campo exportado como obligatorio salvo que lleve `metadata:",optional"`
-	// — el `omitempty` del tag json no alcanza para eso (solo controla el
+	//el `omitempty` del tag json no alcanza para eso (solo controla el
 	// marshal, no la validación de schema de contractapi). Sin esta etiqueta,
 	// un RegisterDocument real fallaba con "value did not match schema:
 	// Result is required" apenas Result quedaba vacío (el caso normal en un
@@ -94,10 +94,10 @@ func (c *ContractsContract) getDocument(
 	return &doc, nil
 }
 
-// putEvent writes the document record (caller decides its Status — a fresh
+// putEvent writes the document record (caller decides its Status: a fresh
 // "Pendiente" one on first registration, or an existing one with an updated
 // Status after a verification) and the event itself under its own composite
-// key — a key that's never reused, so GetStateByPartialCompositeKey(eventKeyType,
+// key: a key that's never reused, so GetStateByPartialCompositeKey(eventKeyType,
 // []string{documentID}) always returns the full chronological history. LevelDB
 // (the peer state DB fixed in Sprint 0) doesn't support rich/CouchDB queries, so
 // traceability is resolved with composite-key ranges instead of a secondary index.
@@ -181,7 +181,7 @@ func (c *ContractsContract) RegisterDocument(
 }
 
 // GetDocument returns the fingerprint record anchored by RegisterDocument. A
-// read-only query (evaluateTransaction) — the first one this contract exposes.
+// read-only query (evaluateTransaction): the first one this contract exposes.
 func (c *ContractsContract) GetDocument(
 	ctx contractapi.TransactionContextInterface,
 	documentID string,
@@ -194,7 +194,7 @@ func (c *ContractsContract) GetDocument(
 
 // RecordVerification anchors the outcome of comparing a document's registered
 // fingerprint against a freshly computed one. It never receives either PDF or
-// either hash — the backend already did the comparison (RNF-04); this only
+// either hash: the backend already did the comparison (RNF-04); this only
 // records the result and updates Document.Status accordingly (RF-34: nothing
 // else is allowed to change it).
 func (c *ContractsContract) RecordVerification(
@@ -243,15 +243,15 @@ func (c *ContractsContract) RecordVerification(
 }
 
 // getEventsByPartialKey iterates every event whose composite key starts with
-// the given attributes — []string{documentID} for one document's history, or
+// the given attributes: []string{documentID} for one document's history, or
 // []string{} for every event of every document (D1/D2 of Sprint 4). Only
 // those two shapes are valid for this schema: []string{""} is NOT the same
-// as []string{} (it matches documentID=="", which never exists — silently
+// as []string{} (it matches documentID=="", which never exists, silently
 // zero results, not "everything"), and a second element would be read as
 // TxID, not a second documentID. Both current callers below pass hardcoded
 // literals; a future caller building `keys` dynamically must preserve this.
 // Always closes the iterator, even if unmarshaling a result fails midway. No
-// particular order is guaranteed — composite-key order groups by documentID,
+// particular order is guaranteed: composite-key order groups by documentID,
 // not by Timestamp across different documents (D2: chronological ordering
 // across documents is the backend's job).
 func (c *ContractsContract) getEventsByPartialKey(

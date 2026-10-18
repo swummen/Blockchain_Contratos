@@ -77,7 +77,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe("requireAuth() — unidad", () => {
+describe("requireAuth(), unidad", () => {
   it("401 sin Authorization header", async () => {
     const req = fakeReq(undefined);
     const res = fakeRes();
@@ -112,7 +112,7 @@ describe("requireAuth() — unidad", () => {
 
   it("401 con un JWT bien firmado pero sin sub/jti (payload incompleto)", async () => {
     // jwt.sign sin subject/jwtid: firma válida, pero el payload no trae lo
-    // que requireAuth necesita — no debería llegar a consultar Mongo.
+    // que requireAuth necesita, no debería llegar a consultar Mongo.
     const malformed = jwt.sign({ role: "Empleado" }, authConfig.jwtSecret, { expiresIn: 3600 });
     const req = fakeReq(`Bearer ${malformed}`);
     const res = fakeRes();
@@ -212,7 +212,7 @@ describe("requireAuth() — unidad", () => {
   });
 });
 
-describe("GET /auth/me — ruta protegida real", () => {
+describe("GET /auth/me, ruta protegida real", () => {
   it("200 con el usuario cuando el JWT y la sesión son válidos", async () => {
     (findSessionByJti as jest.Mock).mockResolvedValue(activeSession);
     (findUserById as jest.Mock).mockResolvedValue(SEED_USER);

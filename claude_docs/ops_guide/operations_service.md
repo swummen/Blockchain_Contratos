@@ -105,7 +105,7 @@ Provider: prometheus
 ### StatsD
 StatsD is a simple statistics aggregation daemon. Metrics are sent to a `statsd` daemon where they are collected, aggregated, and pushed to a backend for visualization and alerting. As this model requires instrumented processes to send metrics data to StatsD, this is considered a push system.
 #### Peer
-A peer can be configured to send metrics to StatsD by setting the metrics provider to `statsd` in the `metrics` section of `core.yaml`. The `statsd`subsection must also be configured with the address of the StatsD daemon, the network type to use (`tcp` or `udp`), and how often to send the metrics. An optional `prefix` may be specified to help differentiate the source of the metrics — for example, differentiating metrics coming from separate peers — that would be prepended to all generated metrics.
+A peer can be configured to send metrics to StatsD by setting the metrics provider to `statsd` in the `metrics` section of `core.yaml`. The `statsd`subsection must also be configured with the address of the StatsD daemon, the network type to use (`tcp` or `udp`), and how often to send the metrics. An optional `prefix` may be specified to help differentiate the source of the metrics (for example, differentiating metrics coming from separate peers) that would be prepended to all generated metrics.
 metrics:
 provider: statsd
 statsd:

@@ -144,7 +144,7 @@ describe("POST /documents", () => {
       .set("Authorization", `Bearer ${token()}`)
       .attach("document", PDF_BUFFER, "b.pdf");
 
-    // Args: (fcn, documentId, hash, user) — el hash es el tercer argumento.
+    // Args: (fcn, documentId, hash, user), el hash es el tercer argumento.
     const [, , hash1] = (submitChaincodeTransaction as jest.Mock).mock.calls[0];
     const [, , hash2] = (submitChaincodeTransaction as jest.Mock).mock.calls[1];
     expect(hash1).toBe(hash2);
@@ -283,7 +283,7 @@ describe("GET /documents/:id", () => {
   it("documento inexistente: 404 (HU-010-CA-02)", async () => {
     // Forma real de un GatewayError cuando el chaincode rechaza la propuesta
     // (ver gatewayerror.d.ts): el mensaje real vive en .details[0].message,
-    // no en .message (ese es un texto gRPC genérico) — mismo hallazgo de T3
+    // no en .message (ese es un texto gRPC genérico), mismo hallazgo de T3
     // de Sprint 2.
     const chaincodeError = Object.assign(new Error("endorsement failure"), {
       details: [{ message: "document doc1 not found" }],
@@ -299,7 +299,7 @@ describe("GET /documents/:id", () => {
 
   it("error de transporte/config sin .details, aunque mencione 'not found': 502, no 404", async () => {
     // Un timeout o un canal/chaincode mal configurado nunca trae .details
-    // poblado (eso solo pasa con una respuesta real del peer) — este caso
+    // poblado (eso solo pasa con una respuesta real del peer), este caso
     // prueba que el chequeo de 404 no se deja engañar por una coincidencia
     // de texto en un error que en realidad es de infraestructura.
     (queryChaincode as jest.Mock).mockRejectedValue(
@@ -554,7 +554,7 @@ describe("GET /documents", () => {
       .set("Authorization", `Bearer ${token("Empleado")}`);
 
     expect(res.status).toBe(200);
-    // token() firma siempre sub="U001" — confirma que el filtro llega con
+    // token() firma siempre sub="U001", confirma que el filtro llega con
     // el id del usuario autenticado, no sin filtro como para los otros roles.
     expect(listDocuments).toHaveBeenCalledWith("U001");
   });

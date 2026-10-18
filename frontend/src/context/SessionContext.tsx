@@ -8,7 +8,7 @@ interface SessionState {
   stage: AuthStage
   user: User | null
   // D7 del plan de Sprint 1: el JWT vive solo en memoria (no localStorage),
-  // se pierde al recargar la página — aceptable, no hay RF que pida
+  // se pierde al recargar la página, aceptable, no hay RF que pida
   // "recordarme".
   token: string | null
   pendingEmail: string | null
@@ -105,7 +105,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         await api.logout(token)
       } catch {
         // Best-effort (AC de T7): si el backend no responde o la sesión ya
-        // estaba vencida, igual se limpia el estado local — no dejar al
+        // estaba vencida, igual se limpia el estado local, no dejar al
         // usuario atrapado esperando una llamada que puede fallar.
       }
     }

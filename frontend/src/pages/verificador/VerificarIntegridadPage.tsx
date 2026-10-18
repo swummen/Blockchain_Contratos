@@ -35,7 +35,7 @@ export default function VerificarIntegridadPage() {
 
   // HU-010-CA-01: "el Verificador lo selecciona". Selección en dos pasos
   // (RF-24, nota de cambio Sprint 4): primero la persona responsable, luego
-  // su contrato — así dos archivos homónimos (`contrato.pdf`) de empleados
+  // su contrato, así dos archivos homónimos (`contrato.pdf`) de empleados
   // distintos nunca se confunden. El ingreso manual del identificador queda
   // como vía secundaria, por si el documento no aparece en esta primera
   // página de 100 o el listado no cargó.
@@ -154,7 +154,7 @@ export default function VerificarIntegridadPage() {
       {result ? (
         <Card>
           <CardContent className="space-y-4">
-            {/* RF-33: la evidencia no es solo el hash — hace falta ver
+            {/* RF-33: la evidencia no es solo el hash, hace falta ver
                 claramente qué documento registrado se comparó contra qué
                 archivo subido, para poder justificar el resultado. */}
             <div className="grid gap-3 rounded-xl border border-border bg-card p-4 text-sm sm:grid-cols-2">
@@ -251,7 +251,7 @@ export default function VerificarIntegridadPage() {
 
                   {documentsError && (
                     <p className="text-xs text-muted-foreground">
-                      No se pudo cargar el listado ({documentsError}) — ingresa el identificador abajo.
+                      No se pudo cargar el listado ({documentsError}): ingresa el identificador abajo.
                     </p>
                   )}
 

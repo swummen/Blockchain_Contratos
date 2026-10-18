@@ -33,7 +33,7 @@ done
 echo
 echo "==> CA-01: el chaincode responde en contratoschannel (GET /fabric/ping)"
 # Desde Sprint 2, /fabric/ping consulta GetMetadata (query de sistema de
-# contractapi) en vez de "GetAllAssets" del chaincode de ejemplo retirado —
+# contractapi) en vez de "GetAllAssets" del chaincode de ejemplo retirado:
 # la respuesta ya no trae "ID", pero sí el nombre del contrato real.
 if ping_output="$(curl -fsS --connect-timeout 5 --max-time 15 "http://127.0.0.1:${BACKEND_PORT}/fabric/ping" 2>&1)" \
    && echo "${ping_output}" | grep -q '"ContractsContract"'; then
@@ -48,7 +48,7 @@ echo "==> CA-02: frontend/src no referencia infraestructura directamente"
 # Case-sensitive a propósito (sin -i): "Fabric" con mayúscula (ya usado en
 # comentarios/nombres legítimos de frontend/src) no dispara el chequeo, pero
 # "fabric" en minúscula en cualquier comentario nuevo sí lo haría (pasó una
-# vez, Sprint 2 T7 — ver claude_docs/tasks/todo-sprint2-documents-ledger.md).
+# vez, Sprint 2 T7: ver claude_docs/tasks/todo-sprint2-documents-ledger.md).
 grep_output="$(grep -rIE "7051|9051|7050|27017|:5984|fabric|mongodb://" ../frontend/src 2>&1)"
 rc=$?
 if [ "${rc}" -eq 0 ]; then

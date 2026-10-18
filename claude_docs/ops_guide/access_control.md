@@ -21,7 +21,7 @@ Signature policies support arbitrary combinations of `AND`, `OR`, and `NOutOf`, 
 #### `ImplicitMeta` policies
 `ImplicitMeta` policies aggregate the result of policies deeper in the configuration hierarchy that are ultimately defined by `Signature` policies. They support default rules like «A majority of the organization admins». These policies use a different but still very simple syntax as compared to `Signature` policies: ` `.
 For example: `ANY` `Readers` or `MAJORITY` `Admins`.
-_Note that in the default policy configuration `Admins` have an operational role. Policies that specify that only Admins — or some subset of Admins — have access to a resource will tend to be for sensitive or operational aspects of the network (such as instantiating chaincode on a channel). `Writers` will tend to be able to propose ledger updates, such as a transaction, but will not typically have administrative permissions. `Readers` have a passive role. They can access information but do not have the permission to propose ledger updates nor do can they perform administrative tasks. These default policies can be added to, edited, or supplemented, for example by the new `peer` and `client` roles (if you have `NodeOU` support)._
+_Note that in the default policy configuration `Admins` have an operational role. Policies that specify that only Admins (or some subset of Admins) have access to a resource will tend to be for sensitive or operational aspects of the network (such as instantiating chaincode on a channel). `Writers` will tend to be able to propose ledger updates, such as a transaction, but will not typically have administrative permissions. `Readers` have a passive role. They can access information but do not have the permission to propose ledger updates nor do can they perform administrative tasks. These default policies can be added to, edited, or supplemented, for example by the new `peer` and `client` roles (if you have `NodeOU` support)._
 Here”s an example of an `ImplicitMeta` policy structure:
 Policies:
 AnotherPolicy:
@@ -41,7 +41,7 @@ event/Block: /Channel/Application/Readers
 These ACLs define that access to `peer/Propose` and `event/Block` resources is restricted to identities satisfying the policy defined at the canonical path `/Channel/Application/Writers` and `/Channel/Application/Readers`, respectively.
 ### Updating ACL defaults in `configtx.yaml`
 In cases where it will be necessary to override ACL defaults when bootstrapping a network, or to change the ACLs before a channel has been bootstrapped, the best practice will be to update `configtx.yaml`.
-Let”s say you want to modify the `peer/Propose` ACL default — which specifies the policy for invoking chaincodes on a peer – from `/Channel/Application/Writers`to a policy called `MyPolicy`.
+Let”s say you want to modify the `peer/Propose` ACL default: which specifies the policy for invoking chaincodes on a peer – from `/Channel/Application/Writers`to a policy called `MyPolicy`.
 This is done by adding a policy called `MyPolicy` (it could be called anything, but for this example we”ll call it `MyPolicy`). The policy is defined in the `Application.Policies` section inside `configtx.yaml` and specifies a rule to be checked to grant or deny access to a user. For this example, we”ll be creating a `Signature` policy identifying `SampleOrg.admin`.
 Policies: &ApplicationDefaultPolicies
 Readers:
@@ -72,7 +72,7 @@ event/Block: /Channel/Application/MyPolicy
 This would restrict the ability to subscribe to block events to `SampleOrg.admin`.
 If channels have already been created that want to use this ACL, they”ll have to update their channel configurations one at a time using the following flow:
 ### Updating ACL defaults in the channel config
-If channels have already been created that want to use `MyPolicy` to restrict access to `peer/Propose` — or if they want to create ACLs they don”t want other channels to know about — they”ll have to update their channel configurations one at a time through config update transactions.
+If channels have already been created that want to use `MyPolicy` to restrict access to `peer/Propose` (or if they want to create ACLs they don”t want other channels to know about) they”ll have to update their channel configurations one at a time through config update transactions.
 _Note: Channel configuration transactions are an involved process we won”t delve into here. If you want to read more about them check out our document on [channel configuration updates](https://hyperledger-fabric.readthedocs.io/es/latest/config%5Fupdate.html) and our [«Adding an Org to a Channel» tutorial](https://hyperledger-fabric.readthedocs.io/es/latest/channel%5Fupdate%5Ftutorial.html)._
 After pulling, translating, and stripping the configuration block of its metadata, you would edit the configuration by adding `MyPolicy` under `Application: policies`, where the `Admins`, `Writers`, and `Readers` policies already live.
 "MyPolicy": {

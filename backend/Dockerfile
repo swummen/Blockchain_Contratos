@@ -4,7 +4,7 @@
 #
 # ponytail: @hyperledger/fabric-gateway (desde T5) declara "engines":
 # {"node": ">=22.12.0"} en su package.json, pero npm no lo hace cumplir sin
-# engine-strict — hoy corre bien sobre Node 20 (verificado end-to-end), pero
+# engine-strict: hoy corre bien sobre Node 20 (verificado end-to-end), pero
 # es un mismatch real: un futuro `npm update` de esa dependencia podría
 # empezar a depender de una API exclusiva de Node 22 sin que ningún
 # build/lint/test lo detecte antes de producción. Subir a node:22-alpine

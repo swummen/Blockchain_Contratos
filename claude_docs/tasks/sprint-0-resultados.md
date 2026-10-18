@@ -1,4 +1,4 @@
-# Sprint 0 — resultados (HU-021, evidencia para el PPS)
+# Sprint 0: resultados (HU-021, evidencia para el PPS)
 
 Fecha de verificación: **2026-09-19**.
 
@@ -22,7 +22,7 @@ bash docker/up.sh && bash docker/smoke-test.sh
 2 peers, 3 CA, mongo, backend, frontend); `docker/smoke-test.sh` se corrió tal cual contra
 ese stack real.
 
-## Salida del smoke test (CA-01 y CA-02) — PASS
+## Salida del smoke test (CA-01 y CA-02): PASS
 
 ```
 ==> CA-01: servicios arriba (orderer, 2 peers, mongo, backend, frontend)

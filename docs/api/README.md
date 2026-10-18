@@ -1,4 +1,4 @@
-# API de integración — TrazaDoc
+# API de integración: TrazaDoc
 
 Documentación de la API REST del backend (entregable "API de integración funcional" de
 OE3). La especificación está en [`openapi.yaml`](openapi.yaml) (OpenAPI 3.0.3): 18
@@ -42,7 +42,7 @@ Cada rol necesita su propio token (repetir el paso 3 con `+verificador@` o `+adm
 
 | # | Petición | Rol | Qué debe verse |
 |---|---|---|---|
-| 1 | `GET /health` y `GET /fabric/ping` | — | `200`: backend, MongoDB y chaincode respondiendo. |
+| 1 | `GET /health` y `GET /fabric/ping` | N/A | `200`: backend, MongoDB y chaincode respondiendo. |
 | 2 | `POST /auth/login` → `POST /auth/verify-otp` | Empleado | Código recibido por correo y `token` devuelto. |
 | 3 | `POST /documents` | Empleado | `201` con el `documentId`. |
 | 4 | `GET /documents/{id}/events` | Empleado | Evento `registro` con su `txId` de Fabric. |
@@ -52,4 +52,4 @@ Cada rol necesita su propio token (repetir el paso 3 con `+verificador@` o `+adm
 | 8 | `GET /events` | Verificador | Registro y verificaciones con sus `txId`, en orden. |
 | 9 | `GET /documents` | Administrador | Mismo documento con la huella **enmascarada** (RF-027). |
 | 10 | `GET /events` | Empleado | `403`: el Empleado no ve la trazabilidad general (RBAC). |
-| 11 | `POST /documents` sin token | — | `401 No autenticado.` (RNF-020: nada entra sin pasar por el backend). |
+| 11 | `POST /documents` sin token | N/A | `401 No autenticado.` (RNF-020: nada entra sin pasar por el backend). |

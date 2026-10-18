@@ -79,7 +79,7 @@ const mean = sorted.reduce((a, b) => a + b, 0) / sorted.length;
 const p95 = pct(95);
 const pass = ok.length === N && p95 <= LIMIT_MS;
 
-// --- Entorno (para no mezclar Docker local con Azure — observación de OBJETIVO 3) ---
+// --- Entorno (para no mezclar Docker local con Azure, observación de OBJETIVO 3) ---
 const sh = (c) => { try { return execSync(c, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch { return "n/d"; } };
 const now = new Date();
 const stamp = new Date(now.getTime() - 5 * 3600_000).toISOString().slice(0, 16).replace(/[:T]/g, "-"); // hora de Colombia (UTC-5)
@@ -95,11 +95,11 @@ mkdirSync(OUT, { recursive: true });
 const csvPath = join(OUT, `latencia-verificacion-${stamp}.csv`);
 writeFileSync(csvPath, "peticion,latencia_ms,http,resultado\n" + rows.map((r) => `${r.i},${r.ms.toFixed(1)},${r.status},${r.result}`).join("\n") + "\n");
 
-const report = `# Medición de latencia — verificación de integridad (RNF-10)
+const report = `# Medición de latencia: verificación de integridad (RNF-10)
 
 | | |
 |---|---|
-| **Resultado** | **${pass ? "PASS" : "FALLA"}** — P95 = **${p95.toFixed(0)} ms** (meta ≤ ${LIMIT_MS} ms) |
+| **Resultado** | **${pass ? "PASS" : "FALLA"}**: P95 = **${p95.toFixed(0)} ms** (meta ≤ ${LIMIT_MS} ms) |
 | Fecha | ${env.fecha} |
 | Entorno | **Docker local** (no Azure) |
 | Equipo | ${env.equipo} |

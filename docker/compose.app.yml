@@ -46,7 +46,7 @@ services:
       # localhost:FRONTEND_PORT, igual que VITE_API_URL de más abajo.
       FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
       # Sprint 1, T3: config/auth.ts no trae ningún default propio para esto
-      # (es un secreto) — el default de acá es exclusivamente para que
+      # (es un secreto), el default de acá es exclusivamente para que
       # docker/up.sh funcione sin pasos extra en desarrollo, mismo criterio
       # que MONGO_ROOT_PASSWORD arriba.
       JWT_SECRET: ${JWT_SECRET:-contratos-dev-secret-cambiar-en-produccion}
@@ -65,11 +65,11 @@ services:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     volumes:
       # Identidad + certificados TLS que genera network-up.sh (T1). Se
-      # regenera en cada ciclo down/up — ver docker/README.md. Solo lectura:
+      # regenera en cada ciclo down/up, ver docker/README.md. Solo lectura:
       # el backend nunca debe modificar el material criptográfico. Se monta
       # solo la carpeta de Org1 (mínimo privilegio): gateway.ts hoy no usa
       # nada de Org2 ni del orderer, así que el backend no tiene por qué
-      # poder leer esas llaves privadas — la ruta de destino coincide con el
+      # poder leer esas llaves privadas, la ruta de destino coincide con el
       # default de FABRIC_CRYPTO_PATH en backend/src/config/fabric.ts.
       - ./fabric-samples/test-network/organizations/peerOrganizations/org1.example.com:/crypto/peerOrganizations/org1.example.com:ro
     depends_on:

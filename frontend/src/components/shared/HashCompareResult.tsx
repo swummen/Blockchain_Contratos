@@ -33,8 +33,8 @@ export function HashCompareResult({ matches, timestamp }: HashCompareResultProps
           )}
         >
           {matches
-            ? "Integridad confirmada — Los hashes son idénticos"
-            : "Integridad comprometida — Los hashes no coinciden"}
+            ? "Integridad confirmada: los hashes son idénticos"
+            : "Integridad comprometida: los hashes no coinciden"}
         </p>
         <p className="text-xs text-muted-foreground">
           Resultado registrado en trazabilidad · {formatDateTime(timestamp)}

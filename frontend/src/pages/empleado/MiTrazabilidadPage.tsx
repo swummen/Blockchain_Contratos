@@ -13,7 +13,7 @@ export default function MiTrazabilidadPage() {
   React.useEffect(() => {
     if (!token) return
     // RF-21/22 (HU-009): el Empleado no tiene acceso a GET /events (solo
-    // Verificador/Administrador) — su trazabilidad se arma con la de cada
+    // Verificador/Administrador), su trazabilidad se arma con la de cada
     // uno de sus documentos, que el backend ya acota a los propios.
     async function load(authToken: string) {
       const documents = await listDocuments(authToken)

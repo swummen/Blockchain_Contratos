@@ -9,7 +9,7 @@ node "Equipo de desarrollo (Windows + Docker Desktop)" as Host {
 
   node "Navegador web" as Browser
 
-  node "Docker Engine — red bridge fabric_test" as Docker {
+  node "Docker Engine: red bridge fabric_test" as Docker {
 
     package "Aplicación (docker/compose.app.yml)" {
       node "Contenedor: frontend\nnginx:alpine + build de React\n127.0.0.1:5173 → 80" as N_Front {
@@ -28,7 +28,7 @@ node "Equipo de desarrollo (Windows + Docker Desktop)" as Host {
       }
     }
 
-    package "Red Hyperledger Fabric 2.5.16 (docker/network-up.sh) — canal contratoschannel" {
+    package "Red Hyperledger Fabric 2.5.16 (docker/network-up.sh): canal contratoschannel" {
       node "Contenedor: orderer.example.com\nRaft · :7050 / :7053 / :9443" as N_Orderer {
         folder "Volumen: compose_orderer.example.com" as V_Ord
       }

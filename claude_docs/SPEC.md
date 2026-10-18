@@ -1,9 +1,9 @@
-# SPEC.md — Fuente única de verdad
+# SPEC.md: Fuente única de verdad
 
 > **MVP de un sistema web para la verificación de integridad y trazabilidad documental
 > en contratos laborales mediante blockchain permisionada (Hyperledger Fabric).**
 >
-> Equipo: Laura Sofia Diaz Suarez · Sofia Ortiz Daza — Universidad Católica de Colombia.
+> Equipo: Laura Sofia Diaz Suarez · Sofia Ortiz Daza, Universidad Católica de Colombia.
 > Versión del documento base: SRS v2.0 (2026‑08‑31). Este archivo consolida `docs/md/*`.
 
 Este documento es la **fuente de verdad** para alcance, diseño y planeación. Si el código
@@ -34,10 +34,10 @@ laborales.
 
 | OE | Descripción | Fase metodológica |
 |---|---|---|
-| OE1 | Identificar requerimientos funcionales, no funcionales y normativos del MVP. | Fase 1 — Análisis |
-| OE2 | Diseñar la arquitectura (UX/UI, software, infraestructura sobre Fabric en Docker). | Fase 2 — Diseño |
-| OE3 | Desarrollar el MVP integrado con una red Hyperledger Fabric en Docker (registro, verificación, consulta, trazabilidad de hashes en el ledger). | Fase 3 — Desarrollo |
-| OE4 | Evaluar el MVP con un Plan de Pruebas de Software (funcional, detección de alteraciones, rendimiento). | Fase 4 — Evaluación |
+| OE1 | Identificar requerimientos funcionales, no funcionales y normativos del MVP. | Fase 1: Análisis |
+| OE2 | Diseñar la arquitectura (UX/UI, software, infraestructura sobre Fabric en Docker). | Fase 2: Diseño |
+| OE3 | Desarrollar el MVP integrado con una red Hyperledger Fabric en Docker (registro, verificación, consulta, trazabilidad de hashes en el ledger). | Fase 3: Desarrollo |
+| OE4 | Evaluar el MVP con un Plan de Pruebas de Software (funcional, detección de alteraciones, rendimiento). | Fase 4: Evaluación |
 
 **Qué es "éxito" (medible).** Ver §12 (KPIs). En síntesis: ≥90 % de casos de prueba
 funcionales PASS, P95 de verificación ≤ 3000 ms, y 100 % de detección sobre 20 documentos
@@ -51,7 +51,7 @@ alterados.
 | 2 | Empleado (firmante) | Carga y consulta de sus documentos | RF‑08…22 | (normativo) |
 | 3 | Verificador | Auditoría de integridad documental | RF‑23…40 | (normativo) |
 | 4 | Administrador | Gobierno del sistema y de los usuarios | RF‑41…51 | (normativo) |
-| 5 | Actor normativo | No opera; impone restricciones de diseño (Ley 527/1999, Decreto 2364/2012, Ley 1581/2012, ISO/IEC 27001:2022 Anexo A) | — | RNF‑01…30 |
+| 5 | Actor normativo | No opera; impone restricciones de diseño (Ley 527/1999, Decreto 2364/2012, Ley 1581/2012, ISO/IEC 27001:2022 Anexo A) | N/A | RNF‑01…30 |
 
 Universo de medición de KPI‑1.1: **53 RF + 30 RNF = 83 requerimientos**.
 
@@ -85,11 +85,11 @@ Conflictos entre documentos resueltos aquí (decisión de proyecto, 2026‑09‑
 | UI | Tailwind CSS v4 + shadcn/ui (`radix-nova`), Radix UI, lucide | Tailwind 4 | Sin archivo de config Tailwind (plugin `@tailwindcss/vite`). |
 | Lint frontend | oxlint | 1.x | **No** ESLint. |
 | Backend | Node.js + Express | Node 20 LTS | Gateway único hacia Fabric (RNF‑20). |
-| Autenticación | **JWT de sesión + OTP de un solo uso por correo corporativo (2FA)** | — | SRS exige 2FA por correo (RF‑03/04); Tabla 2 del trabajo de grado menciona JWT. Se usan **ambos**: JWT para la sesión, OTP por correo como segundo factor. Contraseñas con hash + salt (RNF‑01). **Nota de cambio (2026‑10‑14, indicación del tutor):** el OTP se envía por un proveedor de correo externo, **Brevo** (SMTP relay vía `nodemailer`, sin dependencia nueva); sin SMTP configurado, se loguea en consola (modo desarrollo). |
+| Autenticación | **JWT de sesión + OTP de un solo uso por correo corporativo (2FA)** | N/A | SRS exige 2FA por correo (RF‑03/04); Tabla 2 del trabajo de grado menciona JWT. Se usan **ambos**: JWT para la sesión, OTP por correo como segundo factor. Contraseñas con hash + salt (RNF‑01). **Nota de cambio (2026‑10‑14, indicación del tutor):** el OTP se envía por un proveedor de correo externo, **Brevo** (SMTP relay vía `nodemailer`, sin dependencia nueva); sin SMTP configurado, se loguea en consola (modo desarrollo). |
 | Blockchain | Hyperledger Fabric | **2.5** | Red permisionada en Docker. |
 | Chaincode | **Go (Golang)** | Go 1.22+ | Decisión fija. La fase 3 del trabajo de grado decía "Node.js/Go"; se usa Go. |
 | Persistencia off‑chain | MongoDB | 7.x | Metadatos y estado operativo. Consistencia con el ledger: RNF‑13. |
-| Infraestructura | Docker + Docker Compose | — | RNF‑21. |
+| Infraestructura | Docker + Docker Compose | N/A | RNF‑21. |
 | SDK de integración | Fabric Gateway (Node) | alineado a Fabric 2.5 | Solo el backend lo usa. |
 
 Idioma: **identificadores y código en inglés; documentación, textos de usuario y
@@ -104,7 +104,7 @@ backlog). Se especifican y construyen por id, en orden de dependencia.
 
 | id de módulo | Responsabilidad | Épica | RF | RNF | Depende de |
 |---|---|---|---|---|---|
-| `infra` | Red Fabric (orderer, peers, CAs, 1 canal), MongoDB, contenedores, `docker-compose`. Entorno reproducible. | EP‑05 | — | RNF‑19, 20, 21, 22 | — |
+| `infra` | Red Fabric (orderer, peers, CAs, 1 canal), MongoDB, contenedores, `docker-compose`. Entorno reproducible. | EP‑05 | N/A | RNF‑19, 20, 21, 22 | N/A |
 | `identity` | Selección de rol, login (credenciales + OTP por correo), sesión JWT, RBAC, cierre de sesión, cambio de contraseña, ciclo de vida de usuarios (crear/editar/desactivar). | EP‑01, EP‑04 (RF‑43…47) | RF‑01…07, RF‑43…47, RF‑52, RF‑53 | RNF‑01, 02, 03, 07, 08 | `infra` |
 | `ledger` | Chaincode Go + integración backend↔Fabric: registrar huella y eventos, retornar `txID`, leer trazabilidad desde el ledger. El chaincode nunca recibe el PDF. | transversal a EP‑02/03/04 | RF‑16, 22, 35, 40, 51 | RNF‑04, 05, 13, 26, 27 | `infra` |
 | `documents` | Carga y validación de PDF (formato, tamaño, individual), registro de metadatos, huella SHA‑256, consulta de "mis documentos" y estado (Pendiente/Verificado/Alterado). | EP‑02 | RF‑08…21 | RNF‑09, 11, 23, 24 | `identity`, `ledger` |
@@ -128,56 +128,56 @@ infra ──┬──> identity ──> documents ──> verification ──> a
 | Sprint 3 | `verification` | HU‑010…014 |
 | Sprint 4 | `administration` + consultas restantes | HU‑008, 009, 015…020 |
 
-**Estado de implementación (actualizado 2026‑10‑07):** `infra` (Sprint 0) completo —
+**Estado de implementación (actualizado 2026‑10‑07):** `infra` (Sprint 0) completo, 
 RNF‑19, 20, 21, 22, evidencia en `claude_docs/tasks/sprint-0-resultados.md`. `identity`
-(Sprint 1) completo — **RF‑01…07, RF‑52, RF‑53 y RNF‑01, 02, 03, 07 implementados y
+(Sprint 1) completo: **RF‑01…07, RF‑52, RF‑53 y RNF‑01, 02, 03, 07 implementados y
 verificados** (login con OTP, sesión JWT con invalidación real, RBAC, cambio de
 contraseña; detalle en `claude_docs/tasks/todo-sprint1-identity.md`). La porción de
-`identity` que corresponde a RF‑43…47 (ciclo de vida de usuarios) no se tocó todavía —
+`identity` que corresponde a RF‑43…47 (ciclo de vida de usuarios) no se tocó todavía: 
 llega con HU‑018 en Sprint 4, como ya fija la tabla de arriba.
 
-`documents` + `ledger` (Sprint 2) completos para la mitad de **carga** del módulo —
+`documents` + `ledger` (Sprint 2) completos para la mitad de **carga** del módulo: 
 **RF‑08…17 y RNF‑04, 05, 13, 23, 24 implementados y verificados** (chaincode Go real con
 `RegisterDocument`, `POST /documents` con validación de PDF por firma real + tamaño,
-huella SHA‑256, escritura real al ledger seguida de Mongo, nunca al revés — D13/RNF‑13 —,
+huella SHA‑256, escritura real al ledger seguida de Mongo, nunca al revés (D13/RNF‑13),
 `CargarDocumentoPage` del frontend conectada; detalle en
 `claude_docs/tasks/todo-sprint2-documents-ledger.md`). **RNF‑09 y RNF‑11 solo parciales,
 no completos:** RNF‑09 ("tiempo de respuesta adecuado en consulta **y verificación**") no
-tiene nada que medir todavía — Sprint 2 no construyó ninguna consulta. RNF‑11
+tiene nada que medir todavía, Sprint 2 no construyó ninguna consulta. RNF‑11
 ("generación **y comparación** de huellas SHA‑256") solo tiene la generación; la
 comparación es del módulo `verification` (Sprint 3). RF‑18…22 (la
 porción de consulta de "mis documentos"/trazabilidad del Empleado, dentro de la misma
-épica) no se tocaron todavía — el chaincode no expone ninguna función de lectura (decisión
+épica) no se tocaron todavía: el chaincode no expone ninguna función de lectura (decisión
 D6 del plan de Sprint 2); llegan con Sprint 3/4 junto con `verification`/`administration`,
 que dependen de esa misma lectura.
 
-`verification` (Sprint 3) completo — **RF‑23…36 y RNF‑05, 08, 23, 24, 27 implementados y
+`verification` (Sprint 3) completo: **RF‑23…36 y RNF‑05, 08, 23, 24, 27 implementados y
 verificados** (chaincode con `GetDocument` (primera función de lectura) y
 `RecordVerification`; `GET /documents/:id` con enmascarado del hash por rol (RF‑27);
 `POST /documents/:id/verifications` con comparación real de huellas y actualización de
-estado — ledger primero, Mongo después, mismo criterio D13 de Sprint 2 —;
+estado (ledger primero, Mongo después, mismo criterio D13 de Sprint 2);
 `VerificarIntegridadPage` del frontend conectada; detalle en
 `claude_docs/tasks/todo-sprint3-verification.md`). Esto también completa RNF‑09 y
-RNF‑11 (marcadas parciales en Sprint 2 por faltarles la consulta y la comparación —
+RNF‑11 (marcadas parciales en Sprint 2 por faltarles la consulta y la comparación: 
 ya existen las dos). **RNF‑10 y RNF‑14 quedan parciales, no completos:** son benchmarks
 formales (RNF‑10: P95 ≤ 3000ms en 50 peticiones consecutivas; RNF‑14: 100% de detección
-de alteraciones sobre un set de validación de 20 documentos) — la comparación de hashes
+de alteraciones sobre un set de validación de 20 documentos), la comparación de hashes
 detecta correctamente cualquier alteración en las pruebas manuales hechas (es SHA‑256,
 cualquier cambio de un bit cambia el hash), pero ninguno de los dos benchmarks formales
 se corrió todavía. RF‑37…40 (consulta general de documentos/trazabilidad del
-Verificador, HU‑015/016) siguen sin su alcance completo — Sprint 3 adelantó un listado
+Verificador, HU‑015/016) siguen sin su alcance completo: Sprint 3 adelantó un listado
 mínimo (decisión D8 del plan, `GET /documents`, sin filtros/búsqueda/paginación, pedido
 por Sofia para no obligar a memorizar un `documentId`) para elegir qué verificar; el
 resto (búsqueda, trazabilidad general) sigue para Sprint 4.
 
-`administration` + consultas restantes (Sprint 4) completo (actualizado 2026‑10‑14) —
+`administration` + consultas restantes (Sprint 4) completo (actualizado 2026‑10‑14): 
 **RF‑18…22, RF‑37…51 y RNF‑03, 06, 08, 09, 26, 27 implementados y verificados**, con lo
 que **los 53 RF de este documento quedan implementados**. Chaincode con
 `GetDocumentEvents`/`GetAllEvents` (la trazabilidad se lee del ledger, el backend la
 ordena cronológicamente); `GET /documents` acotado por rol (el Empleado solo ve lo suyo),
 `GET /documents/:id/events` (403 a un Empleado sobre un documento ajeno, dueño tomado
 del ledger), `GET /events`, `GET /documents/summary` y gestión de usuarios
-(`GET/POST /users`, `PUT /users/:id`, `POST /users/:id/deactivate` — baja lógica; cambiar
+(`GET/POST /users`, `PUT /users/:id`, `POST /users/:id/deactivate`, baja lógica; cambiar
 el rol o desactivar corta las sesiones abiertas). Las pantallas de los 3 roles usan el
 backend real (ya no queda ningún mock en el frontend) y la selección del documento a
 verificar es en dos pasos (RF‑24, nota de cambio). Probado por Sofia en navegador;
@@ -186,7 +186,7 @@ existen también el bloqueo por intentos fallidos y el cierre por inactividad (R
 RNF‑07 del backlog fuente). **Siguen parciales:** RNF‑10 y RNF‑14 (benchmarks formales
 sin correr) y la búsqueda/paginación de RF‑37…40 (topes defensivos de 100 documentos /
 200 eventos). **Pendiente de sincronizar:** el backlog fuente creció a 55 RF / 24 HU
-(RF‑054, RF‑055, HU‑022…024) — ver `claude_docs/tasks/plan-trabajo-pendiente.md` (P0.3).
+(RF‑054, RF‑055, HU‑022…024), ver `claude_docs/tasks/plan-trabajo-pendiente.md` (P0.3).
 
 Cada módulo se especifica en su propio `claude_docs/SPEC-<id>.md` **solo si** su diseño
 necesita más detalle del que cabe aquí. El mapa de arriba es el índice de lo que existe.
@@ -223,17 +223,17 @@ frontend (React)  ──HTTP/REST──>  backend (Node + Express + Fabric Gatew
 | `documentId` | MongoDB + ledger | identificador único generado al registrar (RF‑13) |
 | `name`, `responsibleUser`, `registeredAt` | MongoDB | metadatos mínimos (RF‑13, RF‑19) |
 | `hash` (SHA‑256) | ledger (autoridad) + copia en MongoDB | generado sobre el contenido binario completo (RF‑14) |
-| `status` | ledger (autoridad) + copia en MongoDB | `Pendiente` \| `Verificado` \| `Alterado` (RF‑20); solo lo cambia RF‑34, nunca manual (nota de cambio, Sprint 3 T3: la fila original solo decía "MongoDB" — correcto hasta Sprint 2, donde nada lo mutaba todavía; `RecordVerification` del chaincode (Sprint 3 T1) ya lo actualiza on-chain, igual que `hash`, así que el ledger es la autoridad real para ambos) |
+| `status` | ledger (autoridad) + copia en MongoDB | `Pendiente` \| `Verificado` \| `Alterado` (RF‑20); solo lo cambia RF‑34, nunca manual (nota de cambio, Sprint 3 T3: la fila original solo decía "MongoDB", correcto hasta Sprint 2, donde nada lo mutaba todavía; `RecordVerification` del chaincode (Sprint 3 T1) ya lo actualiza on-chain, igual que `hash`, así que el ledger es la autoridad real para ambos) |
 
 **Evento de trazabilidad (en el ledger)**
 
-`{ documentId, action, user, txID, timestamp, result? }` — orden cronológico inmutable
+`{ documentId, action, user, txID, timestamp, result? }`: orden cronológico inmutable
 (RNF‑27). `action` ∈ `registro` \| `verificacion`. `result` ∈ `confirmada` \|
 `comprometida` (solo en verificación). `txID` lo retorna Fabric por transacción (RF‑16).
 
 **Usuario**
 
-`{ userId, name, role, email, status }` — `role` ∈ `Empleado` \| `Verificador` \|
+`{ userId, name, role, email, status }`: `role` ∈ `Empleado` \| `Verificador` \|
 `Administrador`; `status` ∈ `Activo` \| `Inactivo`. Desactivación = baja lógica; nunca
 borrado físico, nunca afecta trazabilidad histórica (RF‑47).
 
@@ -257,7 +257,7 @@ borrado físico, nunca afecta trazabilidad histórica (RF‑47).
 | `npm run dev` | servidor de desarrollo (`tsx watch`) |
 | `npm run build` | `tsc -p tsconfig.json` |
 | `npm start` | corre el build (`dist/server.js`) |
-| `npm run seed` | siembra usuarios de prueba (`identity`, uno por rol — ver `backend/README.md`) |
+| `npm run seed` | siembra usuarios de prueba (`identity`, uno por rol: ver `backend/README.md`) |
 | `npm test` | Jest (`npx jest <archivo>` para un test único) |
 | `npm run lint` | oxlint (mismo linter que `frontend/`, no ESLint) |
 
@@ -270,7 +270,7 @@ borrado físico, nunca afecta trazabilidad histórica (RF‑47).
 | `bash docker/network-up.sh` | solo la red Fabric + canal `contratoschannel` (T1) |
 | `bash docker/network-down.sh` | solo baja la red Fabric |
 | `bash docker/deploy-cc.sh` | despliega el chaincode real del proyecto (`chaincode/`, `contracts`): empaqueta/instala/aprueba/comete + una prueba de extremo a extremo (Sprint 2, T2). Reemplaza a `deploy-sample-cc.sh` (retirado, Sprint 0 decisión D9). |
-| `cp docker/.env.example docker/.env` | prerrequisito único antes de los comandos sueltos de Mongo/backend/frontend (T3) — `up.sh` ya lo hace solo |
+| `cp docker/.env.example docker/.env` | prerrequisito único antes de los comandos sueltos de Mongo/backend/frontend (T3): `up.sh` ya lo hace solo |
 | `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend frontend` | Mongo + backend + frontend (T3/T4/T6), unidos a la red `fabric_test` |
 | `docker compose -f docker/compose.app.yml down` | baja Mongo/backend/frontend (agregar `-v` para borrar también el volumen de Mongo) |
 
@@ -313,10 +313,10 @@ Alias de import en frontend: `@/` → `frontend/src/`.
 - **Inglés** en identificadores, nombres de archivo, mensajes de commit técnicos, comentarios de código.
 - **Español** en textos de UI, mensajes de error para el usuario (RNF‑18), documentación.
 - Frontend: componentes funcionales, hooks; primitivas de `src/components/ui/`; `cn()` para clases.
-- Backend: capas separadas — `routes/ → controllers/ → services/ → repositories|fabric/`. La lógica de Fabric no se filtra a los controllers.
+- Backend: capas separadas, `routes/ → controllers/ → services/ → repositories|fabric/`. La lógica de Fabric no se filtra a los controllers.
 - Chaincode: un contrato (`contract`), funciones cortas, sin dependencias externas de red; validar todo argumento; nunca registrar el PDF.
 
-Ejemplo (chaincode Go — forma esperada):
+Ejemplo (chaincode Go, forma esperada):
 
 ```go
 // RegisterDocument anchors a document's SHA-256 fingerprint and a "registro" event.
@@ -341,7 +341,7 @@ func (c *ContractsContract) RegisterDocument(ctx contractapi.TransactionContextI
 }
 ```
 
-Mensaje de error de UI (español, con causa y acción — RNF‑18):
+Mensaje de error de UI (español, con causa y acción, RNF‑18):
 
 ```
 "El archivo supera el límite de 20 MB. Cargue un PDF de 20 MB o menos."
@@ -351,7 +351,7 @@ Mensaje de error de UI (español, con causa y acción — RNF‑18):
 
 ## 8. Estrategia de pruebas
 
-Regida por el **Plan de Pruebas de Software (PPS)** — Fase 4 / OE4.
+Regida por el **Plan de Pruebas de Software (PPS)**: Fase 4 / OE4.
 
 | Nivel | Herramienta | Dónde | Cubre |
 |---|---|---|---|
@@ -402,7 +402,7 @@ un plan lleva su comando de verificación.
 - Modificar el estado de un documento de forma manual (solo RF‑34 lo cambia).
 - Borrar físicamente un usuario o su trazabilidad histórica (RF‑47: baja lógica).
 - Exponer la huella completa a un rol no autorizado (RF‑27, RNF‑08).
-- `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
+- `git commit` automático: solo dejar el mensaje redactado (norma del equipo).
 - Eliminar o saltar pruebas para llegar a verde sin aprobación.
 - Abrir un `.docx/.xlsx/.pdf` con Read; usar siempre `docs/md/<nombre>.md`.
 
@@ -422,7 +422,7 @@ de integridad).
 
 | Fase | OE | Actividades clave | Entregables |
 |---|---|---|---|
-| **1. Análisis, benchmarking y requerimientos** | OE1 | Análisis normativo (Ley 527, Ley 1581, ISO 27001 Anexo A); benchmarking vs. soluciones comerciales; levantamiento de HU priorizadas. | Matriz de trazabilidad normativa, cuadro de benchmarking, backlog del MVP. **(hecho — ver `docs/md/`)** |
+| **1. Análisis, benchmarking y requerimientos** | OE1 | Análisis normativo (Ley 527, Ley 1581, ISO 27001 Anexo A); benchmarking vs. soluciones comerciales; levantamiento de HU priorizadas. | Matriz de trazabilidad normativa, cuadro de benchmarking, backlog del MVP. **(hecho: ver `docs/md/`)** |
 | **2. Diseño de arquitectura y modelado** | OE2 | Diseño de capas; topología Fabric (orgs, peers, orderers, canales) en Docker; UX/UI baja y alta fidelidad; especificación del chaincode. | Diagramas UML (componentes, secuencia, despliegue), diseños de interfaz, spec del chaincode. |
 | **3. Desarrollo e integración del MVP** | OE3 | Infra con Docker Compose; chaincode Go (registro/consulta de hashes); frontend + backend + integración con Fabric SDK. | Código fuente del MVP, script de despliegue de la red, API de integración. **(fase vigente)** |
 | **4. Evaluación: integridad y rendimiento** | OE4 | Diseño del PPS; pruebas funcionales caja negra; mutación documental; trazabilidad/inmutabilidad; rendimiento (latencia de escritura y de verificación). | Documento del PPS, informe de resultados y defectos, matriz de cumplimiento, manual de usuario y operación. |
@@ -531,10 +531,10 @@ Al abrir `claude_docs/tasks/plan.md` para un sprint / módulo:
 | ID | Título | Enunciado (resumen) | Prioridad |
 |---|---|---|---|
 | RF‑23 | Acceso al módulo de verificación | El Verificador accede al módulo de verificación de integridad. | Must |
-| RF‑24 | Selección del documento registrado | Seleccionar un documento previamente registrado para verificar — de una lista o ingresando el identificador directo (nota de cambio, Sprint 3 T5: se adelantó un `GET /documents` mínimo, sin paginación ni filtros, leyendo solo de MongoDB — el chaincode sigue sin ninguna función de listado, D6; RF‑37…40, Sprint 4, es el alcance completo de esa consulta: búsqueda, filtros, la fuente real para "documentos registrados" en general). **Nota de cambio (Sprint 4, selección en dos pasos — acordado con Sofia):** la "lista" se organiza en dos pasos, primero por **persona responsable** (nombre) y luego por el **contrato** de esa persona (nombre, fecha, estado), no como una lista plana de nombres de archivo. Motivo: dos contratos con el mismo nombre de archivo (`contrato.pdf`) de empleados distintos eran indistinguibles en la lista plana, con riesgo de verificar contra el documento equivocado. El `documentId` (UUID) sigue siendo el identificador real con el que el sistema busca, pero queda **interno** (no se muestra ni se teclea); el ingreso manual del identificador se conserva solo como vía secundaria. No se agrega un código corto legible por ahora (se evaluará más adelante si hace falta). | Must |
+| RF‑24 | Selección del documento registrado | Seleccionar un documento previamente registrado para verificar: de una lista o ingresando el identificador directo (nota de cambio, Sprint 3 T5: se adelantó un `GET /documents` mínimo, sin paginación ni filtros, leyendo solo de MongoDB, el chaincode sigue sin ninguna función de listado, D6; RF‑37…40, Sprint 4, es el alcance completo de esa consulta: búsqueda, filtros, la fuente real para "documentos registrados" en general). **Nota de cambio (Sprint 4, selección en dos pasos: acordado con Sofia):** la "lista" se organiza en dos pasos, primero por **persona responsable** (nombre) y luego por el **contrato** de esa persona (nombre, fecha, estado), no como una lista plana de nombres de archivo. Motivo: dos contratos con el mismo nombre de archivo (`contrato.pdf`) de empleados distintos eran indistinguibles en la lista plana, con riesgo de verificar contra el documento equivocado. El `documentId` (UUID) sigue siendo el identificador real con el que el sistema busca, pero queda **interno** (no se muestra ni se teclea); el ingreso manual del identificador se conserva solo como vía secundaria. No se agrega un código corto legible por ahora (se evaluará más adelante si hace falta). | Must |
 | RF‑25 | Validación de existencia | Consultar por identificador si el documento está registrado. | Must |
 | RF‑26 | Consulta de huella registrada | Mostrar la huella criptográfica registrada del documento. | Must |
-| RF‑27 | Restricción de visualización del hash | La huella completa es visible solo para el Verificador. **Nota de cambio (2026‑10‑15, pedido de Sofia tras la prueba manual):** antes también la veía completa el Administrador; ahora la recibe enmascarada (primeros/últimos 8 caracteres), igual que el Empleado — el enmascarado se hace en el backend, no solo en la UI. Compatible con la fuente: RF‑027 remite a "las reglas de acceso definidas" para cada rol y RF‑049 pide mostrarle la huella al Administrador "respetando las restricciones de privacidad"; HU‑019‑CA‑02 se cumple porque el campo de huella sigue presente. | Must |
+| RF‑27 | Restricción de visualización del hash | La huella completa es visible solo para el Verificador. **Nota de cambio (2026‑10‑15, pedido de Sofia tras la prueba manual):** antes también la veía completa el Administrador; ahora la recibe enmascarada (primeros/últimos 8 caracteres), igual que el Empleado, el enmascarado se hace en el backend, no solo en la UI. Compatible con la fuente: RF‑027 remite a "las reglas de acceso definidas" para cada rol y RF‑049 pide mostrarle la huella al Administrador "respetando las restricciones de privacidad"; HU‑019‑CA‑02 se cumple porque el campo de huella sigue presente. | Must |
 | RF‑28 | Carga del documento a verificar | Cargar el PDF que se comparará con la versión registrada. | Must |
 | RF‑29 | Validación del documento de comparación | Verificar formato PDF y tamaño ≤ 20 MB del documento de comparación. | Must |
 | RF‑30 | Generación de hash del documento de comparación | Generar por SHA‑256 la huella del documento cargado para verificación. | Must |
@@ -561,7 +561,7 @@ Al abrir `claude_docs/tasks/plan.md` para un sprint / módulo:
 | RF‑46 | Edición de usuarios | Modificar nombre, correo y rol. | Must |
 | RF‑47 | Desactivación de usuarios | Baja lógica sin eliminar información ni trazabilidad histórica. | Must |
 | RF‑48 | Consulta administrativa de documentos | El Administrador consulta los documentos registrados. | Must |
-| RF‑49 | Vista administrativa de documentos | Mostrar nombre, identificador, usuario responsable, fecha, estado y huella (con restricciones de privacidad — enmascarada, ver RF‑27). | Must |
+| RF‑49 | Vista administrativa de documentos | Mostrar nombre, identificador, usuario responsable, fecha, estado y huella (con restricciones de privacidad: enmascarada, ver RF‑27). | Must |
 | RF‑50 | Consulta de trazabilidad administrativa | El Administrador consulta el registro histórico de acciones. | Must |
 | RF‑51 | Registro administrativo de trazabilidad | Tabla con identificador del documento, acción, usuario responsable, `txID`, fecha y hora, y resultado. | Must |
 
@@ -659,18 +659,18 @@ Al abrir `claude_docs/tasks/plan.md` para un sprint / módulo:
 | HU‑007 | EP‑02 | Registro de la huella en la red blockchain | RF‑016, RF‑017 | RNF‑04, RNF‑05, RNF‑20 | Must | 8 | 2 |
 | HU‑008 | EP‑02 | Consulta de mis documentos y su estado | RF‑018, RF‑019, RF‑020 | RNF‑09 | Must | 3 | 4 |
 | HU‑009 | EP‑02 | Consulta de trazabilidad de mis documentos | RF‑021, RF‑022 | RNF‑06, RNF‑26, RNF‑27 | Must | 5 | 4 |
-| HU‑010 | EP‑03 | Selección del documento a verificar | RF‑023, RF‑024, RF‑025 | — | Must | 3 | 3 |
+| HU‑010 | EP‑03 | Selección del documento a verificar | RF‑023, RF‑024, RF‑025 | N/A | Must | 3 | 3 |
 | HU‑011 | EP‑03 | Consulta de la huella registrada con control de visibilidad | RF‑026, RF‑027 | RNF‑08 | Must | 3 | 3 |
 | HU‑012 | EP‑03 | Carga del documento a comparar | RF‑028, RF‑029 | RNF‑23, RNF‑24 | Must | 3 | 3 |
 | HU‑013 | EP‑03 | Comparación de huellas y resultado de la verificación | RF‑030…033 | RNF‑10, RNF‑14 | Must | 8 | 3 |
 | HU‑014 | EP‑03 | Actualización de estado y registro de la verificación | RF‑034, RF‑035, RF‑036 | RNF‑05, RNF‑27 | Must | 5 | 3 |
 | HU‑015 | EP‑03 | Consulta general de documentos registrados | RF‑037, RF‑038 | RNF‑08 | Must | 3 | 4 |
 | HU‑016 | EP‑03 | Consulta general de trazabilidad | RF‑039, RF‑040 | RNF‑26, RNF‑27 | Must | 5 | 4 |
-| HU‑017 | EP‑04 | Panel general con resumen documental | RF‑041, RF‑042 | — | Should | 3 | 4 |
+| HU‑017 | EP‑04 | Panel general con resumen documental | RF‑041, RF‑042 | N/A | Should | 3 | 4 |
 | HU‑018 | EP‑04 | Gestión del ciclo de vida de usuarios | RF‑043…047 | RNF‑03 | Must | 8 | 4 |
 | HU‑019 | EP‑04 | Consulta administrativa de documentos | RF‑048, RF‑049 | RNF‑04, RNF‑08 | Must | 3 | 4 |
 | HU‑020 | EP‑04 | Consulta administrativa de trazabilidad | RF‑050, RF‑051 | RNF‑26, RNF‑27 | Must | 5 | 4 |
-| HU‑021 | EP‑05 | Despliegue de la red blockchain y del entorno con Docker | — | RNF‑19, 20, 21, 22 | Must | 13 | 0 |
+| HU‑021 | EP‑05 | Despliegue de la red blockchain y del entorno con Docker | N/A | RNF‑19, 20, 21, 22 | Must | 13 | 0 |
 
 Épicas: **EP‑01** Autenticación y control de acceso · **EP‑02** Registro y gestión
 documental (Empleado) · **EP‑03** Verificación de integridad documental (Verificador) ·
@@ -743,7 +743,7 @@ Ley 1581/2012. Estado: **13/13 disposiciones aplicables al MVP cubiertas (100 %)
 | Decreto 2364/2012 Art. 6 | Custodia de credenciales del firmante | RF‑02, 03, 04, 52, 53; RNF‑01, 02, 07 | Credenciales + OTP por correo + gestión segura de contraseñas. **Implementado (Sprint 1, `identity`)**: hash+salt (bcrypt), OTP por correo con expiración/reintentos, sesión JWT invalidable, cambio de contraseña autenticado. |
 | Ley 1581/2012 Art. 4 lit. g) | Principio de seguridad | RNF‑01, 03, 05, 07 | Hash + salt, RBAC, sesiones seguras, inmutabilidad de la evidencia. |
 | Ley 1581/2012 Art. 4 lit. h) / Art. 3 | Confidencialidad y minimización de datos | RF‑13, 27; RNF‑04, 08 | No se almacena el contenido del contrato; solo huella y metadatos mínimos; huella visible solo a roles autorizados. |
-| Ley 527/1999 Art. 7 · Decreto 2364/2012 Art. 2, 3, 5 | Firma electrónica | — | **Fuera de alcance** (numerales 2.6.1 / 2.6.2 del anteproyecto). |
+| Ley 527/1999 Art. 7 · Decreto 2364/2012 Art. 2, 3, 5 | Firma electrónica | N/A | **Fuera de alcance** (numerales 2.6.1 / 2.6.2 del anteproyecto). |
 | ISO/IEC 27001:2022 Anexo A (A.8.24, A.8.11) | Criptografía, control de acceso | RNF‑30 | Solo como criterio de diseño; no se implementa ni certifica el SGSI. |
 
 ---
@@ -752,11 +752,11 @@ Ley 1581/2012. Estado: **13/13 disposiciones aplicables al MVP cubiertas (100 %)
 
 | # | Tema | Estado |
 |---|---|---|
-| 1 | Canal exclusivo del segundo factor (correo corporativo) frente a SMS / app autenticadora. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D1 de `claude_docs/tasks/plan-sprint1-identity.md`):** por ahora el OTP va al correo *registrado* del usuario, no necesariamente corporativo — permite probar el flujo completo durante el desarrollo. Queda pendiente evaluar más adelante si se exige que sea exclusivamente el correo corporativo (nota de cambio: esto relaja, no contradice, RF‑003 — el canal sigue siendo "correo", solo se pospuso la restricción de dominio). |
-| 2 | Número máximo de intentos de token y tiempo de expiración exactos. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D2 del mismo plan):** 6 dígitos, expira a los 5 minutos, máximo 5 intentos — agotados, hay que volver a iniciar sesión para un código nuevo (eso es el "bloqueo temporal del proceso" de RN‑02). Sin valor fijado en `docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md`/`Trabajo de grado final.md` (se revisaron ambos), se adoptó este default. |
+| 1 | Canal exclusivo del segundo factor (correo corporativo) frente a SMS / app autenticadora. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D1 de `claude_docs/tasks/plan-sprint1-identity.md`):** por ahora el OTP va al correo *registrado* del usuario, no necesariamente corporativo, permite probar el flujo completo durante el desarrollo. Queda pendiente evaluar más adelante si se exige que sea exclusivamente el correo corporativo (nota de cambio: esto relaja, no contradice, RF‑003, el canal sigue siendo "correo", solo se pospuso la restricción de dominio). |
+| 2 | Número máximo de intentos de token y tiempo de expiración exactos. | **Resuelto para Sprint 1 (2026‑09‑19, decisión D2 del mismo plan):** 6 dígitos, expira a los 5 minutos, máximo 5 intentos, agotados, hay que volver a iniciar sesión para un código nuevo (eso es el "bloqueo temporal del proceso" de RN‑02). Sin valor fijado en `docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md`/`Trabajo de grado final.md` (se revisaron ambos), se adoptó este default. |
 | 3 | Topología concreta de Fabric: ¿1 o 2 organizaciones? Política de endorsement. | Por definir en Fase 2 / módulo `infra`. |
 | 4 | Diagramas UML (componentes, secuencia, despliegue) y prototipos UX/UI. | Entregable de Fase 2 (OE2), aún no producidos. |
-| 5 | Estados de aprobación del tutor en la Matriz de Actores (KPI‑1.1). | "Pendiente de aprobación" — actualizar tras revisión. |
+| 5 | Estados de aprobación del tutor en la Matriz de Actores (KPI‑1.1). | "Pendiente de aprobación": actualizar tras revisión. |
 | 6 | Definición del set de 20 documentos sintéticos y del script de mutación. | Entregable del PPS (Fase 4). |
 
 ---

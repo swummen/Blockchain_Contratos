@@ -38,7 +38,7 @@ const MIN_PASSWORD_LENGTH = 8;
 
 // Hash fijo contra el que comparar cuando el usuario no existe: sin esto,
 // bcrypt.compare no corre y la respuesta vuelve más rápido que cuando sí
-// corre (usuario existe, contraseña incorrecta) — una diferencia de tiempo
+// corre (usuario existe, contraseña incorrecta), una diferencia de tiempo
 // medible que le confirmaría a un atacante si un email está registrado.
 // Con el mismo costo que env.bcryptRounds (no un literal aparte): bcrypt.compare
 // tarda según el costo embebido en el hash contra el que compara, así que un
@@ -54,7 +54,7 @@ function generateOtpCode(): string {
 }
 
 // RF-54 RN-02: durante el bloqueo no se aceptan intentos aunque las
-// credenciales sean correctas — por eso el mensaje es distinto al 401
+// credenciales sean correctas, por eso el mensaje es distinto al 401
 // genérico de abajo (acá sí es intencional avisarle al usuario del
 // bloqueo, tal como pide la ficha de RF-54).
 function lockedMessage(lockedUntil: Date): string {
@@ -75,11 +75,11 @@ export async function login(
   const passwordOk = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
 
   // RF-002 CA-02: mismo mensaje genérico sin importar cuál dato falló
-  // (usuario inexistente, contraseña incorrecta, o usuario desactivado —
+  // (usuario inexistente, contraseña incorrecta, o usuario desactivado, 
   // RF-47/HU-018: la baja lógica no debe distinguirse de un login inválido).
   if (!user || !passwordOk || user.status === "Inactivo") {
     // RF-54: solo cuenta para el bloqueo si la cuenta existe de verdad (RN:
-    // "el usuario tiene una cuenta registrada") — un email inexistente no
+    // "el usuario tiene una cuenta registrada"), un email inexistente no
     // tiene ningún contador que incrementar.
     if (user) {
       const attempts = await registerFailedLogin(user._id);
@@ -141,7 +141,7 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
   }
 
   // RN-02 (docs/md/Requisitos_...md:291): agotados los intentos, se bloquea
-  // el proceso — acá eso significa exigir un login nuevo, no solo permitir
+  // el proceso, acá eso significa exigir un login nuevo, no solo permitir
   // reintentar contra el mismo código indefinidamente.
   if (otp.attempts >= authConfig.otpMaxAttempts) {
     await deleteOtp(user._id);
@@ -166,7 +166,7 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
     return { ok: false, status: 400, message: "Código incorrecto." };
   }
 
-  // RN-01: un token solo se usa una vez — se consume el código apenas se
+  // RN-01: un token solo se usa una vez, se consume el código apenas se
   // confirma que es correcto.
   await deleteOtp(user._id);
 
@@ -186,7 +186,7 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
 }
 
 // Invalidación real (D4): borra el documento de sesión, no solo un gesto del
-// lado del cliente — cualquier request posterior con el mismo JWT falla en
+// lado del cliente, cualquier request posterior con el mismo JWT falla en
 // requireAuth() porque su jti ya no existe en Mongo.
 export async function logout(jti: string): Promise<void> {
   await deleteSession(jti);
@@ -198,7 +198,7 @@ export async function getPublicUserById(userId: string): Promise<PublicUser | nu
 }
 
 // RF-52/53: requiere la contraseña actual y valida que sea el usuario
-// autenticado el que actúa — el caller pasa userId desde req.user.sub (el
+// autenticado el que actúa, el caller pasa userId desde req.user.sub (el
 // JWT ya validado por requireAuth()), nunca un id que venga del body.
 export async function changePassword(
   userId: string,

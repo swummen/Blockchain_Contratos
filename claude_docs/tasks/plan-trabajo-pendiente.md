@@ -1,8 +1,8 @@
-# Plan de trabajo — lo que falta del MVP (orden de prioridad)
+# Plan de trabajo: lo que falta del MVP (orden de prioridad)
 
 > Fuente de verdad: `claude_docs/SPEC.md`. Actualizado **2026‑10‑14**, después del cierre
 > de Sprint 4 (T10) y del envío del OTP por Brevo.
-> No hay commit automático — solo mensajes redactados.
+> No hay commit automático: solo mensajes redactados.
 
 ## Dónde estamos
 
@@ -20,16 +20,16 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 
 ---
 
-## P0 — Por revisar (rápido, antes de seguir)
+## P0: Por revisar (rápido, antes de seguir)
 
 | # | Qué revisar | Quién | Por qué |
 |---|---|---|---|
 | R1 | **Cambiar la SMTP key de Brevo** (la actual quedó escrita en el chat): generar una nueva, borrar `sofias-local` y actualizar `docker/.env`. | Sofia | Seguridad: la clave se expuso. |
 | R2 | **Configurar a Laura**: su propia SMTP key (`laura-local`) + sus `docker/.env` y `backend/.env` (no viajan con el repo). Guía paso a paso en `para_sofi.md` §7. Confirmar que a ella también le llega el OTP. | Sofia + Laura | Que no dependa de un solo computador. |
-| R3 ✅ | **Correr `bash docker/smoke-test.sh`** con el stack arriba — no se corrió en el cierre de T10 (Docker estaba apagado). | Claude | Evidencia de no regresión de HU‑021. |
+| R3 ✅ | **Correr `bash docker/smoke-test.sh`** con el stack arriba: no se corrió en el cierre de T10 (Docker estaba apagado). | Claude | Evidencia de no regresión de HU‑021. |
 | R4 ✅ | **Corregir el voseo en textos de usuario** (5 mensajes: "No podés…", "No tenés permiso…", "ingresá…", "¿No lo encontrás?") → tuteo, como el resto de la app. Están en `backend/src/routes/users.ts`, `middlewares/auth.ts`, `services/documentService.ts` y `VerificarIntegridadPage.tsx`. | Claude | Consistencia del español de la UI (RNF‑16/18). |
 | R5 ✅ | **Root `README.md` está vacío** (el commit "completo readme contratos" actualizó los otros README, no el de la raíz). | Claude | Entregable explícito de OBJETIVO 3. |
-| R6 | **Confirmar las fechas reales de S11 y S13** en el cronograma (Tabla 5 del trabajo de grado — es una imagen, no se puede leer desde `docs/md/`). | Sofia | El benchmark de RNF‑10 (2.1) tiene que correrse en esas dos semanas. |
+| R6 | **Confirmar las fechas reales de S11 y S13** en el cronograma (Tabla 5 del trabajo de grado: es una imagen, no se puede leer desde `docs/md/`). | Sofia | El benchmark de RNF‑10 (2.1) tiene que correrse en esas dos semanas. |
 | R7 ✅ | **Limpiar datos de prueba antes de cualquier demo**: quedan `CONTRATO FALSO.pdf` (c.ruiz) y el usuario `Prueba T9 Editada`. `bash docker/down.sh && bash docker/up.sh && npm run seed` deja todo limpio. | Sofia | Una demo con datos de prueba sueltos se ve desordenada. |
 | R8 | **Correos en spam**: si los OTP siguen cayendo en spam, marcar "No es spam" en `contratosblockchain@gmail.com`. Recordar que la SMTP key vence en 1 año **o tras 90 días sin uso**. | Sofia | Que la demo no falle por el correo. |
 | R10 | **Sesión vencida en el frontend**: tras 15 min de inactividad el backend cierra la sesión y responde `401`, pero el frontend solo muestra "Sesión inválida o vencida." y no lleva al login (HU‑022 CA‑04 pide "exige autenticarse nuevamente"). Arreglo chico: ante un `401`, limpiar la sesión y redirigir al inicio. | Claude | Hallado al actualizar el UML. |
@@ -37,17 +37,17 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 
 ---
 
-## P1 — Que el SPEC diga la verdad
+## P1: Que el SPEC diga la verdad
 
 | # | Tarea | Quién | Verificar |
 |---|---|---|---|
 | 1.1 | **Sincronizar el SPEC con el backlog fuente**: 55 RF / 24 HU (el SPEC dice 53 / 21). Agregar RF‑054, RF‑055, HU‑022, HU‑023, HU‑024 con sus Gherkin (~9 escenarios nuevos); marcar RF‑054 y HU‑024 como implementados; HU‑022 parcial (falta CA‑03). | Claude | Conteo RF/HU/Gherkin del SPEC = backlog |
-| 1.2 | **Cerrar preguntas abiertas del SPEC §18**: #3 (topología: 2 orgs, endorsement OR — ya decidido en Sprint 0), #4 (UML en `docs/uml/` y prototipos en `docs/` ya existen). Revisar #1 (¿el OTP debe ir solo a correo corporativo?) con el tutor. | Claude (+ tutor para #1) | §18 sin preguntas ya resueltas |
-| 1.3 | **Nombre del producto**: la app ya dice "TrazaDoc", el SPEC no lo nombra (hallazgo #4 de `Inconsistencias_Mockup_Roles.txt`). Anotarlo en el SPEC. | Claude | — |
+| 1.2 | **Cerrar preguntas abiertas del SPEC §18**: #3 (topología: 2 orgs, endorsement OR, ya decidido en Sprint 0), #4 (UML en `docs/uml/` y prototipos en `docs/` ya existen). Revisar #1 (¿el OTP debe ir solo a correo corporativo?) con el tutor. | Claude (+ tutor para #1) | §18 sin preguntas ya resueltas |
+| 1.3 | **Nombre del producto**: la app ya dice "TrazaDoc", el SPEC no lo nombra (hallazgo #4 de `Inconsistencias_Mockup_Roles.txt`). Anotarlo en el SPEC. | Claude | N/A |
 
 ---
 
-### 1.4 OE2 — Artefactos de diseño y aprobación del tutor (KPI: 4 de 4 dominios)
+### 1.4 OE2: Artefactos de diseño y aprobación del tutor (KPI: 4 de 4 dominios)
 
 - [x] Matriz de infraestructura: `docs/Matriz_Infraestructura.xlsx` (+ `docs/md/`),
   generada desde la configuración real y verificada con el stack corriendo.
@@ -58,15 +58,15 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
   (Sprint 2). Opciones: corregir la documentación, o redesplegar con `OR` ("Ask first":
   cambia la topología).
 - [ ] Revisión y aprobación del tutor de los 4 dominios (UX/UI, software, infraestructura,
-  chaincode/red) — hoja "8. Aprobación" de la matriz. **Lo hacen Sofia y Laura.**
+  chaincode/red): hoja "8. Aprobación" de la matriz. **Lo hacen Sofia y Laura.**
 
 ---
 
-## P2 — Requisitos que faltan construir
+## P2 (Requisitos que faltan construir
 
-### 2.1 RF‑055 / HU‑023 — Aceptación de la política de tratamiento de datos (Must, no existe nada)
+### 2.1 RF‑055 / HU‑023) Aceptación de la política de tratamiento de datos (Must, no existe nada)
 
-- [ ] **Texto de la política** (Ley 1581/2012) con un número de versión — **lo redactan
+- [ ] **Texto de la política** (Ley 1581/2012) con un número de versión: **lo redactan
   Sofia/Laura**. Bloquea el resto.
 - [ ] Backend: guardar en el usuario `policyAcceptance: {version, acceptedAt}`; endpoint
   `POST /auth/accept-policy`; `requireAuth` responde `403` en cualquier otra ruta hasta
@@ -76,16 +76,16 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 - [ ] Tests + prueba en navegador.
 - Cambia el esquema de Mongo → "Ask first" del SPEC: confirmar el diseño antes.
 
-### 2.2 HU‑022 CA‑03 — Registrar los intentos fallidos de login
+### 2.2 HU‑022 CA‑03: Registrar los intentos fallidos de login
 
 - [ ] Colección `login_attempts` (correo ingresado, fecha/hora, motivo; **nunca** la
   contraseña), escrita desde `authService.login` en cada fallo. Hoy solo existe el
   contador del bloqueo.
-- [ ] Decidir si el Administrador lo ve en pantalla (ningún RF lo pide — por defecto no).
+- [ ] Decidir si el Administrador lo ve en pantalla (ningún RF lo pide: por defecto no).
 
 ---
 
-## P3 — Fase 4 / OE4: evidencia que la tesis tiene que medir
+## P3: Fase 4 / OE4: evidencia que la tesis tiene que medir
 
 | # | Tarea | KPI / RNF | Nota |
 |---|---|---|---|
@@ -97,11 +97,11 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 
 ---
 
-## P4 — Entregables documentales (OBJETIVO 3 + DoD)
+## P4: Entregables documentales (OBJETIVO 3 + DoD)
 
 - [ ] `README.md` raíz (R5): qué es, estructura, cómo levantarlo, que el chaincode es solo Go.
 - [x] Documentación de la API: `docs/api/openapi.yaml` (18 endpoints, validada con Redocly y contrastada con el backend real) + guía de Postman en `docs/api/README.md`.
-- [ ] Capturas de las llamadas funcionando (lista sugerida de 11 en `docs/api/README.md`) — **Sofia/Laura**.
+- [ ] Capturas de las llamadas funcionando (lista sugerida de 11 en `docs/api/README.md`): **Sofia/Laura**.
 - [x] Evidencia de integración con Fabric: `docs/evidencias/integracion-fabric.md` (registro, consulta, 2 verificaciones, TxID contrastados en los bloques 9‑11) + scripts para reproducirla.
 - [x] Guía de instalación y despliegue: `INSTALACION.md` (requisitos, programas con `winget`, configuración, `up.sh`/`stop.sh`/`start.sh`/`down.sh`, usuarios, problemas frecuentes, origen de `configtx.yaml`). README principal simplificado. `up.sh` ahora siembra los usuarios (ya no hace falta Node para usar el sistema). Probado: ciclo completo desde cero + apagar/encender sin perder datos, smoke test PASS.
 - [x] Registro de sprints: `docs/registro-sprints.md` (HU comprometidas, % terminado por sprint, DoD y lecciones). Falta que el tutor registre su aprobación (criterio 5) para el % oficial.
@@ -109,12 +109,12 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 - [ ] Registro de cambios respecto al diseño (OE2): p. ej. login sin selector de rol, selección en dos pasos, Brevo, CouchDB → LevelDB (OBJETIVO 3 pedía CouchDB en el script de red).
 - [ ] Actualizar los diagramas UML de `docs/uml/` a lo implementado (sus nombres de servicios eran una propuesta previa al código; su README cita un `SRS_v2_Requerimientos (2).md` que no existe).
 - [ ] Convertir a `docs/md/` los documentos nuevos de Laura (`Matriz_ASRS y Utility tree.xlsx`, `Prototipo alta fidelidad.pdf`, `Wireframes baja fidelidad.pdf`), retirar los obsoletos (`Rol administrador.md`, `roles mock up.md`) y comparar el prototipo de alta fidelidad con las pantallas actuales.
-- [ ] Despliegue en Azure (DoD 4) — después de 3.1.
+- [ ] Despliegue en Azure (DoD 4): después de 3.1.
 - [ ] Manual de usuario.
 
 ---
 
-## P5 — Deuda técnica conocida (solo si sobra tiempo)
+## P5: Deuda técnica conocida (solo si sobra tiempo)
 
 - Idempotencia de la carga (un reintento tras timeout puede anclar el mismo archivo dos veces).
 - `verifyDocument` descarta el `txID`/timestamp real de la verificación (la evidencia usa la hora del navegador).
@@ -142,6 +142,6 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
   usuarios sembrados con `SEED_EMAIL`); guía de configuración de Laura en
   `para_sofi.md` §7; nota en `docker/README.md` sobre restos de red tras re-clonar.
 - **Cerrado 2026‑10‑14:** cierre de Sprint 4 (T10 + limpieza del mock); OTP por
-  proveedor externo (Brevo, por indicación del tutor) — `SMTP_*` en Docker, puerto 465,
+  proveedor externo (Brevo, por indicación del tutor), `SMTP_*` en Docker, puerto 465,
   correo en español, `SEED_EMAIL`, tests, host `smtp-relay.sendinblue.com` (el de
   `brevo.com` falla TLS desde Colombia).

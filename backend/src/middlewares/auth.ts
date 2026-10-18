@@ -22,7 +22,7 @@ function extractBearerToken(req: Request): string | undefined {
 
 // requireAuth() sin argumentos: solo exige sesión válida, cualquier rol.
 // requireAuth("Administrador", ...): además exige que el rol del JWT esté en
-// la lista (RF-05/RNF-03) — un único middleware parametrizable en vez de dos
+// la lista (RF-05/RNF-03), un único middleware parametrizable en vez de dos
 // separados (autenticación + autorización), ya que acá siempre van juntos.
 export function requireAuth(...allowedRoles: Role[]) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {

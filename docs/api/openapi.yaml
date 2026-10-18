@@ -3,7 +3,7 @@ info:
   title: TrazaDoc API
   version: "1.0.0"
   description: |
-    API REST del backend de TrazaDoc — MVP de verificación de integridad y trazabilidad
+    API REST del backend de TrazaDoc, MVP de verificación de integridad y trazabilidad
     documental en contratos laborales con Hyperledger Fabric.
 
     Es la **única puerta** entre el frontend y la red blockchain / MongoDB (RNF-020):
@@ -25,7 +25,7 @@ info:
 
     Fuente: `backend/src/routes/*.ts` y `backend/README.md` (Sprints 1-4).
   contact:
-    name: Laura Sofia Diaz Suarez · Sofia Ortiz Daza — Universidad Católica de Colombia
+    name: Laura Sofia Diaz Suarez · Sofia Ortiz Daza, Universidad Católica de Colombia
 servers:
   - url: http://localhost:8080
     description: Docker local (bash docker/up.sh)
@@ -101,7 +101,7 @@ paths:
       operationId: login
       security: []
       tags: [Autenticación]
-      summary: Primer factor — correo y contraseña
+      summary: Primer factor, correo y contraseña
       description: |
         Valida las credenciales y envía un código de 6 dígitos al correo del usuario
         (RF-002, RF-003). El rol no se envía: se toma de la cuenta. Usuario inexistente,
@@ -148,7 +148,7 @@ paths:
       operationId: verifyOtp
       security: []
       tags: [Autenticación]
-      summary: Segundo factor — código por correo
+      summary: Segundo factor, código por correo
       description: Valida el código (5 minutos, máximo 5 intentos) y abre la sesión (RF-004, RF-005).
       requestBody:
         required: true
@@ -321,7 +321,7 @@ paths:
     get:
       operationId: getDocumentsSummary
       tags: [Documentos]
-      summary: Totales por estado — panel del Administrador (RF-041, RF-042)
+      summary: Totales por estado, panel del Administrador (RF-041, RF-042)
       security: [{ bearerAuth: [] }]
       responses:
         "200":
@@ -393,8 +393,8 @@ paths:
       description: |
         Recalcula la huella SHA-256 del PDF cargado y la compara con la registrada en el
         ledger (RF-028 a RF-033). Registra el resultado con `RecordVerification`, que cambia
-        el estado a Verificado (coinciden) o Alterado (difieren) — única vía de cambio de
-        estado (RF-034) — y agrega un evento con su TxID (RF-035). Luego actualiza MongoDB.
+        el estado a Verificado (coinciden) o Alterado (difieren) (única vía de cambio de
+        estado (RF-034)) y agrega un evento con su TxID (RF-035). Luego actualiza MongoDB.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: "#/components/parameters/DocumentId"
@@ -543,7 +543,7 @@ paths:
     post:
       operationId: deactivateUser
       tags: [Usuarios]
-      summary: Desactivar usuario — baja lógica (RF-047)
+      summary: Desactivar usuario, baja lógica (RF-047)
       description: Marca el usuario como Inactivo (no se borra nada ni su trazabilidad) y cierra sus sesiones al instante. El Administrador no puede desactivarse a sí mismo.
       security: [{ bearerAuth: [] }]
       parameters:

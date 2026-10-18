@@ -18,7 +18,7 @@ import {
 import { deleteSessionsByUserId } from "../repositories/sessionRepository";
 
 // D7b del plan de Sprint 4: un usuario nuevo se crea con esta contraseña
-// temporal fija y conocida (misma que ya usa `seedUsers.ts`) — nunca un
+// temporal fija y conocida (misma que ya usa `seedUsers.ts`), nunca un
 // secreto real, documentado en backend/README.md. No hay flujo de invitación
 // por correo (token de un solo uso, expiración): es trabajo real de
 // producción que ningún RF de este backlog pide (RF-45 solo dice "Registrar
@@ -38,7 +38,7 @@ export interface CreateUserInput {
 }
 
 // `temporaryPassword` (T9): el Administrador necesita comunicársela al
-// usuario nuevo. Es la misma contraseña fija y documentada de D7b — devolverla
+// usuario nuevo. Es la misma contraseña fija y documentada de D7b: devolverla
 // evita que el frontend tenga su propia copia que se desincronice de esta.
 export type CreateUserResult =
   | { ok: true; user: PublicUser; temporaryPassword: string }
@@ -54,7 +54,7 @@ export async function createUser(input: CreateUserInput): Promise<CreateUserResu
   // Chequeo rápido para el caso común (mensaje claro, sin gastar un insert
   // que se sabe de antemano que va a fallar); el índice único de `email`
   // (ensureIndexes, Sprint 1) sigue siendo la garantía real contra una
-  // carrera entre dos altas simultáneas con el mismo correo — ver el catch
+  // carrera entre dos altas simultáneas con el mismo correo, ver el catch
   // de abajo.
   if (await findUserByEmail(input.email)) {
     return DUPLICATE_EMAIL_RESULT;
@@ -62,7 +62,7 @@ export async function createUser(input: CreateUserInput): Promise<CreateUserResu
 
   const passwordHash = await bcrypt.hash(TEMP_PASSWORD, env.bcryptRounds);
   // crypto.randomUUID() (mismo criterio que documentId, D11 de Sprint 2): sin
-  // coordinación de secuencia, sin colisiones — el formato "U00N" del seed de
+  // coordinación de secuencia, sin colisiones, el formato "U00N" del seed de
   // Sprint 1 era solo para los 4 usuarios de prueba, nunca una convención que
   // el resto del sistema dependa de mantener.
   const user: UserDoc = {
@@ -71,7 +71,7 @@ export async function createUser(input: CreateUserInput): Promise<CreateUserResu
     // Normalizado acá (hallazgo de review), no solo adentro de insertUser:
     // sin esto, la respuesta HTTP mostraba el email tal cual lo tipeó el
     // admin (p. ej. "Foo@Bar.COM") mientras Mongo ya guardaba la versión en
-    // minúsculas — inconsistente con lo que de verdad quedó persistido.
+    // minúsculas: inconsistente con lo que de verdad quedó persistido.
     email: normalizeEmail(input.email),
     passwordHash,
     role: input.role,
@@ -125,10 +125,10 @@ export async function updateUser(userId: string, input: UpdateUserInput): Promis
   }
 
   // para_sofi.md §4: el rol viaja firmado en el JWT y requireAuth nunca lo
-  // relee de Mongo — sin esto, una sesión abierta conservaba el rol viejo
+  // relee de Mongo, sin esto, una sesión abierta conservaba el rol viejo
   // hasta que el token expirara (hasta jwtExpiresMinutes). Mismo arreglo que
   // deactivateUser: se cortan sus sesiones y el próximo login emite un JWT
-  // con el rol nuevo. Solo si el rol cambió — editar nombre/correo no afecta
+  // con el rol nuevo. Solo si el rol cambió: editar nombre/correo no afecta
   // nada de lo que el JWT lleva adentro.
   if (input.role !== user.role) {
     await deleteSessionsByUserId(userId);
@@ -141,7 +141,7 @@ export type DeactivateUserResult =
   | { ok: true }
   | { ok: false; status: number; message: string };
 
-// RF-47: baja lógica. No hay reactivación (D8 del plan — ningún RF la pide).
+// RF-47: baja lógica. No hay reactivación (D8 del plan: ningún RF la pide).
 export async function deactivateUser(userId: string): Promise<DeactivateUserResult> {
   const user = await findUserById(userId);
   if (!user) {

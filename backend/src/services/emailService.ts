@@ -19,20 +19,20 @@ function getTransporter(): Transporter | undefined {
 }
 
 // D6 del plan: sin SMTP_HOST configurado, el código se loguea a consola en
-// vez de fallar — nunca en silencio, para poder probar el flujo completo en
+// vez de fallar, nunca en silencio, para poder probar el flujo completo en
 // desarrollo sin credenciales SMTP reales. Con SMTP configurado (proveedor
 // externo, hoy Brevo) el código nunca se loguea.
 export async function sendOtpEmail(to: string, code: string): Promise<void> {
   const transport = getTransporter();
   if (!transport) {
-    console.warn(`[dev] SMTP no configurado — código OTP para ${to}: ${code}`);
+    console.warn(`[dev] SMTP no configurado, código OTP para ${to}: ${code}`);
     return;
   }
 
   await transport.sendMail({
     from: `TrazaDoc <${authConfig.smtp.from}>`,
     to,
-    subject: "TrazaDoc — Código de verificación",
+    subject: "TrazaDoc: Código de verificación",
     text:
       `Tu código de verificación es ${code}.\n\n` +
       `Vence en ${authConfig.otpTtlMinutes} minutos. ` +

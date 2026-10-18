@@ -81,7 +81,7 @@ describe("POST /auth/logout", () => {
     const token = signToken();
 
     // Antes del logout, la sesión existe; después, findSessionByJti ya no la
-    // encuentra — simula lo que pasa de verdad una vez que deleteSession la
+    // encuentra, simula lo que pasa de verdad una vez que deleteSession la
     // borró de Mongo.
     (findSessionByJti as jest.Mock)
       .mockResolvedValueOnce(activeSession)

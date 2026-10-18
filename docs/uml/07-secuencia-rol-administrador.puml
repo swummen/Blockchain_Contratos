@@ -88,6 +88,6 @@ BE -> GW : evaluate GetAllEvents()
 GW -> CC : Todos los eventos
 CC --> BE : Eventos
 BE -> BE : Ordenar por fecha; 200 más recientes
-BE --> FE : 200 [documento, acción, usuario, TxID, fecha, resultado]\n(mismo detalle que el Verificador — HU-020 CA-02)
+BE --> FE : 200 [documento, acción, usuario, TxID, fecha, resultado]\n(mismo detalle que el Verificador, HU-020 CA-02)
 FE --> Administrador : Tabla de trazabilidad
 @enduml

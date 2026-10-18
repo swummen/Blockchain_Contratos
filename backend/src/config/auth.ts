@@ -6,7 +6,7 @@ function parsePositiveInt(name: string, raw: string | undefined, fallback: numbe
   return value;
 }
 
-// Sin default a propósito: es un secreto, no un valor de configuración — un
+// Sin default a propósito: es un secreto, no un valor de configuración, un
 // default lo dejaría firmando JWTs con la misma clave conocida en cualquier
 // instalación que se olvide de setearla.
 function requireSecret(name: string): string {
@@ -37,11 +37,11 @@ export const authConfig = {
   // poder invalidarlo de verdad en el logout (T4). Un solo valor en minutos
   // (no un string tipo "60m") a propósito: authService.ts lo usa tanto para
   // el `expiresIn` del JWT como para el `expiresAt` del documento de sesión
-  // — de una sola fuente, para que nunca queden desincronizados.
+  //de una sola fuente, para que nunca queden desincronizados.
   jwtSecret: requireSecret("JWT_SECRET"),
   jwtExpiresMinutes: parsePositiveInt("JWT_EXPIRES_MINUTES", process.env.JWT_EXPIRES_MINUTES, 60),
   // RNF-07 (docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md):
-  // cierre automático de sesión tras 15 minutos de inactividad — un tope
+  // cierre automático de sesión tras 15 minutos de inactividad, un tope
   // aparte del expiry absoluto de arriba (jwtExpiresMinutes); el que se
   // cumpla primero cierra la sesión.
   sessionInactivityMinutes: parsePositiveInt(

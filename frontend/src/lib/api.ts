@@ -17,7 +17,7 @@ export async function getHealth(): Promise<HealthStatus> {
   return res.json()
 }
 
-// El backend siempre responde { message } en error — se propaga tal cual, ya
+// El backend siempre responde { message } en error, se propaga tal cual, ya
 // son mensajes pensados para mostrarse. Compartido por los helpers de abajo
 // (JSON y multipart) para no repetir el mismo parseo 4 veces.
 async function parseJsonResponse<T>(res: Response): Promise<T> {
@@ -48,14 +48,14 @@ async function sendAuthJson<T>(
       },
       body: JSON.stringify(body),
       // Sin esto, un servidor que acepta la conexión pero nunca responde
-      // deja la promesa colgada para siempre — el botón de submit (o el
+      // deja la promesa colgada para siempre, el botón de submit (o el
       // logout) quedaría deshabilitado sin salida. AbortSignal.timeout es
       // nativo, sin librería nueva.
       signal: AbortSignal.timeout(10_000),
     })
   } catch {
     // fetch() rechaza (sin llegar a res.ok) si el backend no responde, hay
-    // un problema de red o de CORS — el mensaje nativo del navegador viene
+    // un problema de red o de CORS, el mensaje nativo del navegador viene
     // en inglés ("Failed to fetch"), así que se normaliza acá.
     throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
   }
@@ -102,7 +102,7 @@ export interface UploadDocumentResult {
   documentId: string
 }
 
-// multipart/form-data, no JSON — no puede pasar por postAuthJson (fija
+// multipart/form-data, no JSON, no puede pasar por postAuthJson (fija
 // Content-Type: application/json). El campo se llama "document" porque así
 // lo espera `upload.single("document")` en backend/src/routes/documents.ts.
 export async function uploadDocument(
@@ -138,7 +138,7 @@ export interface DocumentLookup {
   status: "Pendiente" | "Verificado" | "Alterado"
 }
 
-// RF-25/26 (HU-010/011): consulta puntual por identificador exacto — 404 si
+// RF-25/26 (HU-010/011): consulta puntual por identificador exacto, 404 si
 // no existe (HU-010-CA-02). Es la fuente real de hash/status (el ledger es
 // la autoridad); `listDocuments` de abajo es solo para elegir cuál consultar.
 export async function getDocument(token: string, documentId: string): Promise<DocumentLookup> {
@@ -158,7 +158,7 @@ export interface DocumentSummary {
 }
 
 // Listado (Sprint 3 T5, ampliado en Sprint 4): para el Empleado, solo sus
-// documentos. El hash es la copia de Mongo — antes de verificar, la fuente
+// documentos. El hash es la copia de Mongo: antes de verificar, la fuente
 // real sigue siendo getDocument() (el ledger).
 export async function listDocuments(token: string): Promise<DocumentSummary[]> {
   return getAuthJson("/documents", token)
@@ -200,7 +200,7 @@ export interface DocumentsSummary {
 }
 
 // RF-41/42 (HU-017): totales reales por estado, solo Administrador. Contados
-// en Mongo con un aggregate — nunca limitados a los 100 de listDocuments.
+// en Mongo con un aggregate: nunca limitados a los 100 de listDocuments.
 export async function getDocumentsSummary(token: string): Promise<DocumentsSummary> {
   return getAuthJson("/documents/summary", token)
 }
@@ -257,7 +257,7 @@ export async function createUser(
 }
 
 // Si cambia el rol, el backend cierra las sesiones abiertas de ese usuario
-// (el rol viaja en el JWT) — tendrá que volver a iniciar sesión.
+// (el rol viaja en el JWT), tendrá que volver a iniciar sesión.
 export async function updateUser(
   token: string,
   userId: string,

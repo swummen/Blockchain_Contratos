@@ -1,4 +1,4 @@
-# Registro de sprints — TrazaDoc
+# Registro de sprints: TrazaDoc
 
 Plan y registro del desarrollo del MVP con **Prototipado Evolutivo** (OE3): objetivo,
 historias comprometidas, resultado, cumplimiento de la Definición de Terminado y lecciones
@@ -23,8 +23,8 @@ comprometidas aprobadas al cierre de cada sprint"**.
 | **Total** | | | **21 HU** | **102** | **21 de 21 (100 %)** | **0 de 21 registradas** |
 
 **Cómo leer el KPI.** La Definición de Terminado (SPEC §10.2) tiene 5 criterios. Los
-criterios técnicos — **2** (casos de prueba en PASS), **3** (RF/RNF actualizados) y
-**4** (desplegado y verificado en Docker Compose) — se cumplieron en todas las HU
+criterios técnicos (**2** (casos de prueba en PASS), **3** (RF/RNF actualizados) y
+**4** (desplegado y verificado en Docker Compose)) se cumplieron en todas las HU
 comprometidas: el **100 % en cada sprint, por encima de la meta del 80 %**. El KPI
 formal exige además **el criterio 5 (aceptación del director o la codirectora)**, que
 todavía no se ha registrado en ningún sprint, y el **criterio 1** (revisión por pares e
@@ -47,7 +47,7 @@ las consultas que los sprints anteriores dejaron a propósito para el final.
 
 ---
 
-## Sprint 0 — Infraestructura (`infra`)
+## Sprint 0: Infraestructura (`infra`)
 
 - **Objetivo:** entorno reproducible de una sola orden con la red Hyperledger Fabric,
   MongoDB, backend y frontend en contenedores, y retirar temprano el mayor riesgo del
@@ -72,7 +72,7 @@ las consultas que los sprints anteriores dejaron a propósito para el final.
   - Integrar trabajo paralelo exige no pisarlo: la página de estado se agregó como ruta
     aparte para no reemplazar el frontend de `Feat/Front`.
 
-## Sprint 1 — Identidad (`identity`)
+## Sprint 1: Identidad (`identity`)
 
 - **Objetivo:** acceso seguro con credenciales, segundo factor por correo, sesión y
   control por rol.
@@ -91,7 +91,7 @@ las consultas que los sprints anteriores dejaron a propósito para el final.
   - Mismo mensaje para todo fallo de login, y mismo tiempo de respuesta, para no revelar
     si un correo existe.
 
-## Sprint 2 — Documentos y ledger (`documents` + `ledger`)
+## Sprint 2: Documentos y ledger (`documents` + `ledger`)
 
 - **Objetivo:** primer chaincode real y primera escritura en la blockchain: el Empleado
   carga un PDF y su huella queda anclada.
@@ -109,7 +109,7 @@ las consultas que los sprints anteriores dejaron a propósito para el final.
   - El motivo real de un rechazo del chaincode viene en un campo distinto del mensaje
     del SDK: hay que leerlo ahí para dar mensajes útiles.
 
-## Sprint 3 — Verificación (`verification`)
+## Sprint 3: Verificación (`verification`)
 
 - **Objetivo:** que el Verificador compare un PDF contra la huella registrada y el
   resultado quede en la blockchain.
@@ -131,7 +131,7 @@ las consultas que los sprints anteriores dejaron a propósito para el final.
   - La revisión encontró que la pantalla mostraba la fecha de registro como si fuera la
     de la verificación.
 
-## Sprint 4 — Administración y consultas (`administration`)
+## Sprint 4: Administración y consultas (`administration`)
 
 - **Objetivo:** cerrar todas las consultas pendientes (documentos y trazabilidad para los
   3 roles), el panel del Administrador y la gestión de usuarios; conectar todas las

@@ -1,4 +1,4 @@
-# TrazaDoc — Verificación de integridad de contratos laborales con blockchain
+# TrazaDoc: Verificación de integridad de contratos laborales con blockchain
 
 TrazaDoc guarda la **huella digital (SHA‑256)** de cada contrato laboral en PDF en una
 blockchain permisionada (**Hyperledger Fabric**). Después, cualquier Verificador puede
@@ -8,14 +8,14 @@ identificador de transacción.
 
 **El PDF nunca se guarda**, ni en la blockchain ni en la base de datos: solo su huella.
 
-Trabajo de grado — Laura Sofia Diaz Suarez · Sofia Ortiz Daza, Universidad Católica de
+Trabajo de grado: Laura Sofia Diaz Suarez · Sofia Ortiz Daza, Universidad Católica de
 Colombia.
 
 ---
 
 ## 🚀 Cómo ponerlo a funcionar
 
-> **Guía completa paso a paso: [INSTALACION.md](INSTALACION.md)** — qué programas
+> **Guía completa paso a paso: [INSTALACION.md](INSTALACION.md)**, qué programas
 > instalar, cómo configurarlo, encenderlo, apagarlo y qué hacer si algo falla.
 
 **1. Instala los programas** (una sola vez, en PowerShell como administrador, y luego
@@ -34,7 +34,7 @@ winget install -e --id jqlang.jq
 cd /c/proyectos
 git clone https://github.com/swummen/Blockchain_Contratos.git
 cd Blockchain_Contratos
-cp docker/.env.example docker/.env     # completar el correo (Brevo) y SEED_EMAIL — ver INSTALACION.md §5
+cp docker/.env.example docker/.env     # completar el correo (Brevo) y SEED_EMAIL, ver INSTALACION.md §5
 ```
 
 **3. Enciende todo** (con Docker Desktop abierto):

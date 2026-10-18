@@ -13,7 +13,7 @@ Empleado --|> UsuarioBase
 Verificador --|> UsuarioBase
 Administrador --|> UsuarioBase
 
-rectangle "TrazaDoc — Verificación de integridad documental (blockchain)" {
+rectangle "TrazaDoc: Verificación de integridad documental (blockchain)" {
   usecase "Iniciar sesión\n(credenciales + código por correo)" as UC_Login
   usecase "Cerrar sesión" as UC_Logout
   usecase "Cambiar contraseña" as UC_ChangePwd

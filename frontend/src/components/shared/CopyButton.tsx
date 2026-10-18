@@ -11,7 +11,7 @@ export function CopyButton({ value }: { value: string }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Sin permiso de clipboard o navegador sin la API — el valor ya está
+      // Sin permiso de clipboard o navegador sin la API, el valor ya está
       // visible y seleccionable a mano, así que no hace falta un fallback.
     }
   }

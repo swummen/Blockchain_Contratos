@@ -6,7 +6,7 @@ import { CheckCircle2 } from "lucide-react"
 
 // RF-07 (HU-003 CA-01): cerrar sesión invalida el token y redirige al inicio
 // de sesión. Esta pantalla intermedia solo confirma al usuario que la
-// invalidación ya ocurrió, antes de mandarlo de vuelta a LoginPage — no
+// invalidación ya ocurrió, antes de mandarlo de vuelta a LoginPage: no
 // cambia el destino final que exige el requisito.
 const REDIRECT_MS = 2500
 

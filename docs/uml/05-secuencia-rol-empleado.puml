@@ -47,7 +47,7 @@ else archivo válido
             end
         else Fabric rechaza o no responde
             GW --> BE : Error
-            BE --> FE : 502 (no se guarda nada en MongoDB — HU-007 CA-02)
+            BE --> FE : 502 (no se guarda nada en MongoDB, HU-007 CA-02)
             FE --> Empleado : Mensaje de error
         end
     end

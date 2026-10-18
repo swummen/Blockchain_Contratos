@@ -6,7 +6,7 @@ export const VALID_ROLES: Role[] = ["Empleado", "Verificador", "Administrador"];
 export type UserStatus = "Activo" | "Inactivo";
 
 // _id es el mismo userId legible (p. ej. "U001") que ya usa el frontend
-// (frontend/src/types/domain.ts) — no un ObjectId — para no tener que
+// (frontend/src/types/domain.ts) (no un ObjectId) para no tener que
 // traducir entre dos formatos de id distintos al cablear T6.
 export interface UserDoc {
   _id: string;
@@ -17,7 +17,7 @@ export interface UserDoc {
   status: UserStatus;
   // RF-54: contador de intentos fallidos consecutivos de login y, si llegó
   // al tope, hasta cuándo queda bloqueada la cuenta. Ausentes en usuarios
-  // sembrados antes de este cambio — se tratan como "0 intentos, sin
+  // sembrados antes de este cambio: se tratan como "0 intentos, sin
   // bloqueo" (ver helpers de abajo), no hace falta migrar nada a mano.
   failedLoginAttempts?: number;
   lockedUntil?: Date;
@@ -36,7 +36,7 @@ export async function ensureIndexes(): Promise<void> {
 
 // Exportado (Sprint 4 T5, hallazgo de review): los servicios que construyen
 // el objeto a devolver en la respuesta HTTP necesitan la misma normalización
-// que ya se aplica acá adentro al escribir — si no, un correo con mayúsculas
+// que ya se aplica acá adentro al escribir, si no, un correo con mayúsculas
 // queda guardado en minúsculas pero la respuesta sigue mostrando lo que
 // escribió el admin, inconsistente con lo que de verdad persiste.
 export function normalizeEmail(email: string): string {
@@ -52,7 +52,7 @@ export async function findUserById(userId: string): Promise<UserDoc | null> {
 }
 
 // Listados de documentos y trazabilidad (Sprint 4, limitación de T7): el
-// ledger y `documents` solo guardan el userId ("U001") — esto lo traduce al
+// ledger y `documents` solo guardan el userId ("U001"), esto lo traduce al
 // nombre para mostrar, en una sola consulta por listado. Ids que no existen
 // como usuario (p. ej. "smoke-test-user" del smoke test) quedan fuera del
 // mapa; el caller decide qué mostrar en ese caso.
@@ -111,7 +111,7 @@ export async function resetFailedLogin(userId: string): Promise<void> {
   );
 }
 
-// RF-43/44 (Sprint 4 T5): sin límite ni paginación — mismo criterio que
+// RF-43/44 (Sprint 4 T5): sin límite ni paginación, mismo criterio que
 // aceptaría `listDocuments` si el volumen fuera chico, y acá lo es de verdad
 // (usuarios de un sistema interno, no documentos que se acumulan con cada
 // operación de negocio).
@@ -120,7 +120,7 @@ export async function listUsers(): Promise<UserDoc[]> {
 }
 
 // RF-45: alta real (a diferencia de `insertUserIfMissing`, que es solo para
-// el seed idempotente de Sprint 1 — acá un correo duplicado tiene que fallar
+// el seed idempotente de Sprint 1, acá un correo duplicado tiene que fallar
 // de verdad, no quedar silenciosamente ignorado).
 export async function insertUser(user: UserDoc): Promise<void> {
   await usersCollection().insertOne({ ...user, email: normalizeEmail(user.email) });
@@ -137,14 +137,14 @@ export async function updateUser(
   );
 }
 
-// RF-47: baja lógica — nunca borra el usuario ni su trazabilidad histórica
+// RF-47: baja lógica, nunca borra el usuario ni su trazabilidad histórica
 // (los documentos que ya registró siguen con su `responsibleUser` intacto).
 export async function deactivateUser(userId: string): Promise<void> {
   await usersCollection().updateOne({ _id: userId }, { $set: { status: "Inactivo" } });
 }
 
 // Forma pública del usuario (sin passwordHash), con las mismas claves que ya
-// usa frontend/src/types/domain.ts — la respuesta de /auth/verify-otp (T3)
+// usa frontend/src/types/domain.ts, la respuesta de /auth/verify-otp (T3)
 // no necesita traducir nada para que el frontend la consuma en T6.
 export interface PublicUser {
   userId: string;

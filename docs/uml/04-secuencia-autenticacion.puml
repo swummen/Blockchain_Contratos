@@ -17,7 +17,7 @@ alt cuenta bloqueada (lockedUntil vigente) (RF-054)
     FE --> Usuario : Mensaje de bloqueo (15 min)
 else usuario inexistente, contraseña incorrecta o cuenta Inactiva
     BE -> DB : failedLoginAttempts++ (al llegar a 5: lockedUntil = ahora + 15 min)
-    BE --> FE : 401 Credenciales inválidas\n(mismo mensaje en todos los casos — RF-002 CA-02)
+    BE --> FE : 401 Credenciales inválidas\n(mismo mensaje en todos los casos, RF-002 CA-02)
     FE --> Usuario : Mensaje de error (RNF-018)
 else credenciales válidas (bcrypt + sal, RNF-001)
     BE -> DB : failedLoginAttempts = 0
@@ -25,7 +25,7 @@ else credenciales válidas (bcrypt + sal, RNF-001)
     BE -> DB : otp_codes: hash del código, attempts = 0,\nexpiresAt = ahora + 5 min (índice TTL)
     BE -> Mail : sendOtpEmail(correo, código)
     Mail -> Brevo : SMTP + STARTTLS :587
-    Brevo --> Usuario : Correo "TrazaDoc — Código de verificación"
+    Brevo --> Usuario : Correo "TrazaDoc: Código de verificación"
     alt el proveedor rechaza el envío
         BE --> FE : 502 No se pudo enviar el código de verificación
     else enviado
@@ -52,7 +52,7 @@ else código correcto
     BE -> BE : Firmar JWT {sub, role, jti} (HS256)
     BE --> FE : 200 {token, user} (RF-005)
     FE -> FE : Guardar token en memoria (SessionContext)
-    opt primer ingreso sin política aceptada (RF-055 — PENDIENTE DE IMPLEMENTAR)
+    opt primer ingreso sin política aceptada (RF-055, PENDIENTE DE IMPLEMENTAR)
         FE --> Usuario : Mostrar política de tratamiento de datos
         Usuario -> FE : Acepta la política
         FE -> BE : POST /auth/accept-policy

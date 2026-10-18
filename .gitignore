@@ -42,7 +42,7 @@ node_modules/
 jspm_packages/
 
 # Go: generado por `go mod vendor` (network.sh/packageCC.sh lo corre solo al
-# empaquetar el chaincode, Sprint 2) — go.sum ya alcanza para reproducibilidad,
+# empaquetar el chaincode, Sprint 2): go.sum ya alcanza para reproducibilidad,
 # no hace falta versionar las dependencias vendorizadas.
 chaincode/vendor/
 

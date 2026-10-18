@@ -16,7 +16,7 @@ const ACTION_LABEL: Record<TraceEvent["action"], string> = {
   verificacion: "Verificación de integridad",
 }
 
-// Los eventos reales del ledger no traen eventId (el mock sí) — el txId ya
+// Los eventos reales del ledger no traen eventId (el mock sí): el txId ya
 // es único por evento (una transacción escribe un solo evento).
 type TableEvent = Omit<TraceEvent, "eventId"> & { userName?: string }
 
@@ -65,7 +65,7 @@ export function TraceabilityTable({ events, documentNames }: TraceabilityTablePr
                   <XCircle className="size-3" /> Alterado
                 </Badge>
               )}
-              {!event.result && <span className="text-xs text-muted-foreground">—</span>}
+              {!event.result && <span className="text-xs text-muted-foreground">N/A</span>}
             </TableCell>
           </TableRow>
         ))}

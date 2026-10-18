@@ -6,7 +6,7 @@ There are three actors involved in an Idemix flow: **user**, **issuer**, and **v
 * An issuer certifies a set of user’s attributes are issued in the form of a digital certificate, hereafter called «credential».
 * The user later generates a «[zero-knowledge proof](https://en.wikipedia.org/wiki/Zero-knowledge%5Fproof)» of possession of the credential and also selectively discloses only the attributes the user chooses to reveal. The proof, because it is zero-knowledge, reveals no additional information to the verifier, issuer, or anyone else.
 As an example, suppose «Alice» needs to prove to Bob (a store clerk) that she has a driver’s license issued to her by the DMV.
-In this scenario, Alice is the user, the DMV is the issuer, and Bob is the verifier. In order to prove to Bob that Alice has a driver’s license, she could show it to him. However, Bob would then be able to see Alice’s name, address, exact age, etc. — much more information than Bob needs to know.
+In this scenario, Alice is the user, the DMV is the issuer, and Bob is the verifier. In order to prove to Bob that Alice has a driver’s license, she could show it to him. However, Bob would then be able to see Alice’s name, address, exact age, etc.: much more information than Bob needs to know.
 Instead, Alice can use Idemix to generate a «zero-knowledge proof» for Bob, which only reveals that she has a valid driver’s license and nothing else.
 So from the proof:
 * Bob does not learn any additional information about Alice other than the fact that she has a valid license (anonymity).
@@ -69,7 +69,7 @@ The following four attributes are currently supported:
 > * Type: integer
 > * Revealed: always
 1. Enrollment ID attribute
-> * Usage: uniquely identify a user — same in all enrollment credentials that belong to the same user (will be used for auditing in the future releases)
+> * Usage: uniquely identify a user, same in all enrollment credentials that belong to the same user (will be used for auditing in the future releases)
 > * Type: BIG
 > * Revealed: never in the signature, only when generating an authentication token for Fabric CA
 1. Revocation Handle attribute

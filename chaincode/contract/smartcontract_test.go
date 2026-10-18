@@ -66,7 +66,7 @@ func TestRegisterDocument_Success(t *testing.T) {
 	require.Contains(t, string(eventValue), `"Action":"registro"`)
 
 	// D5: la clave compuesta del evento tiene que quedar armada con
-	// (documentID, txID) — es lo que un futuro GetStateByPartialCompositeKey
+	// (documentID, txID), es lo que un futuro GetStateByPartialCompositeKey
 	// por documentID (Sprint 3/4) va a necesitar para recuperar el historial.
 	objType, attrs := stub.CreateCompositeKeyArgsForCall(0)
 	require.Equal(t, "event", objType)
@@ -128,7 +128,7 @@ func TestRegisterDocument_PutStateFails(t *testing.T) {
 func TestRegisterDocument_PutEventStateFails(t *testing.T) {
 	c, stub, ctx := newContext()
 	// La primera llamada a PutState (el documento) tiene éxito; falla recién
-	// la segunda (el evento) — rama distinta a TestRegisterDocument_PutStateFails.
+	// la segunda (el evento), rama distinta a TestRegisterDocument_PutStateFails.
 	stub.PutStateReturnsOnCall(1, errors.New("disk full"))
 
 	_, err := c.RegisterDocument(ctx, "doc1", validHash, "U001")
@@ -224,7 +224,7 @@ func TestRecordVerification_Success_Confirmada(t *testing.T) {
 	require.Equal(t, 2, stub.PutStateCallCount())
 	docKey, docValue := stub.PutStateArgsForCall(0)
 	require.Equal(t, "doc1", docKey)
-	// El hash no cambia; solo el Status — RF-34: nada más lo puede tocar.
+	// El hash no cambia; solo el Status, RF-34: nada más lo puede tocar.
 	require.Contains(t, string(docValue), `"Sha256Hex":"`+validHash+`"`)
 	require.Contains(t, string(docValue), `"Status":"Verificado"`)
 
@@ -261,7 +261,7 @@ func TestRecordVerification_InvalidResult(t *testing.T) {
 	_, err := c.RecordVerification(ctx, "doc1", "quizas", "U003")
 
 	require.EqualError(t, err, `result must be "confirmada" or "comprometida", got "quizas"`)
-	// Falla antes de leer el documento — ni falta que hace.
+	// Falla antes de leer el documento: ni falta que hace.
 	require.Equal(t, 0, stub.GetStateCallCount())
 }
 
@@ -439,7 +439,7 @@ func TestGetAllEvents_Success(t *testing.T) {
 	require.Len(t, events, 2)
 	require.Equal(t, "doc1", events[0].DocumentID)
 	require.Equal(t, "doc2", events[1].DocumentID)
-	// Clave parcial SIN atributos — a diferencia de GetDocumentEvents, que la
+	// Clave parcial SIN atributos: a diferencia de GetDocumentEvents, que la
 	// pasa con [documentID].
 	objType, attrs := stub.GetStateByPartialCompositeKeyArgsForCall(0)
 	require.Equal(t, "event", objType)

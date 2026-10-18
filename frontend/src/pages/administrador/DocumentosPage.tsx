@@ -13,7 +13,7 @@ export default function DocumentosPage() {
     if (!token) return
     let cancelled = false
 
-    // RF-48/49 (HU-019): mismo listado que ve el Verificador — todos los
+    // RF-48/49 (HU-019): mismo listado que ve el Verificador, todos los
     // documentos (hasta 100), con la huella completa y el responsable.
     listDocuments(token)
       .then((docs) => {

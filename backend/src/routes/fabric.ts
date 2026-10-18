@@ -6,7 +6,7 @@ export const fabricRouter = Router();
 fabricRouter.get("/fabric/ping", async (_req, res) => {
   try {
     // GetMetadata es una query de sistema que expone cualquier chaincode de
-    // contractapi automáticamente (nombre del contrato, funciones) — no una
+    // contractapi automáticamente (nombre del contrato, funciones): no una
     // función de negocio del contrato en sí. Hasta Sprint 2 esto llamaba a
     // "GetAllAssets" del chaincode de ejemplo (asset-transfer-basic); el
     // chaincode real (`contracts`) no tiene ninguna función pública de

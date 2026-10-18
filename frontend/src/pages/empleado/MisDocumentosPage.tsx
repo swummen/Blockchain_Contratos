@@ -4,7 +4,7 @@ import { DocumentListItem } from "@/components/shared/DocumentListItem"
 import { listDocuments, type DocumentSummary } from "@/lib/api"
 
 // RF-18 (Sprint 4 T6): el empleado puede volver a ver y copiar el id de
-// cualquier documento suyo en cualquier momento — antes solo lo veía una vez,
+// cualquier documento suyo en cualquier momento, antes solo lo veía una vez,
 // en la pantalla de éxito de la carga (para_sofi.md §3, "el problema del ID").
 export default function MisDocumentosPage() {
   const { token } = useSession()
@@ -17,7 +17,7 @@ export default function MisDocumentosPage() {
     let cancelled = false
 
     // RF-18/19 (HU-008): el backend ya acota GET /documents a los del
-    // Empleado autenticado — no se filtra nada acá.
+    // Empleado autenticado, no se filtra nada acá.
     listDocuments(token)
       .then((docs) => {
         if (!cancelled) setDocuments(docs)

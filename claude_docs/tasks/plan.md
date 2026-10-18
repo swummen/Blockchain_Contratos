@@ -1,4 +1,4 @@
-# Plan de implementación: Sprint 0 — módulo `infra` (HU‑021)
+# Plan de implementación: Sprint 0, módulo `infra` (HU‑021)
 
 > Fuente de verdad: `claude_docs/SPEC.md` (**aprobado 2026‑09‑06**).
 > Plan **aprobado 2026‑09‑06**. Implementación aún **no iniciada**.
@@ -10,7 +10,7 @@ Entregar un **entorno reproducible de una sola orden** donde el MVP pueda ejecut
 validarse: red Hyperledger Fabric permisionada + MongoDB + esqueletos de `backend` y
 `frontend` en contenedores, todos en la misma red Docker. Al cierre del sprint,
 `docker/up.sh` levanta todos los componentes y el `backend` puede invocar un chaincode a
-través del Fabric Gateway — retirando temprano el riesgo de integración con Fabric, tal
+través del Fabric Gateway: retirando temprano el riesgo de integración con Fabric, tal
 como exige el enfoque de Prototipado Evolutivo (SPEC §10).
 
 No se implementa lógica de negocio: el chaincode real es Sprint 2, la autenticación real es
@@ -55,7 +55,7 @@ Cada tarea deja el sistema en un estado ejecutable y verificable por sí misma:
 - **T2** una transacción real se confirma en el canal (query devuelve datos).
 - **T3** MongoDB sano y alcanzable.
 - **T4** el `backend` responde y está conectado a Mongo.
-- **T5** el `backend` lee del ledger a través del Gateway — *slice de mayor riesgo, va temprano*.
+- **T5** el `backend` lee del ledger a través del Gateway: *slice de mayor riesgo, va temprano*.
 - **T6** el `frontend` muestra el estado del `backend` y no habla con nada más.
 - **T7** una sola orden reproduce todo.
 - **T8** HU‑021 CA‑01 y CA‑02 verificados y registrados para el PPS.
@@ -86,22 +86,22 @@ Ver `claude_docs/tasks/todo.md`. Índice:
 
 | # | Título | Alcance | Depende de |
 |---|---|---|---|
-| T1 | Levantar red Fabric + canal `contratoschannel` | M | — |
+| T1 | Levantar red Fabric + canal `contratoschannel` | M | N/A |
 | T2 | Desplegar chaincode de ejemplo como prueba de pipeline | S | T1 |
-| — | **Checkpoint: red Fabric operativa** | | |
-| T3 | Servicio MongoDB + red Docker de la app | S | — |
+| N/A | **Checkpoint: red Fabric operativa** | | |
+| T3 | Servicio MongoDB + red Docker de la app | S | N/A |
 | T4 | Esqueleto del `backend` (`/health` + conexión a Mongo) | M | T3 |
 | T5 | `backend` ↔ Fabric Gateway (`/fabric/ping`) | M | T1, T2, T4 |
 | T6 | `frontend` en contenedor + página de estado del sistema | M | T4 |
-| — | **Checkpoint: esqueleto de app conectado a Fabric + Mongo** | | |
+| N/A | **Checkpoint: esqueleto de app conectado a Fabric + Mongo** | | |
 | T7 | Orquestación de una sola orden (`up.sh` / `down.sh`) + documentación | M | T1‑T6 |
 | T8 | Verificación de HU‑021 (smoke test CA‑01 / CA‑02) | S | T7 |
-| — | **Checkpoint: HU‑021 terminada (DoD)** | | |
+| N/A | **Checkpoint: HU‑021 terminada (DoD)** | | |
 
-## Definición de Terminado (HU‑021) — SPEC §10.2
+## Definición de Terminado (HU‑021): SPEC §10.2
 
 1. Revisión por pares + merge a `main` (PR aprobado).
-2. Casos del PPS de HU‑021 (CA‑01, CA‑02) en PASS — cubierto por T8.
+2. Casos del PPS de HU‑021 (CA‑01, CA‑02) en PASS: cubierto por T8.
 3. SRS/trazabilidad: marcar RNF‑19, 20, 21, 22 como implementados; sin RF.
-4. Desplegado y verificado en entorno de prueba (Docker Compose) — cubierto por T7/T8.
+4. Desplegado y verificado en entorno de prueba (Docker Compose): cubierto por T7/T8.
 5. Aceptación registrada por dirección/codirección del proyecto.

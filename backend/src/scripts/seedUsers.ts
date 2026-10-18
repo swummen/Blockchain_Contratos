@@ -1,7 +1,7 @@
 // Siembra los usuarios de prueba de Sprint 1 (identity, T1): uno por rol, con
 // contraseña de desarrollo hasheada. Reemplaza a frontend/src/data/users.ts
 // como fuente real para el login hasta que HU-018 (Sprint 4) le dé al
-// Administrador el alta real de usuarios — ver claude_docs/tasks/plan-sprint1-identity.md
+// Administrador el alta real de usuarios: ver claude_docs/tasks/plan-sprint1-identity.md
 // (D9). Contraseña de desarrollo documentada en backend/README.md, nunca acá
 // como secreto real.
 //
@@ -19,10 +19,10 @@ const DEV_PASSWORD = "Contratos123!";
 
 // Un usuario por rol alcanzaba para probar el login de Sprint 1; Sprint 4
 // (T3) agrega un segundo Empleado (mismo usuario que ya tenía mockeado
-// frontend/src/data/users.ts como U002) — sin esto, el chequeo de "un
+// frontend/src/data/users.ts como U002), sin esto, el chequeo de "un
 // Empleado no puede ver la trazabilidad de otro" (RF-21-CA-02) no se podía
 // probar en vivo, solo con mocks. U004 (Verificador en el mock) sigue sin
-// sembrarse — no hace falta un segundo usuario de ese rol para nada que
+// sembrarse: no hace falta un segundo usuario de ese rol para nada que
 // el backend necesite probar hoy.
 const SEED_USERS: Array<Omit<UserDoc, "passwordHash">> = [
   {

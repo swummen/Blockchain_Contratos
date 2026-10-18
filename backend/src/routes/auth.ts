@@ -82,7 +82,7 @@ authRouter.post("/auth/change-password", requireAuth(), async (req, res) => {
   }
 
   // req.user.sub viene del JWT ya validado por requireAuth(), nunca de un id
-  // que mande el cliente en el body — así no se puede cambiar la contraseña
+  // que mande el cliente en el body, así no se puede cambiar la contraseña
   // de otro usuario pasando su id.
   const result = await changePassword(req.user!.sub, currentPassword, newPassword);
   if (!result.ok) {

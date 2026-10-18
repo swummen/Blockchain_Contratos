@@ -1,23 +1,23 @@
 ## Portada
 | Matriz de Arquitectura de Infraestructura |
 | --- |
-| TrazaDoc — MVP de verificación de integridad y trazabilidad documental en contratos laborales con blockchain permisionada (Hyperledger Fabric) |
+| TrazaDoc: MVP de verificación de integridad y trazabilidad documental en contratos laborales con blockchain permisionada (Hyperledger Fabric) |
 | NaN |
-| Objetivo específico: OE2 — Diseñar la arquitectura del sistema (UX/UI, software e infraestructura sobre Hyperledger Fabric desplegada en Docker). |
+| Objetivo específico: OE2, Diseñar la arquitectura del sistema (UX/UI, software e infraestructura sobre Hyperledger Fabric desplegada en Docker). |
 | KPI asociado: artefactos de diseño aprobados por el tutor (4 de 4 dominios). Este documento cubre el dominio de infraestructura. |
-| Autoras: Laura Sofia Diaz Suarez · Sofia Ortiz Daza — Universidad Católica de Colombia |
+| Autoras: Laura Sofia Diaz Suarez · Sofia Ortiz Daza, Universidad Católica de Colombia |
 | Versión: 1.0 · Fecha: 2026-10-15 · Entorno descrito: Docker local (Docker Desktop + Docker Compose) |
 | Fuente: configuración real del repositorio (docker/compose.app.yml, docker/network-up.sh, docker/deploy-cc.sh, test-network de fabric-samples 2.5.16) verificada con el stack en ejecución. |
 | NaN |
 | Hojas: |
-| 1. Componentes — cada nodo/servicio: tecnología, versión, función, puertos, persistencia, seguridad, dependencias y requisitos que cumple. |
-| 2. Red Fabric — topología blockchain: organizaciones, canal, consenso, políticas, chaincode. |
-| 3. Puertos — mapa de puertos expuestos en el host. |
-| 4. Configuración — variables de entorno y secretos. |
-| 5. Despliegue — procedimiento reproducible paso a paso. |
-| 6. Trazabilidad RNF — qué componente cumple cada requisito no funcional de infraestructura. |
-| 7. Observaciones — decisiones de diseño y diferencias entre lo documentado y lo implementado. |
-| 8. Aprobación — registro de revisión del tutor (KPI OE2). |
+| 1. Componentes: cada nodo/servicio: tecnología, versión, función, puertos, persistencia, seguridad, dependencias y requisitos que cumple. |
+| 2. Red Fabric: topología blockchain: organizaciones, canal, consenso, políticas, chaincode. |
+| 3. Puertos: mapa de puertos expuestos en el host. |
+| 4. Configuración: variables de entorno y secretos. |
+| 5. Despliegue: procedimiento reproducible paso a paso. |
+| 6. Trazabilidad RNF: qué componente cumple cada requisito no funcional de infraestructura. |
+| 7. Observaciones: decisiones de diseño y diferencias entre lo documentado y lo implementado. |
+| 8. Aprobación: registro de revisión del tutor (KPI OE2). |
 
 ## 1. Componentes
 | 1. Componentes de infraestructura | Unnamed: 1 | Unnamed: 2 | Unnamed: 3 | Unnamed: 4 | Unnamed: 5 | Unnamed: 6 | Unnamed: 7 | Unnamed: 8 | Unnamed: 9 | Unnamed: 10 | Unnamed: 11 | Unnamed: 12 |
@@ -26,17 +26,17 @@
 | ID | Capa | Componente | Tecnología / imagen | Versión | Función en el sistema | Contenedor | Puertos (host → contenedor) | Persistencia | Seguridad | Depende de | Requisitos | Lo levanta |
 | INF-01 | Presentación | Frontend web | React 19 + Vite + TypeScript, servido por nginx (nginx:alpine) | build de producción | SPA de los 3 roles (Empleado, Verificador, Administrador). Solo conoce la URL del backend (VITE\_API\_URL). | frontend | 127.0.0.1:5173 → 80 | Ninguna (estático) | No conoce ni contacta Fabric ni MongoDB. Publicado solo en localhost. | INF-02 | RNF-19, RNF-20, RNF-25 | docker/compose.app.yml (up.sh paso 3) |
 | INF-02 | Aplicación / integración | Backend API | Node.js + Express + TypeScript + Fabric Gateway SDK (node:20-alpine) | Node 20 LTS | API REST: autenticación (JWT + OTP), documentos, verificación, trazabilidad, usuarios. Única puerta hacia Fabric y MongoDB. | backend | 127.0.0.1:8080 → 8080 | Ninguna propia. Monta en solo lectura el material criptográfico de Org1 en /crypto. | Usuario no-root; JWT + sesión revocable; RBAC; CORS acotado al frontend; TLS (grpcs) hacia el peer; identidad Admin de Org1 de solo lectura. | INF-03 (healthy), INF-05, INF-13 | RNF-01, 02, 03, 07, 19, 20 | docker/compose.app.yml (up.sh paso 3) |
-| INF-03 | Persistencia | Base de datos off-chain | MongoDB (mongo) | 7.0.41 | Metadatos de documentos (nombre, responsable, fecha, copia de hash y estado), usuarios, sesiones y códigos OTP. Nunca el PDF. | mongo | 127.0.0.1:27017 → 27017 | Volumen contratos\_mongo\_data (/data/db) | Autenticación root; publicado solo en localhost; healthcheck cada 10 s; índices TTL para OTP y sesiones. | — | RNF-04, RNF-13 | docker/compose.app.yml (up.sh paso 3) |
+| INF-03 | Persistencia | Base de datos off-chain | MongoDB (mongo) | 7.0.41 | Metadatos de documentos (nombre, responsable, fecha, copia de hash y estado), usuarios, sesiones y códigos OTP. Nunca el PDF. | mongo | 127.0.0.1:27017 → 27017 | Volumen contratos\_mongo\_data (/data/db) | Autenticación root; publicado solo en localhost; healthcheck cada 10 s; índices TTL para OTP y sesiones. | NaN | RNF-04, RNF-13 | docker/compose.app.yml (up.sh paso 3) |
 | INF-04 | Blockchain | Orderer | hyperledger/fabric-orderer | 2.5.16 | Ordena las transacciones endosadas y corta los bloques del canal (consenso Raft, 1 nodo). | orderer.example.com | 7050 (gRPC), 7053 (admin del canal), 9443 (operaciones) | Volumen compose\_orderer.example.com | TLS mutuo; identidad emitida por INF-09. | INF-09 | RNF-05, RNF-27 | docker/network-up.sh (up.sh paso 1) |
 | INF-05 | Blockchain | Peer Org1 | hyperledger/fabric-peer | 2.5.16 | Mantiene una copia del ledger y del world state (LevelDB), ejecuta el chaincode y endosa. Es el endpoint del Gateway que usa el backend. | peer0.org1.example.com | 7051 (gRPC), 9444 (operaciones) | Volumen compose\_peer0.org1.example.com | TLS; identidad emitida por INF-07. | INF-04, INF-07 | RNF-05, 20, 26, 27 | docker/network-up.sh (up.sh paso 1) |
 | INF-06 | Blockchain | Peer Org2 | hyperledger/fabric-peer | 2.5.16 | Segunda copia del ledger; ejecuta y endosa el chaincode (requerido por la política MAJORITY). | peer0.org2.example.com | 9051 (gRPC), 9445 (operaciones) | Volumen compose\_peer0.org2.example.com | TLS; identidad emitida por INF-08. | INF-04, INF-08 | RNF-05, RNF-27 | docker/network-up.sh (up.sh paso 1) |
-| INF-07 | Blockchain / identidad | CA Org1 | hyperledger/fabric-ca | 1.5.22 | Emite las identidades X.509 de Org1 (peer, Admin que usa el backend). | ca\_org1 | 7054, 17054 (operaciones) | Material en docker/fabric-samples/test-network/organizations (se regenera en cada ciclo down/up) | Red permisionada: solo entran identidades emitidas por una CA del canal. | — | RNF-03, RNF-30 | docker/network-up.sh (up.sh paso 1) |
-| INF-08 | Blockchain / identidad | CA Org2 | hyperledger/fabric-ca | 1.5.22 | Emite las identidades X.509 de Org2. | ca\_org2 | 8054, 18054 (operaciones) | Igual que INF-07 | Igual que INF-07 | — | RNF-03, RNF-30 | docker/network-up.sh (up.sh paso 1) |
-| INF-09 | Blockchain / identidad | CA Orderer | hyperledger/fabric-ca | 1.5.22 | Emite las identidades X.509 de la organización del orderer. | ca\_orderer | 9054, 19054 (operaciones) | Igual que INF-07 | Igual que INF-07 | — | RNF-30 | docker/network-up.sh (up.sh paso 1) |
-| INF-10 | Blockchain / lógica | Chaincode contracts | Go 1.22+ con fabric-contract-api-go v2.2.0 | 1.0 (secuencia 1) | Registra huellas SHA-256 y eventos; consulta documentos y trazabilidad (5 funciones). Lo lanza cada peer en su propio contenedor. | dev-peer0.org1…contracts\_1.0, dev-peer0.org2…contracts\_1.0 | — (solo lo invoca el peer) | World state del canal (en el ledger de cada peer) | Nunca recibe el PDF; timestamps deterministas de la transacción; la identidad del usuario la valida el backend. | INF-05, INF-06, INF-11 | RNF-04, 05, 11, 26, 27 | docker/deploy-cc.sh (up.sh paso 2) |
-| INF-11 | Blockchain (lógico) | Canal contratoschannel | Canal de aplicación de Fabric | — | Ledger compartido entre Org1 y Org2 donde vive el chaincode contracts. | — | — | Ledger en INF-05 e INF-06 | Políticas de lectura/escritura/endoso por organización (ver hoja 2). | INF-04, INF-05, INF-06 | RNF-05, RNF-27 | docker/network-up.sh (up.sh paso 1) |
-| INF-12 | Red | Red Docker fabric\_test | Red bridge de Docker | — | Une todos los contenedores; resuelven por nombre DNS (p. ej. peer0.org1.example.com, mongo). | — | — | — | Tráfico interno entre contenedores; el backend nunca usa localhost para llegar al peer. | — | RNF-19, RNF-21 | docker/network-up.sh (la crea); compose.app.yml la usa como externa |
-| INF-13 | Servicio externo | Correo transaccional | Brevo SMTP relay (smtp-relay.sendinblue.com) | Plan gratuito (300 correos/día) | Envía el código de verificación (OTP) del segundo factor al correo del usuario. | — (servicio en la nube) | Saliente 587 (STARTTLS) | — | Clave SMTP por persona en docker/.env (no versionado); remitente verificado contratosblockchain@gmail.com. | — | RNF-02 | Variables SMTP\_\* en docker/.env |
+| INF-07 | Blockchain / identidad | CA Org1 | hyperledger/fabric-ca | 1.5.22 | Emite las identidades X.509 de Org1 (peer, Admin que usa el backend). | ca\_org1 | 7054, 17054 (operaciones) | Material en docker/fabric-samples/test-network/organizations (se regenera en cada ciclo down/up) | Red permisionada: solo entran identidades emitidas por una CA del canal. | NaN | RNF-03, RNF-30 | docker/network-up.sh (up.sh paso 1) |
+| INF-08 | Blockchain / identidad | CA Org2 | hyperledger/fabric-ca | 1.5.22 | Emite las identidades X.509 de Org2. | ca\_org2 | 8054, 18054 (operaciones) | Igual que INF-07 | Igual que INF-07 | NaN | RNF-03, RNF-30 | docker/network-up.sh (up.sh paso 1) |
+| INF-09 | Blockchain / identidad | CA Orderer | hyperledger/fabric-ca | 1.5.22 | Emite las identidades X.509 de la organización del orderer. | ca\_orderer | 9054, 19054 (operaciones) | Igual que INF-07 | Igual que INF-07 | NaN | RNF-30 | docker/network-up.sh (up.sh paso 1) |
+| INF-10 | Blockchain / lógica | Chaincode contracts | Go 1.22+ con fabric-contract-api-go v2.2.0 | 1.0 (secuencia 1) | Registra huellas SHA-256 y eventos; consulta documentos y trazabilidad (5 funciones). Lo lanza cada peer en su propio contenedor. | dev-peer0.org1…contracts\_1.0, dev-peer0.org2…contracts\_1.0 | : (solo lo invoca el peer) | World state del canal (en el ledger de cada peer) | Nunca recibe el PDF; timestamps deterministas de la transacción; la identidad del usuario la valida el backend. | INF-05, INF-06, INF-11 | RNF-04, 05, 11, 26, 27 | docker/deploy-cc.sh (up.sh paso 2) |
+| INF-11 | Blockchain (lógico) | Canal contratoschannel | Canal de aplicación de Fabric | NaN | Ledger compartido entre Org1 y Org2 donde vive el chaincode contracts. | NaN | NaN | Ledger en INF-05 e INF-06 | Políticas de lectura/escritura/endoso por organización (ver hoja 2). | INF-04, INF-05, INF-06 | RNF-05, RNF-27 | docker/network-up.sh (up.sh paso 1) |
+| INF-12 | Red | Red Docker fabric\_test | Red bridge de Docker | NaN | Une todos los contenedores; resuelven por nombre DNS (p. ej. peer0.org1.example.com, mongo). | NaN | NaN | NaN | Tráfico interno entre contenedores; el backend nunca usa localhost para llegar al peer. | NaN | RNF-19, RNF-21 | docker/network-up.sh (la crea); compose.app.yml la usa como externa |
+| INF-13 | Servicio externo | Correo transaccional | Brevo SMTP relay (smtp-relay.sendinblue.com) | Plan gratuito (300 correos/día) | Envía el código de verificación (OTP) del segundo factor al correo del usuario. | : (servicio en la nube) | Saliente 587 (STARTTLS) | NaN | Clave SMTP por persona en docker/.env (no versionado); remitente verificado contratosblockchain@gmail.com. | NaN | RNF-02 | Variables SMTP\_\* en docker/.env |
 
 ## 2. Red Fabric
 | 2. Topología de la red Hyperledger Fabric | Unnamed: 1 | Unnamed: 2 |
@@ -104,7 +104,7 @@
 | NaN | NaN | NaN | NaN |
 | Paso | Comando (desde la raíz del repo, en Git Bash) | Qué hace | Verificación |
 | 0 | Requisitos: Docker Desktop, Git Bash o WSL2, Go 1.22+, jq, Node.js 20 | Herramientas del host. La primera vez se descargan ~2-3 GB de imágenes de Fabric. | docker ps responde |
-| 1 | cp docker/.env.example docker/.env · cp backend/.env.example backend/.env | Configuración local (no versionada). Completar SMTP\_\* y SEED\_EMAIL. | — |
+| 1 | cp docker/.env.example docker/.env · cp backend/.env.example backend/.env | Configuración local (no versionada). Completar SMTP\_\* y SEED\_EMAIL. | NaN |
 | 2 | bash docker/up.sh | Orquesta los pasos 2a-2c en una sola orden. | Mensaje 'Todo arriba' |
 | 2a | (dentro de up.sh) docker/network-up.sh | Descarga fabric-samples con versión fijada, levanta orderer + 2 peers + 3 CA y crea/une el canal contratoschannel con LevelDB. | 6 contenedores Fabric en Up |
 | 2b | (dentro de up.sh) docker/deploy-cc.sh | Empaqueta, instala, aprueba y confirma el chaincode contracts; prueba un registro y el rechazo de un duplicado. | 'OK: el documento duplicado fue rechazado' |
@@ -134,12 +134,12 @@
 | --- | --- | --- | --- | --- |
 | NaN | NaN | NaN | NaN | NaN |
 | ID | Tema | Documentado | Implementado | Impacto / acción sugerida |
-| OBS-01 | Política de endoso | Plan de Sprint 0 (D2) y Sprint 2 (D7): OR('Org1MSP.peer','Org2MSP.peer') — basta una organización. | Política por defecto del canal: MAJORITY Endorsement → con 2 organizaciones firman AMBAS. | Funciona (el Gateway pide las dos firmas). Decidir: corregir la documentación a MAJORITY, o desplegar el chaincode con --signature-policy OR(...) si se quiere que baste una. |
+| OBS-01 | Política de endoso | Plan de Sprint 0 (D2) y Sprint 2 (D7): OR('Org1MSP.peer','Org2MSP.peer'), basta una organización. | Política por defecto del canal: MAJORITY Endorsement → con 2 organizaciones firman AMBAS. | Funciona (el Gateway pide las dos firmas). Decidir: corregir la documentación a MAJORITY, o desplegar el chaincode con --signature-policy OR(...) si se quiere que baste una. |
 | OBS-02 | Base de estado | OBJETIVO 3 menciona CouchDB en el script de red. | LevelDB (goleveldb). | Decisión D3 de Sprint 0: no se usan consultas enriquecidas. Anotarlo en el registro de cambios respecto al diseño. |
 | OBS-03 | Topología en el benchmarking | benchmarking\_mvp\_gcp: 'Red local: 1 org, 1 peer, 1 orderer, 1 CA'. | 2 organizaciones, 2 peers, 1 orderer, 3 CA. | Actualizar el cuadro de benchmarking o explicar el cambio (D1 de Sprint 0). |
-| OBS-04 | Exposición de puertos de Fabric | — | Los puertos de la red Fabric se publican en 0.0.0.0 (todas las interfaces); los de la aplicación solo en 127.0.0.1. | Aceptable en local. Para Azure, restringir con reglas de red (NSG) o publicar solo en localhost. |
+| OBS-04 | Exposición de puertos de Fabric | NaN | Los puertos de la red Fabric se publican en 0.0.0.0 (todas las interfaces); los de la aplicación solo en 127.0.0.1. | Aceptable en local. Para Azure, restringir con reglas de red (NSG) o publicar solo en localhost. |
 | OBS-05 | Entorno de despliegue | Trabajo de grado: Docker local + VM de Azure (Azure Student) para pruebas. | Solo Docker local. | Pendiente: despliegue en Azure (criterio 4 de la Definición de Terminado). Las mediciones de rendimiento S11/S13 son en Docker local. |
-| OBS-06 | Material criptográfico | — | Se regenera en cada ciclo down/up; no hay respaldo de identidades. | Correcto para el MVP (entorno desechable). En producción se requeriría gestión de identidades persistente. |
+| OBS-06 | Material criptográfico | NaN | Se regenera en cada ciclo down/up; no hay respaldo de identidades. | Correcto para el MVP (entorno desechable). En producción se requeriría gestión de identidades persistente. |
 | OBS-07 | Proveedor de correo | SRS: OTP por correo corporativo. | Brevo con remitente Gmail verificado, por indicación del tutor. | Puede caer en spam sin dominio propio + DKIM; aceptable para el MVP. |
 
 ## 8. Aprobación

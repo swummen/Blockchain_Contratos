@@ -310,7 +310,7 @@ export default function UsuariosPage() {
                 return (
                   <TableRow key={u.userId}>
                     {/* Los usuarios creados desde acá tienen un UUID como id
-                        (no "U00N" como los del seed) — se recorta a la vista. */}
+                        (no "U00N" como los del seed), se recorta a la vista. */}
                     <TableCell
                       className="max-w-28 truncate font-mono text-xs font-medium"
                       title={u.userId}

@@ -1446,8 +1446,8 @@ electrónica. Diario Oficial n.º 48.622. Bogotá: Función Pública, 22 de novi
 2012. [en línea]. Disponible en:
 https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=50550
 [10] INTERNATIONAL ORGANIZATION FOR STANDARDIZATION. ISO/IEC
-27001:2022 - Information security, cybersecurity and privacy protection —
-Information security management systems — Requirements. Ginebra: ISO, octubre
+27001:2022 - Information security, cybersecurity and privacy protection (
+Information security management systems) Requirements. Ginebra: ISO, octubre
 2022.
 [11] ZHENG, Zibin, et al. An overview on smart contracts: challenges, advances and
 
@@ -1500,7 +1500,7 @@ Colombia, 2022.
 tecnología blockchain para la Universidad Católica de Córdoba. Trabajo final de
 grado para optar al título de Ingeniero en Sistemas. Córdoba: Universidad Católica
 de Córdoba, Facultad de Ingeniería, 2022.
-[25] HYPERLEDGER FOUNDATION. A Blockchain Platform for the Enterprise —
+[25] HYPERLEDGER FOUNDATION. A Blockchain Platform for the Enterprise: 
 Hyperledger Fabric Docs main documentation. 2023. [en línea]. Disponible en:
 https://hyperledger-fabric.readthedocs.io/
 [26] REHAN, Muhammad, et al. Supply chain management using an industrial

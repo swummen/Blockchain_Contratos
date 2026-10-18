@@ -1,4 +1,4 @@
-# Guía de instalación y despliegue — TrazaDoc
+# Guía de instalación y despliegue: TrazaDoc
 
 Esta guía lleva un computador **desde cero** hasta tener TrazaDoc funcionando: qué
 programas instalar, cómo descargar el proyecto, cómo configurarlo, cómo encenderlo,
@@ -53,7 +53,7 @@ verificación (por Brevo).
 | Memoria RAM | 8 GB | 16 GB |
 | Espacio libre en disco | 20 GB | 30 GB |
 | Procesador | Con **virtualización activada** (casi todos los actuales) | 4 núcleos o más |
-| Internet | Necesario la **primera vez** (se descargan ~3‑4 GB) | — |
+| Internet | Necesario la **primera vez** (se descargan ~3‑4 GB) | N/A |
 
 > **¿Cómo sé si la virtualización está activada?** Abre el Administrador de tareas →
 > pestaña **Rendimiento** → **CPU**. Debe decir *Virtualización: Habilitado*. Si dice
@@ -72,9 +72,9 @@ verificación (por Brevo).
 | **Go** | Empaqueta el contrato inteligente (chaincode) al instalarlo en la red | 1.22 o superior | Sí |
 | **jq** | Lo usan los scripts de Hyperledger Fabric | 1.6 o superior | Sí |
 | **Node.js** | Solo para desarrollar, correr pruebas y medir la latencia | 20 LTS o superior | No (opcional) |
-| **Visual Studio Code** | Editor para ver y modificar el código | — | No (opcional) |
+| **Visual Studio Code** | Editor para ver y modificar el código | N/A | No (opcional) |
 
-### Opción A — instalar todo con un solo comando (recomendada)
+### Opción A: instalar todo con un solo comando (recomendada)
 
 1. Abre el menú Inicio, escribe **PowerShell**, clic derecho → **Ejecutar como
    administrador**.
@@ -91,7 +91,7 @@ verificación (por Brevo).
    (La última línea es opcional: Node.js.)
 3. **Reinicia el computador** cuando termine. Docker Desktop lo necesita.
 
-### Opción B — instalar uno por uno desde sus páginas
+### Opción B: instalar uno por uno desde sus páginas
 
 | Programa | Descarga | Notas al instalar |
 |---|---|---|
@@ -292,6 +292,7 @@ Otras comprobaciones rápidas (en el navegador):
 | Errores raros al ejecutar desde PowerShell o CMD | Los scripts son de Bash | Usa **Git Bash**. |
 | `$'\r': command not found` | El archivo se guardó con finales de línea de Windows | `git checkout -- docker/` para restaurar los scripts (el repo los fuerza a formato Linux). |
 | `port is already allocated` / puerto ocupado | Otro programa usa el puerto (5173, 8080, 27017, 7050‑9054) | Cierra ese programa, o cambia `FRONTEND_PORT` / `BACKEND_PORT` / `MONGO_PORT` en `docker/.env`. |
+| `ports are not available ... bind: Intento de acceso a un socket no permitido` (por ejemplo con el puerto 19054), normalmente después de reiniciar el computador | Windows reservó un rango de puertos para Hyper-V/WSL que incluye uno de Fabric (se ve con `netsh interface ipv4 show excludedportrange protocol=tcp`) | Abre **PowerShell como administrador** y ejecuta `net stop winnat` y luego `net start winnat`. Después, en Git Bash: `bash docker/start.sh`. |
 | El código de verificación **no llega** | Spam, datos SMTP incorrectos, o `SMTP_HOST` vacío | Revisa spam. Revisa `docker/.env` (sección 5.1). El código siempre puede verse con `docker logs backend 2>&1 \| grep -i otp` cuando SMTP está vacío; si está configurado, el error real aparece en `docker logs backend`. |
 | Al entrar: *"No se pudo enviar el código de verificación"* | Clave SMTP mal copiada o vencida (vence en 1 año **o a los 90 días sin uso**) | Generar una clave nueva en Brevo y ponerla en `docker/.env`; luego `bash docker/start.sh`. |
 | Cambié `docker/.env` y no se nota | Los contenedores leen `.env` al crearse | `docker compose --env-file docker/.env -f docker/compose.app.yml up -d backend` (o `bash docker/down.sh && bash docker/up.sh`). |

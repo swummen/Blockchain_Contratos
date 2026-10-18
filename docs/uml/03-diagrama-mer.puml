@@ -42,7 +42,7 @@ package "MongoDB (off-chain)" {
   }
 }
 
-package "Hyperledger Fabric — world state (on-chain)" {
+package "Hyperledger Fabric: world state (on-chain)" {
   entity "Document" as LDoc {
     * DocumentID : string <<clave>>
     --

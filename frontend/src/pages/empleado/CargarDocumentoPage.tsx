@@ -43,7 +43,7 @@ export default function CargarDocumentoPage() {
     } catch (err) {
       // 401 (sesión vencida) llega con el mismo mensaje ya pensado para
       // mostrarse ("Sesión inválida o vencida.") que cualquier otro rechazo
-      // del backend — no amerita un interceptor global todavía por un único
+      // del backend, no amerita un interceptor global todavía por un único
       // caso, a diferencia de lo que sí necesitó /auth en Sprint 1.
       setError(err instanceof Error ? err.message : "No se pudo registrar el documento.")
     } finally {

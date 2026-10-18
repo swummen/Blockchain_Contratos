@@ -1,29 +1,29 @@
-# TODO — Sprint 4 · módulo `administration` + consultas restantes · HU‑008, 009, 015…020
+# TODO: Sprint 4 · módulo `administration` + consultas restantes · HU‑008, 009, 015…020
 
 Plan: `claude_docs/tasks/plan-sprint4-administration.md` (**aprobado 2026‑10‑08**).
 Fuente de verdad: `claude_docs/SPEC.md`.
-Estado: **T1-T10 completos. Sprint 4 cerrado (2026‑10‑14) — flujo de los 3 roles
+Estado: **T1-T10 completos. Sprint 4 cerrado (2026‑10‑14): flujo de los 3 roles
 confirmado por Sofia en navegador; documentación y SPEC al día. Solo falta la aceptación
 de dirección/codirección (DoD 5) y el commit/PR.**
-No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
+No hacer `git commit` automático: solo dejar el mensaje redactado (norma del equipo).
 
 ---
 
-## Fase 1 — Chaincode
+## Fase 1 (Chaincode
 
-### T1: Chaincode — `GetDocumentEvents` + `GetAllEvents` + tests unitarios
+### T1: Chaincode) `GetDocumentEvents` + `GetAllEvents` + tests unitarios
 
 **Descripción:** Las dos funciones de lectura de eventos que ningún sprint anterior
-construyó (D1/D2 del plan). Sin red todavía — solo compila y sus tests pasan.
+construyó (D1/D2 del plan). Sin red todavía: solo compila y sus tests pasan.
 
 **Criterios de aceptación:**
-- [x] `GetDocumentEvents(ctx, documentID) ([]*Event, error)` — `evaluateTransaction`,
+- [x] `GetDocumentEvents(ctx, documentID) ([]*Event, error)`: `evaluateTransaction`,
   `GetStateByPartialCompositeKey("event", []string{documentID})`, deserializa cada
   resultado del iterador a `Event`, cierra el iterador. Lista vacía (no error) si el
-  documento no tiene eventos o no existe — la validación de "documento existe" la hace
+  documento no tiene eventos o no existe: la validación de "documento existe" la hace
   el backend con `GetDocument` antes de llamar a esto (no duplicar esa lógica acá).
-- [x] `GetAllEvents(ctx) ([]*Event, error)` — mismo mecanismo, clave parcial sin
-  atributos (`GetStateByPartialCompositeKey("event", []string{})`) — todos los eventos
+- [x] `GetAllEvents(ctx) ([]*Event, error)` (mismo mecanismo, clave parcial sin
+  atributos (`GetStateByPartialCompositeKey("event", []string{})`)) todos los eventos
   de todos los documentos. Sin orden particular garantizado (D2: el orden cronológico se
   resuelve en el backend).
 - [x] Ambas cierran el `StateQueryIterator` siempre (con `defer`), incluso si el
@@ -32,7 +32,7 @@ construyó (D1/D2 del plan). Sin red todavía — solo compila y sus tests pasan
 **Verificación:**
 - [x] Build: `go build ./...`, `go vet ./...` sin errores; `gofmt -l contract/*.go
   main.go` sin salida.
-- [x] Tests: 34/34 (26 ya existentes + 8 nuevos) — éxito con 2 eventos y con 0 eventos
+- [x] Tests: 34/34 (26 ya existentes + 8 nuevos), éxito con 2 eventos y con 0 eventos
   para `GetDocumentEvents`, `documentID` vacío, fallo de la query, fallo de
   `iterator.Next()` a mitad de camino (confirma `Close()` llamado igual), fallo de
   unmarshal; éxito con eventos de 2 documentos distintos para `GetAllEvents` (confirma
@@ -41,10 +41,10 @@ construyó (D1/D2 del plan). Sin red todavía — solo compila y sus tests pasan
   Sprint 2, nunca se había usado activamente en un test).
 - [x] Ronda de `code-reviewer` (verdict: **REQUEST CHANGES** → aplicado, 1 Required):
   confirmó de forma independiente (no solo por los tests) que ambos `return nil, err`
-  dentro del loop descartan lo ya acumulado — nunca se devuelve una lista parcial — y
+  dentro del loop descartan lo ya acumulado (nunca se devuelve una lista parcial) y
   que `defer iterator.Close()` corre en los dos casos de error. Encontró que
-  `chaincode/README.md` seguía diciendo "cuando exista esa consulta (todavía no existe —
-  Sprint 4)" — justo lo que esta tarea acababa de construir — y que no documentaba el
+  `chaincode/README.md` seguía diciendo "cuando exista esa consulta (todavía no existe (
+  Sprint 4)") justo lo que esta tarea acababa de construir: y que no documentaba el
   caso `GetAllEvents` (clave vacía) en absoluto. Corregido: la tabla y una nota nueva
   explican las dos funciones, por qué `[]string{""}` no es lo mismo que `[]string{}`
   (un typo da `[]` silencioso, no "todos"), y que ninguna de las dos verifica que el
@@ -64,19 +64,19 @@ construyó (D1/D2 del plan). Sin red todavía — solo compila y sus tests pasan
 ### T2: Deploy del chaincode actualizado
 
 **Descripción:** Subir de versión el chaincode ya desplegado y probar
-`GetDocumentEvents`/`GetAllEvents` contra la red real — mismo patrón que T2 de Sprint 3.
+`GetDocumentEvents`/`GetAllEvents` contra la red real, mismo patrón que T2 de Sprint 3.
 
 **Criterios de aceptación:**
 - [x] Upgrade manual (`./network.sh deployCC -c contratoschannel -ccn contracts -ccp
   ../../../chaincode -ccl go -ccv 1.1`, bypaseando el guard de idempotencia de
-  `deploy-cc.sh` — no detecta cambios de código, mismo criterio ya documentado en
+  `deploy-cc.sh`: no detecta cambios de código, mismo criterio ya documentado en
   Sprint 2/3). Confirmado `querycommitted` en ambos orgs: `Version: 1.1, Sequence: 2`.
 
 **Verificación:**
 - [x] Manual contra la red real: `RegisterDocument` + `RecordVerification` reales sobre
   un documento nuevo → `GetDocumentEvents` devuelve los 2 eventos reales (registro +
   verificación, con `Result:"confirmada"` en el segundo) con sus `TxID` reales, en el
-  orden en que se escribieron. `GetAllEvents` (probado con cero argumentos — la forma
+  orden en que se escribieron. `GetAllEvents` (probado con cero argumentos: la forma
   exacta que va a usar `queryChaincode("GetAllEvents")` desde el backend) devuelve 6
   eventos de 3 documentos distintos, acumulados de pruebas de sprints anteriores que
   siguen vivos en el ledger. `GetDocumentEvents` de un `documentID` inventado → `[]` sin
@@ -98,27 +98,27 @@ construyó (D1/D2 del plan). Sin red todavía — solo compila y sus tests pasan
 
 ---
 
-## Fase 2 — Backend
+## Fase 2 (Backend
 
-### T3: Backend — `GET /documents` acotado por rol + `GET /documents/:id/events`
+### T3: Backend) `GET /documents` acotado por rol + `GET /documents/:id/events`
 
 **Descripción:** Completa RF‑18…22 (Empleado) y la mitad de RF‑37…40 (Verificador) que
-faltaba — el listado ya existía (D8 de Sprint 3), falta que el Empleado lo use acotado a
+faltaba, el listado ya existía (D8 de Sprint 3), falta que el Empleado lo use acotado a
 lo suyo, y la trazabilidad por documento (nadie la tiene todavía).
 
 **Criterios de aceptación:**
-- [x] `GET /documents` (ya existía) se abre a `requireAuth()` sin roles — si
+- [x] `GET /documents` (ya existía) se abre a `requireAuth()` sin roles: si
   `req.user.role === "Empleado"`, el service filtra por `responsibleUser ===
   req.user.sub` (Mongo, un `find({responsibleUser: ...})` en vez de `find()`); otros
   roles, sin cambio (D3).
 - [x] `GET /documents/:id/events` (nuevo): llama a `queryLedgerDocument` (confirma que
-  existe — mismo helper que ya usan `getDocument`/`verifyDocument`) + `GetDocumentEvents`;
+  existe, mismo helper que ya usan `getDocument`/`verifyDocument`) + `GetDocumentEvents`;
   si `req.user.role === "Empleado"` y `document.responsibleUser !== req.user.sub` →
-  `403` (D4/RF‑21‑CA‑02) — incluido el caso "existe en el ledger pero no en Mongo"
+  `403` (D4/RF‑21‑CA‑02), incluido el caso "existe en el ledger pero no en Mongo"
   (fail closed: sin Mongo no hay forma de confirmar el dueño, se niega por defecto, no
   se asume). Devuelve `[{documentId, action, user, txId, timestamp, result?}, ...]`
   ordenados por `timestamp` (comparación lexicográfica de un string RFC3339 en UTC
-  siempre con el mismo formato — alcanza sin parsear a `Date`, D2 del plan).
+  siempre con el mismo formato: alcanza sin parsear a `Date`, D2 del plan).
 
 **Verificación:**
 - [x] Manual contra la red real: Empleado real (`m.lopez`) ve solo sus 2 documentos en
@@ -126,27 +126,27 @@ lo suyo, y la trazabilidad por documento (nadie la tiene todavía).
   Verificador ve el mismo total sin filtro; Empleado consultando la trazabilidad de su
   propio documento → `200` con el evento de registro real; `documentId` inexistente →
   `404`. El caso "Empleado consultando un documento ajeno → 403" no se probó en vivo
-  (solo hay un Empleado sembrado) — sí está cubierto por 2 tests unitarios (ajeno +
+  (solo hay un Empleado sembrado): sí está cubierto por 2 tests unitarios (ajeno +
   ledger-sin-Mongo). Sin regresión: `bash docker/smoke-test.sh` → `PASS`.
-- [x] Tests: 9 casos nuevos — filtro por rol en `GET /documents` (Empleado acotado,
+- [x] Tests: 9 casos nuevos, filtro por rol en `GET /documents` (Empleado acotado,
   Verificador sin filtro), `GET /documents/:id/events` éxito con orden cronológico
   confirmado (eventos deliberadamente desordenados en el mock), Empleado dueño, Empleado
   ajeno (403, nunca llega a pedir los eventos), Empleado con ledger-sin-Mongo (403, fail
-  closed), 404, 502, 401 — 91/91 tests del backend en verde.
+  closed), 404, 502, 401, 91/91 tests del backend en verde.
 - [x] Build/lint del backend en 0 errores/warnings.
 - [x] Ronda de `code-reviewer` (verdict: **APPROVE**, sin Required): confirmó leyendo el
   chaincode que las dos consultas en serie a Fabric (`GetDocument` + `GetDocumentEvents`)
-  no son redundantes — `GetDocumentEvents` nunca devuelve "not found", solo `[]`, así que
-  la primera consulta es la única fuente real del 404 — y que el costo de dos queries de
+  no son redundantes (`GetDocumentEvents` nunca devuelve "not found", solo `[]`, así que
+  la primera consulta es la única fuente real del 404) y que el costo de dos queries de
   solo lectura en serie es insignificante para el volumen de un MVP de tesis. Confirmó que
   `GET /documents` y `GET /documents/:id/events` usan el mismo criterio de "dueño"
   (`responsibleUser`/`req.user.sub`), sin inconsistencia entre los dos. Aplicados los 2
   hallazgos Optional: **(1)** el chequeo de propiedad de `getDocumentEvents` dejó de
-  depender de Mongo (`findDocumentById`) — ahora compara contra el `User` del propio
+  depender de Mongo (`findDocumentById`), ahora compara contra el `User` del propio
   evento `"registro"` que ya devuelve `GetDocumentEvents` (una consulta menos, y cierra
   del todo el caso límite "ledger-sin-Mongo" que antes negaba el acceso al dueño real por
   una inconsistencia de Mongo). **(2)** Sembrado un segundo Empleado de prueba
-  (`c.ruiz@empresa.com`, U002 — ya existía en el mock del frontend, solo faltaba en el
+  (`c.ruiz@empresa.com`, U002: ya existía en el mock del frontend, solo faltaba en el
   seed) para poder probar el `403` de verdad contra la red real, no solo con mocks.
   Re-verificado tras los 2 fixes: 91/91 tests, build/lint limpios, y en vivo: `c.ruiz`
   (U002) pidiendo la trazabilidad del documento de `m.lopez` (U001) → `403` real.
@@ -154,7 +154,7 @@ lo suyo, y la trazabilidad por documento (nadie la tiene todavía).
 **Dependencias:** T2.
 
 **Archivos:** `backend/src/routes/documents.ts`, `backend/src/services/documentService.ts`
-(`listDocuments` con filtro por rol, `getDocumentEvents` nuevo — propiedad desde el
+(`listDocuments` con filtro por rol, `getDocumentEvents` nuevo, propiedad desde el
 ledger, no Mongo), `backend/src/repositories/documentRepository.ts` (filtro por
 `responsibleUser`), `backend/src/scripts/seedUsers.ts` (segundo Empleado), tests.
 
@@ -162,26 +162,26 @@ ledger, no Mongo), `backend/src/repositories/documentRepository.ts` (filtro por
 
 ---
 
-### T4: Backend — `GET /events` (trazabilidad general) + `GET /documents/summary` (panel)
+### T4: Backend, `GET /events` (trazabilidad general) + `GET /documents/summary` (panel)
 
 **Descripción:** RF‑39/40/50/51 (trazabilidad general) y RF‑41/42 (panel del
 Administrador).
 
 **Criterios de aceptación:**
-- [x] `GET /events` (ruta nueva, archivo nuevo `backend/src/routes/events.ts` — no tenía
+- [x] `GET /events` (ruta nueva, archivo nuevo `backend/src/routes/events.ts` (no tenía
   sentido meterlo en `documents.ts`, no es un recurso anidado bajo `/documents`),
-  `requireAuth("Verificador", "Administrador")` — llama a `GetAllEvents`, ordena por
+  `requireAuth("Verificador", "Administrador")`) llama a `GetAllEvents`, ordena por
   `timestamp` (D2), responde `[{documentId, action, user, txId, timestamp, result?},
-  ...]`. Mismo nivel de detalle para los dos roles (D5/HU‑020‑CA‑02) — una sola
+  ...]`. Mismo nivel de detalle para los dos roles (D5/HU‑020‑CA‑02): una sola
   respuesta, no una versión recortada.
-- [x] `GET /documents/summary`, `requireAuth("Administrador")` — totales por `status`
-  vía un `aggregate` de Mongo agrupado (`$group` por `status`) — `{total, pendiente,
+- [x] `GET /documents/summary`, `requireAuth("Administrador")` (totales por `status`
+  vía un `aggregate` de Mongo agrupado (`$group` por `status`)) `{total, pendiente,
   verificado, alterado}` (D6, nunca limitado a los 100 de `GET /documents`). Registrada
   **antes** de `GET /documents/:id` en el router (si no, Express la tomaría como
-  `id="summary"`) — hay un test dedicado a confirmar justo esto.
+  `id="summary"`), hay un test dedicado a confirmar justo esto.
 - [x] **Hallazgo real durante esta tarea, fuera del AC original pero imposible de no
   arreglar**: el CORS de `/documents` en `server.ts` nunca se actualizó desde Sprint 2
-  (seguía en `"POST, OPTIONS"`) — un preflight real confirmó que el navegador habría
+  (seguía en `"POST, OPTIONS"`), un preflight real confirmó que el navegador habría
   bloqueado cualquier `GET` desde que Sprint 3 agregó el primero. Corregido a `"GET,
   POST, OPTIONS"`, y agregado un bloque de CORS nuevo para `/events` (antes no existía
   ningún `GET` bajo ese prefijo).
@@ -194,7 +194,7 @@ Administrador).
   equivocado → `403` real en los dos. Preflight real de `/documents` y `/events`
   confirmado con `Access-Control-Allow-Methods` incluyendo `GET` después del fix. Sin
   regresión: `bash docker/smoke-test.sh` → `PASS`.
-- [x] Tests: 9 casos nuevos — `GET /events` éxito con orden cronológico confirmado
+- [x] Tests: 9 casos nuevos, `GET /events` éxito con orden cronológico confirmado
   (eventos deliberadamente desordenados en el mock), Administrador (mismo detalle),
   Empleado 403, falla del chaincode 502, sin JWT 401; `GET /documents/summary` éxito con
   números exactos, Verificador 403, sin JWT 401, y un test dedicado a que la ruta no
@@ -202,23 +202,23 @@ Administrador).
 - [x] Build/lint del backend en 0 errores/warnings.
 - [x] Ronda de `code-reviewer` (verdict: **REQUEST CHANGES** → aplicado, 2 Required):
   1. **La narrativa del hallazgo de CORS estaba mal.** Dije que "un preflight real
-     confirmó que el navegador lo habría bloqueado" — falso: `curl` no aplica ninguna
+     confirmó que el navegador lo habría bloqueado": falso: `curl` no aplica ninguna
      política de CORS, solo muestra los headers de la respuesta. El reviewer señaló (y
      confirmó contra la spec de Fetch, no de memoria) que `GET` es un "CORS-safelisted
-     method" — el chequeo de método del preflight pasa igual aunque
+     method": el chequeo de método del preflight pasa igual aunque
      `Access-Control-Allow-Methods` no lo liste, así que ningún navegador real rechazó
      esto nunca por este motivo específico. El valor seguía estando mal (y el fix sigue
      siendo correcto), pero por una razón distinta: el riesgo real es que un método que
      **no** esté en esa lista de excepción (`PUT`/`DELETE`/`PATCH`) agregado más adelante
      sin actualizar esto sí quedaría bloqueado, sin excepción, por cualquier navegador.
      Corregido el comentario en `server.ts` para contar la historia real, no la
-     inventada — esto estaba a punto de quedar mal explicado en `SPEC.md`/
+     inventada, esto estaba a punto de quedar mal explicado en `SPEC.md`/
      `backend/README.md` cuando llegue T10.
   2. **`getAllEvents()` no tenía ningún límite, a diferencia de `listDocuments` (100,
-     D8) y sin ninguna nota explicando por qué no** — inconsistente con la postura
+     D8) y sin ninguna nota explicando por qué no**: inconsistente con la postura
      explícita que el resto del archivo ya tiene sobre su propio crecimiento. El ledger
      de eventos es estrictamente de solo-anexado (cada documento deja mínimo 1 evento, y
-     HU‑014‑CA‑02 permite re-verificar sin límite) — crece para siempre, en cada reuso
+     HU‑014‑CA‑02 permite re-verificar sin límite): crece para siempre, en cada reuso
      del mismo entorno de pruebas. Agregado el mismo tipo de límite defensivo (200 más
      recientes, `.slice(-200)` después de ordenar) con el mismo criterio ya documentado
      para `listDocuments`.
@@ -228,7 +228,7 @@ Administrador).
   entre el total del panel y el listado truncado si algún día hay más de 100
   documentos (nota para T8/SPEC), y una constricción de forma UUID sobre el parámetro
   `:id` como alternativa más robusta que "comentario + test" para el riesgo de orden de
-  rutas (no aplicada ahora — Express 5 cambió la sintaxis de `path-to-regexp` para
+  rutas (no aplicada ahora, Express 5 cambió la sintaxis de `path-to-regexp` para
   constricciones inline y no quise arriesgar una ruta mal armada por adivinarla sin
   confirmar la sintaxis exacta de la v8). Re-verificado tras los 2 fixes: 101/101 tests,
   build/lint limpios, contenedor `backend` reconstruido, `bash docker/smoke-test.sh` →
@@ -247,15 +247,15 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 
 ---
 
-### T5: Backend — Gestión de usuarios (Administrador)
+### T5: Backend, Gestión de usuarios (Administrador)
 
 **Descripción:** RF‑43…47, la porción de `identity` pendiente desde Sprint 1.
 
 **Criterios de aceptación:**
 - [x] `userRepository.ts` gana `listUsers()`, `insertUser(user)` (creación real,
-  password temporal fija — D7b), `updateUser(userId, {name, email, role})`,
-  `deactivateUser(userId)` (`status: "Inactivo"`, baja lógica — RF‑47, nunca borra nada).
-- [x] `GET /users`, `POST /users`, `PUT /users/:id`, `POST /users/:id/deactivate` — los 4,
+  password temporal fija (D7b), `updateUser(userId, {name, email, role})`,
+  `deactivateUser(userId)` (`status: "Inactivo"`, baja lógica) RF‑47, nunca borra nada).
+- [x] `GET /users`, `POST /users`, `PUT /users/:id`, `POST /users/:id/deactivate`, los 4,
   `requireAuth("Administrador")`. `POST /users` rechaza un correo ya registrado (mismo
   índice único que ya existe, `ensureIndexes`) con un mensaje claro, no un 500 de Mongo
   crudo.
@@ -263,13 +263,13 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
   `/auth/verify-otp`).
 
 **Verificación:**
-- [x] Manual contra la red real (bueno, contra Mongo real — esto no toca el chaincode):
+- [x] Manual contra la red real (bueno, contra Mongo real: esto no toca el chaincode):
   Administrador (`admin@empresa.com`) crea un usuario nuevo → el usuario nuevo se loguea
   con la contraseña temporal `Contratos123!` → Administrador edita su nombre/correo/rol →
   lo desactiva → ya no puede loguearse (401 "Credenciales inválidas", lo valida
   `authService` desde Sprint 1) y `GET /users` lo sigue listando con `status: "Inactivo"`.
   Confirmado también: `Empleado` recibe 403 en los 4 endpoints; sin JWT, 401.
-- [x] Tests: 25 casos — los 4 endpoints, éxito y error (correo duplicado por pre‑chequeo
+- [x] Tests: 25 casos, los 4 endpoints, éxito y error (correo duplicado por pre‑chequeo
   y por carrera contra el índice único, usuario inexistente, rol distinto de
   Administrador, 401, body inválido), confirmación de que `passwordHash` nunca viaja en
   ninguna respuesta, normalización de email en la respuesta, revocación de sesión al
@@ -278,35 +278,35 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
   warnings de lint).
 - [x] Ronda de `code-reviewer` (verdict: **REQUEST CHANGES** → aplicado, 2 Required + 1
   recomendación de judgment aplicada):
-  - **Required — desactivar no revocaba sesiones ya abiertas.** `requireAuth` solo valida
+  - **Required, desactivar no revocaba sesiones ya abiertas.** `requireAuth` solo valida
     que el `jti` siga existiendo en Mongo; nunca relee `status`. Antes de este fix, un
     usuario desactivado con una sesión ya abierta conservaba acceso completo hasta que su
-    JWT expirara solo (hasta `jwtExpiresMinutes`, default 60 min) — el primer hueco real
+    JWT expirara solo (hasta `jwtExpiresMinutes`, default 60 min): el primer hueco real
     de este tipo, porque T5 es la primera feature que cambia `status` de un usuario vivo
     vía la API. Fix: `sessionRepository.deleteSessionsByUserId(userId)` (un
     `deleteMany({ userId })`), llamado desde `userService.deactivateUser` justo después
     de la baja lógica. Verificado en vivo: con una sesión real abierta de un usuario de
     prueba, `GET /documents` daba 200 antes de desactivarlo y 401 inmediatamente después,
     sin esperar a que el JWT expirara.
-  - **Required — la respuesta de `POST /users`/`PUT /users/:id` podía mostrar un email
+  - **Required, la respuesta de `POST /users`/`PUT /users/:id` podía mostrar un email
     con otra capitalización que la persistida.** `normalizeEmail` (`.trim().toLowerCase()`)
     se aplicaba adentro de `insertUser`/`updateUser` (repositorio), pero el servicio ya
-    había construido el objeto de respuesta con el email crudo del input — un admin que
+    había construido el objeto de respuesta con el email crudo del input, un admin que
     tipeaba `"Foo@Bar.COM"` veía esa forma en la respuesta mientras Mongo guardaba
     `"foo@bar.com"`. Fix: se exportó `normalizeEmail` desde `userRepository.ts` y el
     servicio la aplica antes de construir el objeto que se devuelve, en ambos casos.
-  - **Recomendación aplicada — sin guardia de auto‑desactivación.** El reviewer
+  - **Recomendación aplicada, sin guardia de auto‑desactivación.** El reviewer
     distinguió dos riesgos: "Administrador se desactiva a sí mismo por error" (barato de
     evitar, un chequeo de una línea) vs. "queda cero Administradores activos" (correcto
     de resolver requeriría un conteo con las mismas condiciones de carrera que ya se
-    decidió no perseguir para la reactivación, D8 — mismo criterio YAGNI). Se aplicó solo
+    decidió no perseguir para la reactivación, D8: mismo criterio YAGNI). Se aplicó solo
     el primero: `POST /users/:id/deactivate` devuelve 400 si `req.user.sub === req.params.id`.
   - Preguntas de diseño que el reviewer confirmó aceptables tal cual, sin cambios: D7b
     (contraseña temporal fija, documentada, con `/auth/change-password` como vía de
-    escape — ya existente desde Sprint 1); el manejo de la carrera de email duplicado
+    escape, ya existente desde Sprint 1); el manejo de la carrera de email duplicado
     (chequeo previo + `catch` de `MongoServerError` código 11000, correcto en ambos
-    sentidos — rastreado el interleaving real); la falta de validación de formato de
-    email (la única invariante que importa, unicidad, ya la garantiza el índice único —
+    sentidos, rastreado el interleaving real); la falta de validación de formato de
+    email (la única invariante que importa, unicidad, ya la garantiza el índice único, 
     un email mal formado es, como mucho, una confusión de UX en el primer login del
     usuario nuevo, no un hueco de seguridad).
 
@@ -325,15 +325,15 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 ### ✅ Checkpoint: backend↔ledger real (consultas)
 - [x] Los 5 endpoints nuevos (`GET /documents/:id/events`, `GET /events`,
   `GET /documents/summary`, `GET /users`, `POST /users`, `PUT /users/:id`,
-  `POST /users/:id/deactivate` — y el filtro por rol de `GET /documents`) probados de
+  `POST /users/:id/deactivate`, y el filtro por rol de `GET /documents`) probados de
   punta a punta contra la red/Mongo real.
 - [x] Revisado por `code-reviewer`.
 
 ---
 
-## Fase 3 — Frontend
+## Fase 3 (Frontend
 
-### T6: Frontend — Empleado: `MisDocumentosPage` + `MiTrazabilidadPage`
+### T6: Frontend) Empleado: `MisDocumentosPage` + `MiTrazabilidadPage`
 
 **Criterios de aceptación:**
 - [x] `frontend/src/lib/api.ts` gana las funciones que falten (reusar `listDocuments`
@@ -345,7 +345,7 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
   documento propio (el Empleado no tiene acceso a `GET /events`), ordenada de más reciente
   a más antiguo, mostrando el nombre del archivo en vez del UUID.
 - [x] **Extra (problema del ID, `para_sofi.md` §3):** cada documento de "Mis documentos"
-  muestra su identificador completo con botón "Copiar" — el Empleado ya puede recuperar
+  muestra su identificador completo con botón "Copiar", el Empleado ya puede recuperar
   su ID en cualquier momento, no solo en la pantalla de éxito de la carga. El botón se
   extrajo a `components/shared/CopyButton.tsx` y `CargarDocumentoPage` lo reusa.
 - [x] `DocumentListItem` acepta documentos sin `hash`/`sizeLabel` (el listado real no
@@ -371,7 +371,7 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 
 ---
 
-### T7: Frontend — Verificador: `DocumentosPage` + `TrazabilidadGlobalPage`
+### T7: Frontend, Verificador: `DocumentosPage` + `TrazabilidadGlobalPage`
 
 **Criterios de aceptación:**
 - [x] `frontend/src/lib/api.ts` gana `getAllEvents(token)`.
@@ -395,8 +395,8 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
     una sola consulta por respuesta (`findUserNamesByIds` en `userRepository.ts`). Si el
     id no es un usuario registrado (p. ej. `smoke-test-user`), cae al id, no falla. El
     selector de `VerificarIntegridadPage` (cambio de Laura, `Feat/Front`) también muestra
-    el nombre en vez de `U001` — con nombre + fecha ya se distinguen dos "contrato.pdf".
-  - **Huella en el listado.** `GET /documents` trae `hash` — completo para
+    el nombre en vez de `U001`: con nombre + fecha ya se distinguen dos "contrato.pdf".
+  - **Huella en el listado.** `GET /documents` trae `hash`: completo para
     Verificador/Administrador, enmascarado server-side para el Empleado (RF‑27, mismo
     `maskHash` que `GET /documents/:id`). Sale de la copia de Mongo: es seguro porque la
     huella nunca cambia después del registro (`RecordVerification` solo toca `Status`).
@@ -413,7 +413,7 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 
 ---
 
-### T8: Frontend — Administrador: `DashboardPage` + `DocumentosPage` + `TrazabilidadPage`
+### T8: Frontend, Administrador: `DashboardPage` + `DocumentosPage` + `TrazabilidadPage`
 
 **Criterios de aceptación:**
 - [x] `frontend/src/lib/api.ts` gana `getDocumentsSummary(token)` (+ tipo `DocumentsSummary`).
@@ -423,7 +423,7 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
   (cargas independientes: si el ledger no responde, los totales se muestran igual);
   `DocumentosPage`: mismo listado que el Verificador, con ID copiable y huella completa;
   `TrazabilidadPage`: misma tabla y mismo detalle que el Verificador (HU‑020‑CA‑02).
-  `KpiCard` acepta `"—"` mientras carga.
+  `KpiCard` acepta `"N/A"` mientras carga.
 - [x] `npm run build`/`npm run lint` pasan (0 errores).
 
 **Verificación:**
@@ -433,7 +433,7 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
   2 documentos con hash completo (64 caracteres) y responsable por nombre; Verificador en
   `GET /documents/summary` → `403`. Falta la confirmación de Sofia en navegador.
 - Nota (ya anotada en el review de T4, no bloqueante): el total del panel cuenta todos
-  los documentos, mientras que el listado se corta en 100 — con más de 100 documentos los
+  los documentos, mientras que el listado se corta en 100, con más de 100 documentos los
   dos números dejarían de coincidir a simple vista.
 
 **Dependencias:** T3, T4.
@@ -447,24 +447,24 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 
 ---
 
-### T9: Frontend — Administrador: `UsuariosPage` (CRUD real)
+### T9: Frontend, Administrador: `UsuariosPage` (CRUD real)
 
 **Criterios de aceptación:**
 - [x] `frontend/src/lib/api.ts` gana `listUsers`, `createUser`, `updateUser`,
   `deactivateUser` (todas autenticadas). `postAuthJson` pasa a delegar en un
   `sendAuthJson(method, ...)` nuevo para poder hacer `PUT` sin duplicar el manejo de
   timeout/errores.
-- [x] `UsuariosPage` deja de usar `useAppData()` para crear/editar/desactivar — llama a
+- [x] `UsuariosPage` deja de usar `useAppData()` para crear/editar/desactivar: llama a
   los endpoints reales de T5. El formulario muestra el error del backend sin cerrarse
   (p. ej. `409` por correo duplicado); al crear, un aviso muestra la contraseña temporal
   para comunicarla; desactivar pide confirmación (no hay reactivación, D8); el
   Administrador no ve "Desactivar" sobre sí mismo y no puede cambiar su propio rol.
   Ya ninguna pantalla usa `useAppData()` (queda solo `AppDataContext.tsx`, sin
-  consumidores — limpieza para T10).
+  consumidores: limpieza para T10).
 - [x] `npm run build`/`npm run lint` pasan (0 errores).
 - [x] **Extra, backend (`para_sofi.md` §4, mecanismo 2):** cambiar el rol de un usuario
   con `PUT /users/:id` ahora corta sus sesiones abiertas (`deleteSessionsByUserId`, mismo
-  arreglo que la desactivación) — antes conservaba el rol viejo hasta que el JWT
+  arreglo que la desactivación), antes conservaba el rol viejo hasta que el JWT
   expirara. Solo si el rol cambió (editar nombre/correo no corta nada). Además,
   `PUT /users/:id` rechaza con `400` que el Administrador se quite su propio rol (mismo
   criterio que la auto-desactivación), y `POST /users` devuelve `temporaryPassword` para
@@ -499,7 +499,7 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 
 ---
 
-## Fase 4 — Documentación y cierre
+## Fase 4: Documentación y cierre
 
 ### T10: Documentación y trazabilidad SPEC
 
@@ -530,7 +530,7 @@ bloque nuevo para `/events`, router de `events` montado), `backend/tests/events.
 
 ---
 
-### ✅ Checkpoint: HU‑008/009/015…020 terminadas (DoD — SPEC §10.2)
+### ✅ Checkpoint: HU‑008/009/015…020 terminadas (DoD, SPEC §10.2)
 - [x] Los escenarios Gherkin de HU‑008/009/015…020 en PASS.
 - [x] RF‑18…22, RF‑37…51 y RNF relevantes marcados como implementados.
 - [x] Entorno verificado en Docker Compose.

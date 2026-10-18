@@ -12,7 +12,7 @@ note over BE
   POST /documents/{id}/verifications: solo rol Verificador (RF-023).
 end note
 
-== Selección del documento (RF-023 a RF-025) — en dos pasos ==
+== Selección del documento (RF-023 a RF-025): en dos pasos ==
 Verificador -> FE : Abre "Verificar integridad"
 FE -> BE : GET /documents
 BE -> DB : Todos los documentos (máx. 100) + nombre del responsable
@@ -47,7 +47,7 @@ BE -> BE : Revalida un archivo, ≤ 20 MB, firma "%PDF-" (RF-029)
 alt archivo inválido
     BE --> FE : 400
 else válido
-    BE -> GW : evaluate GetDocument(id) — huella registrada
+    BE -> GW : evaluate GetDocument(id), huella registrada
     GW -> CC : Consulta
     CC --> BE : Sha256Hex
     BE -> BE : SHA-256 del archivo cargado (RF-030)

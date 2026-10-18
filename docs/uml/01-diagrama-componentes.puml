@@ -1,7 +1,7 @@
 @startuml 01-diagrama-componentes
 skinparam componentStyle rectangle
 
-package "CAPA DE PRESENTACIÓN — frontend (React 19 + Vite)" {
+package "CAPA DE PRESENTACIÓN: frontend (React 19 + Vite)" {
   [Páginas de autenticación\nLoginPage · OtpPage · LoggedOutPage] as UI_Auth
   [Páginas Empleado\nCargar documento · Mis documentos · Mi trazabilidad] as UI_Empleado
   [Páginas Verificador\nVerificar integridad · Documentos · Trazabilidad global] as UI_Verificador
@@ -10,7 +10,7 @@ package "CAPA DE PRESENTACIÓN — frontend (React 19 + Vite)" {
   [lib/api.ts\n(único cliente HTTP, VITE_API_URL)] as UI_Api
 }
 
-package "CAPA DE APLICACIÓN — backend (Node.js 20 + Express + TypeScript)" {
+package "CAPA DE APLICACIÓN: backend (Node.js 20 + Express + TypeScript)" {
   package "routes/" {
     [auth.ts\n/auth/*] as R_Auth
     [documents.ts\n/documents/*] as R_Docs
@@ -30,9 +30,9 @@ package "CAPA DE APLICACIÓN — backend (Node.js 20 + Express + TypeScript)" {
   [fabric/gateway.ts\nFabric Gateway SDK\n(evaluate / submit)] as GW
 }
 
-database "CAPA DE PERSISTENCIA — MongoDB 7\nusers · documents · sessions · otp_codes" as DB
+database "CAPA DE PERSISTENCIA: MongoDB 7\nusers · documents · sessions · otp_codes" as DB
 
-package "CAPA BLOCKCHAIN — Hyperledger Fabric 2.5 (canal contratoschannel)" {
+package "CAPA BLOCKCHAIN: Hyperledger Fabric 2.5 (canal contratoschannel)" {
   [peer0.org1 / peer0.org2] as Peer
   [Chaincode contracts (Go)\nRegisterDocument · GetDocument\nRecordVerification\nGetDocumentEvents · GetAllEvents] as CC
   database "Ledger\n(world state + bloques)" as Ledger

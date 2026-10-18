@@ -58,7 +58,7 @@ interface UploadedFile {
   buffer: Buffer;
 }
 
-// Firma de archivo (RNF-23), no el Content-Type que manda el cliente — ese
+// Firma de archivo (RNF-23), no el Content-Type que manda el cliente, ese
 // header lo controla quien sube el archivo, así que confiar solo en él deja
 // pasar cualquier archivo renombrado a ".pdf".
 const PDF_MAGIC = Buffer.from("%PDF-");
@@ -69,9 +69,9 @@ export function isPdfSignature(buffer: Buffer): boolean {
 
 // Best-effort para el log del servidor: el mensaje real de un rechazo del
 // chaincode (ej. "document ... already registered") no viaja en `.message`
-// del error del SDK, vive en `.details[0].message` (GatewayError.details —
+// del error del SDK, vive en `.details[0].message` (GatewayError.details: 
 // ver el hallazgo de T3 en claude_docs/tasks/todo-sprint2-documents-ledger.md).
-// Nunca se expone al cliente tal cual — /documents es un endpoint de
+// Nunca se expone al cliente tal cual: /documents es un endpoint de
 // negocio real, no el diagnóstico de /fabric/ping.
 function describeFabricError(err: unknown): string {
   const details = (err as { details?: Array<{ message?: string }> })?.details;
@@ -81,10 +81,10 @@ function describeFabricError(err: unknown): string {
 }
 
 // A diferencia de describeFabricError (solo para loguear), esto decide un
-// status HTTP — así que exige que `.details` venga poblado antes de mirar el
+// status HTTP, así que exige que `.details` venga poblado antes de mirar el
 // texto: eso solo pasa cuando el error vino de una respuesta real del peer
 // (grpc-status-details-bin), nunca de una falla de transporte/config
-// (peer caído, nombre de canal/chaincode mal configurado, timeout) — esas
+// (peer caído, nombre de canal/chaincode mal configurado, timeout), esas
 // nunca traen `.details`, así que nunca podrían disfrazarse de un 404 de
 // negocio con este chequeo.
 function isDocumentNotFoundError(err: unknown): boolean {
@@ -101,12 +101,12 @@ export async function registerDocument(
     return { ok: false, status: 400, message: "El archivo no es un PDF válido." };
   }
 
-  // RF-14/RNF-11: automática, determinista — el mismo contenido siempre da
+  // RF-14/RNF-11: automática, determinista, el mismo contenido siempre da
   // el mismo hash (HU-006-CA-02).
   const hash = crypto.createHash("sha256").update(file.buffer).digest("hex");
 
   // Pedido de Sofia: no tiene sentido tener dos registros "Pendiente" del
-  // mismo archivo esperando verificación a la vez — solo se puede volver a
+  // mismo archivo esperando verificación a la vez, solo se puede volver a
   // subirlo una vez que el anterior ya se verificó (o salió "Alterado").
   const duplicate = await findPendingDuplicate(userId, hash);
   if (duplicate) {
@@ -138,7 +138,7 @@ export async function registerDocument(
     await insertDocument({
       _id: documentId,
       // Recortado: es el nombre de archivo que manda el cliente, sin
-      // sanitizar más allá de esto — Sprint 4 (consulta/listado) es quien
+      // sanitizar más allá de esto, Sprint 4 (consulta/listado) es quien
       // decide cómo mostrarlo con seguridad, acá solo se evita que un nombre
       // absurdamente largo infle el documento en Mongo sin necesidad.
       name: file.originalname.slice(0, 255),
@@ -151,7 +151,7 @@ export async function registerDocument(
     // Caso raro y sin una forma limpia de revertir (RNF-05: lo ya anclado en
     // el ledger es inmutable, no hay "deshacer"): el documento queda
     // registrado on-chain pero sin metadata en Mongo. Se loguea bien fuerte
-    // para poder reconciliar a mano — no se intenta un rollback automático
+    // para poder reconciliar a mano: no se intenta un rollback automático
     // (agregar un saga/outbox acá sería sobre-construir para un caso límite
     // de un MVP de tesis).
     console.error(
@@ -170,22 +170,22 @@ export async function registerDocument(
 
 // Ampliación de alcance de Sprint 3 T5 (pedida por Sofia): sin esto, elegir
 // un documento para verificar exigía que alguien le pasara el documentId a
-// mano al Verificador — nada que lo liste todavía (eso es RF-37/48, Sprint
+// mano al Verificador, nada que lo liste todavía (eso es RF-37/48, Sprint
 // 4). Lee directo de Mongo (nunca del chaincode: no es una fuente de verdad
-// de cuáles existen, D6) — el `status` que muestra puede estar un instante
+// de cuáles existen, D6), el `status` que muestra puede estar un instante
 // desactualizado frente al ledger si algo falló a mitad de camino en
 // verifyDocument, pero `GetDocument` (al elegir un documento puntual) sigue
 // siendo la fuente real para hash/status antes de verificar nada.
 //
 // Acotado por rol desde Sprint 4 (D3): un Empleado solo ve los documentos
-// donde él es `responsibleUser` (RF-18, "Mis documentos") — mismo endpoint
+// donde él es `responsibleUser` (RF-18, "Mis documentos"), mismo endpoint
 // que `GET /documents/:id` usa para el hash: el comportamiento varía por
 // rol, no la ruta.
 //
 // Desde Sprint 4 (limitación de T7) también trae el nombre del responsable y
 // la huella: sin el nombre, dos "contrato.pdf" de empleados distintos eran
 // indistinguibles; sin la huella, "Todos los documentos" no podía mostrarla.
-// El hash sale de la copia de Mongo — es seguro porque nunca cambia después
+// El hash sale de la copia de Mongo, es seguro porque nunca cambia después
 // del registro (RecordVerification solo cambia Status en el ledger), así
 // que no hace falta una consulta al ledger por documento.
 export async function listDocuments(role: Role, userId: string): Promise<DocumentSummary[]> {
@@ -204,11 +204,11 @@ export async function listDocuments(role: Role, userId: string): Promise<Documen
 }
 
 // RF-27/RNF-08: el hash completo solo lo ve el Verificador (nota de cambio
-// 2026-10-15, pedido de Sofia: el Administrador también lo recibe enmascarado —
+// 2026-10-15, pedido de Sofia: el Administrador también lo recibe enmascarado, 
 // RF-49 "respetando las restricciones de privacidad"; él gobierna el sistema,
 // no compara huellas). Mismo
 // algoritmo que `frontend/src/lib/mask-hash.ts` (primeros/últimos 8
-// caracteres visibles) — se enmascara server-side, no solo en la UI, porque
+// caracteres visibles): se enmascara server-side, no solo en la UI, porque
 // este es un endpoint de negocio real que un cliente arbitrario puede llamar.
 const ROLES_WITH_FULL_HASH: Role[] = ["Verificador"];
 
@@ -229,7 +229,7 @@ type LedgerDocumentResult =
   | { ok: true; doc: LedgerDocument }
   | { ok: false; status: number; message: string };
 
-// Compartido por getDocument (T3) y verifyDocument (T4) — ambos necesitan la
+// Compartido por getDocument (T3) y verifyDocument (T4), ambos necesitan la
 // misma consulta al ledger y la misma clasificación 404 (chaincode, documento
 // inexistente) vs. 502 (transporte/config) de isDocumentNotFoundError.
 async function queryLedgerDocument(documentId: string): Promise<LedgerDocumentResult> {
@@ -254,7 +254,7 @@ export async function getDocument(documentId: string, role: Role): Promise<GetDo
   // El ledger es la autoridad para hash/status (SPEC.md §4.1); si Mongo no
   // tiene el resto de los metadatos (inconsistencia real, ya logueada en
   // registerDocument si ocurrió ahí), igual se responde con lo que el ledger
-  // sí tiene en vez de un 404 falso — el documento SÍ existe.
+  // sí tiene en vez de un 404 falso, el documento SÍ existe.
   const hash = ROLES_WITH_FULL_HASH.includes(role)
     ? ledgerResult.doc.Sha256Hex
     : maskHash(ledgerResult.doc.Sha256Hex);
@@ -287,19 +287,19 @@ export async function verifyDocument(
   // RF-30/RNF-10: mismo algoritmo determinista que registerDocument.
   const computedHash = crypto.createHash("sha256").update(file.buffer).digest("hex");
   const matches = computedHash === ledgerResult.doc.Sha256Hex;
-  // RF-34: nunca manual — el resultado de comparar los hashes es lo único
+  // RF-34: nunca manual, el resultado de comparar los hashes es lo único
   // que decide el estado nuevo.
   const result = matches ? "confirmada" : "comprometida";
   const newStatus: DocumentStatus = matches ? "Verificado" : "Alterado";
 
   try {
     // submitChaincodeTransaction espera el commit real (nunca "éxito" solo a
-    // nivel de endoso) — si esto resuelve, el evento ya quedó anclado. Un
+    // nivel de endoso), si esto resuelve, el evento ya quedó anclado. Un
     // reintento del cliente justo si el proceso se cae entre esta línea y el
     // updateDocumentStatus de abajo es seguro (RecordVerification no tiene
     // ningún guard de "ya verificado", HU-014-CA-02 lo permite a propósito),
     // pero deja dos eventos reales de verificación en el ledger para lo que
-    // el humano percibe como una sola acción — consecuencia ya aceptada en
+    // el humano percibe como una sola acción: consecuencia ya aceptada en
     // D13 de Sprint 2 (sin saga/outbox para un MVP de tesis), no un bug.
     await submitChaincodeTransaction("RecordVerification", documentId, result, userId);
   } catch (err) {
@@ -336,7 +336,7 @@ export async function verifyDocument(
       status: newStatus,
       matches,
       // Hash completo en los dos: quien llega hasta acá ya es Verificador
-      // (requireAuth("Verificador") en la ruta) — no hay nada que enmascarar.
+      // (requireAuth("Verificador") en la ruta), no hay nada que enmascarar.
       registeredHash: ledgerResult.doc.Sha256Hex,
       computedHash,
     },
@@ -363,7 +363,7 @@ interface LedgerEvent {
   User: string;
 }
 
-// El ledger solo guarda el userId en cada evento — los nombres se resuelven
+// El ledger solo guarda el userId en cada evento, los nombres se resuelven
 // en Mongo con una sola consulta por respuesta (limitación de T7).
 async function toEventViews(events: LedgerEvent[]): Promise<EventView[]> {
   const names = await findUserNamesByIds(events.map((evt) => evt.User));
@@ -379,8 +379,8 @@ async function toEventViews(events: LedgerEvent[]): Promise<EventView[]> {
 }
 
 // El ledger no garantiza ningún orden entre TxID (son hashes, no un contador
-// — ni siquiera dentro de UN documento el orden de iteración coincide con el
-// cronológico, D2 del plan de Sprint 4) — Timestamp es un string RFC3339 en
+// (ni siquiera dentro de UN documento el orden de iteración coincide con el
+// cronológico, D2 del plan de Sprint 4)) Timestamp es un string RFC3339 en
 // UTC siempre con el mismo formato (`ts.AsTime().UTC().Format(time.RFC3339)`
 // en el chaincode), así que la comparación lexicográfica ya alcanza, sin
 // parsear a `Date`.
@@ -393,7 +393,7 @@ export type GetDocumentEventsResult =
   | { ok: false; status: number; message: string };
 
 // RF-21/22 (HU-009): trazabilidad de un documento. Un Empleado solo puede
-// verla si es el dueño (RF-21-CA-02, "el sistema le deniega el acceso") —
+// verla si es el dueño (RF-21-CA-02, "el sistema le deniega el acceso"): 
 // Verificador/Administrador, sin esa restricción (mismo criterio que ya usan
 // para el hash completo, RF-27).
 export async function getDocumentEvents(
@@ -415,11 +415,11 @@ export async function getDocumentEvents(
   const events = sortByTimestamp(await toEventViews(JSON.parse(raw) as LedgerEvent[]));
 
   if (role === "Empleado") {
-    // El dueño es el `User` del evento "registro" — del propio ledger, no de
+    // El dueño es el `User` del evento "registro": del propio ledger, no de
     // Mongo (hallazgo del review de T3: así nunca puede quedar desincronizado
     // con la fuente real, a diferencia de consultar `findDocumentById`).
     // Fail closed si por algún motivo no hay evento de registro (no debería
-    // pasar — RegisterDocument siempre lo planta primero).
+    // pasar, RegisterDocument siempre lo planta primero).
     const registro = events.find((evt) => evt.action === "registro");
     if (registro?.user !== userId) {
       return { ok: false, status: 403, message: "No tienes permiso para esta acción." };
@@ -435,17 +435,17 @@ export type GetAllEventsResult =
 
 // Límite defensivo (hallazgo del review de T4): a diferencia de `documents`
 // en Mongo (una población real, aunque creciente), el ledger es estrictamente
-// de solo-anexado — cada documento deja como mínimo 1 evento y HU-014-CA-02
+// de solo-anexado, cada documento deja como mínimo 1 evento y HU-014-CA-02
 // permite re-verificar sin límite, así que esto crece para siempre, no solo
 // mientras el proyecto esté vivo sino en cada reuso del mismo entorno de
 // pruebas. `listDocuments` (D8, Sprint 3) ya tiene el mismo tipo de límite
-// por la misma razón — acá, no reusarlo habría sido la única consulta de
+// por la misma razón: acá, no reusarlo habría sido la única consulta de
 // esta capa sin ninguna postura escrita sobre su propio crecimiento.
 const MAX_EVENTS = 200;
 
 // RF-39/40 (Verificador) y RF-50/51 (Administrador), HU-016/020: trazabilidad
 // general, todos los documentos, mismo nivel de detalle para los dos roles
-// (D5 del plan — una sola respuesta, no una "recortada" para Verificador).
+// (D5 del plan, una sola respuesta, no una "recortada" para Verificador).
 // Sin chequeo de propiedad: a diferencia de getDocumentEvents, nadie acá
 // consulta solo lo suyo.
 export async function getAllEvents(): Promise<GetAllEventsResult> {
@@ -468,7 +468,7 @@ export async function getAllEvents(): Promise<GetAllEventsResult> {
 }
 
 // RF-41/42 (HU-017): panel del Administrador. Puro paso a través del
-// repositorio — no hay ninguna lógica de negocio propia que justifique más
+// repositorio: no hay ninguna lógica de negocio propia que justifique más
 // que esto (D6 del plan: "Should", no "Must", alcance chico a propósito).
 export async function getDocumentsSummary(): Promise<DocumentCounts> {
   return countDocumentsByStatus();

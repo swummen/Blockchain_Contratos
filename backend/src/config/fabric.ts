@@ -11,6 +11,6 @@ export const fabricConfig = {
   identityUser: process.env.FABRIC_IDENTITY_USER ?? "Admin@org1.example.com",
   channelName: process.env.FABRIC_CHANNEL_NAME ?? "contratoschannel",
   // Sprint 2 (T3): el chaincode real del proyecto reemplaza al placeholder
-  // de Sprint 0 (`basic`, asset-transfer-basic — ya retirado de la red).
+  // de Sprint 0 (`basic`, asset-transfer-basic, ya retirado de la red).
   chaincodeName: process.env.FABRIC_CHAINCODE_NAME ?? "contracts",
 };

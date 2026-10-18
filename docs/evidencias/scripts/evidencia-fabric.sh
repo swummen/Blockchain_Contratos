@@ -44,15 +44,15 @@ VER=$(login contratosblockchain+verificador@gmail.com)
 ADM=$(login contratosblockchain+admin@gmail.com)
 echo "Sesiones abiertas: Empleado, Verificador, Administrador (JWT obtenidos tras el código OTP)"
 
-step "1. Registro (Empleado) — POST /documents"
+step "1. Registro (Empleado): POST /documents"
 R=$(curl -s -w '\nHTTP %{http_code}' -H "Authorization: Bearer $EMP" -F "document=@contrato-evidencia.pdf;type=application/pdf" $B/documents)
 echo "$R"; DOC=$(echo "$R" | head -1 | jq -r .documentId)
 H1=$(height); echo "Altura del canal: $H0 → $H1 (nuevo bloque con la transacción RegisterDocument)"
 
-step "2. Consulta (Verificador) — GET /documents/$DOC"
+step "2. Consulta (Verificador): GET /documents/$DOC"
 curl -s -w '\nHTTP %{http_code}\n' -H "Authorization: Bearer $VER" $B/documents/$DOC
 
-step "3. Verificación con el MISMO archivo (Verificador) — POST /documents/$DOC/verifications"
+step "3. Verificación con el MISMO archivo (Verificador): POST /documents/$DOC/verifications"
 curl -s -w '\nHTTP %{http_code}\n' -H "Authorization: Bearer $VER" -F "document=@contrato-evidencia.pdf;type=application/pdf" $B/documents/$DOC/verifications
 H2=$(height); echo "Altura del canal: $H1 → $H2"
 
@@ -60,10 +60,10 @@ step "4. Verificación con el archivo ALTERADO (Verificador)"
 curl -s -w '\nHTTP %{http_code}\n' -H "Authorization: Bearer $VER" -F "document=@contrato-evidencia-alterado.pdf;type=application/pdf" $B/documents/$DOC/verifications
 H3=$(height); echo "Altura del canal: $H2 → $H3"
 
-step "5. Trazabilidad del documento (Empleado dueño) — GET /documents/$DOC/events"
+step "5. Trazabilidad del documento (Empleado dueño): GET /documents/$DOC/events"
 curl -s -H "Authorization: Bearer $EMP" $B/documents/$DOC/events | jq .
 
-step "6. Misma consulta, vista del Administrador — GET /documents (huella enmascarada)"
+step "6. Misma consulta, vista del Administrador: GET /documents (huella enmascarada)"
 curl -s -H "Authorization: Bearer $ADM" $B/documents | jq --arg d "$DOC" '.[] | select(.documentId==$d)'
 
 step "7. Contraste DIRECTO en el ledger (CLI de Fabric, sin pasar por el backend)"

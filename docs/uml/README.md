@@ -1,4 +1,4 @@
-# Modelado UML — OE2 (Diseño de Arquitectura y Modelado del Sistema)
+# Modelado UML: OE2 (Diseño de Arquitectura y Modelado del Sistema)
 
 Diagramas en formato PlantUML (`.puml`), un diagrama por archivo. **Actualizados el
 2026‑10‑15 para reflejar lo implementado** (Sprints 0‑4): nombres de módulos, endpoints,
@@ -7,13 +7,13 @@ de una propuesta previa.
 
 Fuentes:
 
-- `docs/md/Trabajo de grado final.md` — Fase 2 (OE2) exige "Diagramas UML (Componentes,
+- `docs/md/Trabajo de grado final.md`: Fase 2 (OE2) exige "Diagramas UML (Componentes,
   Secuencia y Despliegue)".
-- `docs/md/Requerimientos funcionales y no funcionales.md` — RF‑001 a RF‑055 y RNF‑001 a
+- `docs/md/Requerimientos funcionales y no funcionales.md`: RF‑001 a RF‑055 y RNF‑001 a
   RNF‑030, citados en cada paso de las secuencias.
-- `docs/md/Matriz_Actores_Stakeholders.md` — los 3 roles operativos.
+- `docs/md/Matriz_Actores_Stakeholders.md`: los 3 roles operativos.
 - El código: `backend/src/`, `chaincode/contract/`, `frontend/src/`, `docker/`.
-- `docs/Matriz_Infraestructura.xlsx` — mismos datos de infraestructura que el diagrama
+- `docs/Matriz_Infraestructura.xlsx`: mismos datos de infraestructura que el diagrama
   de despliegue.
 
 ## Contenido
@@ -44,7 +44,7 @@ Fuentes:
 | --- | --- | --- |
 | Base de estado del peer | CouchDB | LevelDB (sin consultas enriquecidas; la trazabilidad usa claves compuestas). |
 | Topología | 1 organización, 1 peer, 1 CA | 2 organizaciones, 2 peers, 1 orderer (Raft), 3 CA (test-network de Fabric). |
-| Política de endoso | — | MAJORITY: firman ambas organizaciones (ver OBS‑01 de la matriz de infraestructura). |
+| Política de endoso | N/A | MAJORITY: firman ambas organizaciones (ver OBS‑01 de la matriz de infraestructura). |
 | Conexión backend ↔ Fabric | SDK hacia peer y orderer | Fabric Gateway: una sola conexión al peer; el peer reenvía al orderer. |
 | Funciones del chaincode | RegistrarHuella, ConsultarHuella, ActualizarEstado, RegistrarEvento, ConsultarTrazabilidad | `RegisterDocument` (huella + evento en una transacción), `GetDocument`, `RecordVerification` (estado + evento en una transacción), `GetDocumentEvents`, `GetAllEvents`. |
 | Eventos de gestión de usuarios | Se registraban en el ledger | No: el ledger solo guarda eventos de documentos; usuarios viven en MongoDB. |

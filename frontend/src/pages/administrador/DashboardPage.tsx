@@ -32,7 +32,7 @@ export default function DashboardPage() {
     let cancelled = false
 
     // RF-41/42 (HU-017): los totales y la actividad reciente se cargan por
-    // separado — si el ledger no responde, los totales (Mongo) se muestran
+    // separado, si el ledger no responde, los totales (Mongo) se muestran
     // igual, y viceversa.
     getDocumentsSummary(token)
       .then((s) => {
@@ -81,17 +81,17 @@ export default function DashboardPage() {
         <p className="text-sm text-destructive">{summaryError}</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard label="Total documentos" value={summary?.total ?? "—"} icon={FileText} />
+          <KpiCard label="Total documentos" value={summary?.total ?? "..."} icon={FileText} />
           <KpiCard
             label="Verificados"
-            value={summary?.verificado ?? "—"}
+            value={summary?.verificado ?? "..."}
             icon={CheckCircle2}
             tone="success"
           />
-          <KpiCard label="Pendientes" value={summary?.pendiente ?? "—"} icon={Clock} tone="warning" />
+          <KpiCard label="Pendientes" value={summary?.pendiente ?? "..."} icon={Clock} tone="warning" />
           <KpiCard
             label="Alterados"
-            value={summary?.alterado ?? "—"}
+            value={summary?.alterado ?? "..."}
             icon={AlertTriangle}
             tone="destructive"
           />
@@ -112,7 +112,7 @@ export default function DashboardPage() {
               <li key={event.txId} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">
-                    {documentNames[event.documentId] ?? event.documentId} —{" "}
+                    {documentNames[event.documentId] ?? event.documentId} ·{" "}
                     {ACTION_LABEL[event.action]}
                   </p>
                   <p className="text-xs text-muted-foreground">{event.userName}</p>

@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react"
 
 interface KpiCardProps {
   label: string
-  /** "—" mientras carga el dato real. */
+  /** "..." mientras carga el dato real. */
   value: number | string
   icon: LucideIcon
   tone?: "default" | "success" | "warning" | "destructive"

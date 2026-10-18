@@ -1,14 +1,14 @@
-# TODO — Selección de documento en dos pasos (persona → contrato) · RF‑24 / HU‑010
+# TODO: Selección de documento en dos pasos (persona → contrato) · RF‑24 / HU‑010
 
 Plan: `claude_docs/tasks/plan-id-seleccion.md` (acordado 2026‑10‑12).
 Fuente de verdad: `claude_docs/SPEC.md` (RF‑24, nota de cambio Sprint 4).
 Estado: **COMPLETO. T1, T2 y T3 cerrados. Falta solo el visto bueno de Sofia en
 navegador y el commit (mensaje redactado en T3).**
-No hacer `git commit` automático — solo dejar el mensaje redactado (norma del equipo).
+No hacer `git commit` automático: solo dejar el mensaje redactado (norma del equipo).
 
 ---
 
-## T1: Frontend — selección en dos pasos (persona → contrato)
+## T1: Frontend, selección en dos pasos (persona → contrato)
 
 **Descripción:** Reemplazar la lista plana de `VerificarIntegridadPage` por una selección
 en dos pasos (persona → su contrato), conservando el ingreso manual del `documentId` como
@@ -35,7 +35,7 @@ vía secundaria. Sin cambios de backend (D4).
   paso 2 lista sus 3 contratos (incluidos dos con fecha/estado distintos) con nombre,
   fecha y estado; al elegir, el panel muestra "Responsable · María López" + el hash
   registrado; ingreso manual de un UUID inexistente → "El documento no está registrado".
-  Falta T2 (reproducir con **dos personas** que tengan un archivo homónimo — hoy solo
+  Falta T2 (reproducir con **dos personas** que tengan un archivo homónimo, hoy solo
   un Empleado tiene documentos sembrados).
 
 **Dependencias:** ninguna.
@@ -51,7 +51,7 @@ vía secundaria. Sin cambios de backend (D4).
 **Criterios de aceptación:**
 - [x] Subir dos contratos distintos con el mismo nombre de archivo desde dos empleados
   distintos; confirmar que el Verificador los distingue (paso 1 por persona) y elige el
-  correcto. Se subió a `c.ruiz` (Carlos Ruiz, U002) un `CONTRATO FALSO.pdf` — mismo
+  correcto. Se subió a `c.ruiz` (Carlos Ruiz, U002) un `CONTRATO FALSO.pdf`: mismo
   nombre que los de María López. El paso 1 lista ambas personas; cada una muestra su
   propio `CONTRATO FALSO.pdf` por separado.
 - [x] Verificar con el archivo correcto → "Integridad confirmada"; con uno alterado →
@@ -78,10 +78,10 @@ vía secundaria. Sin cambios de backend (D4).
 
 **Criterios de aceptación:**
 - [x] `claude_docs/SPEC.md`: RF‑24 con la nota de cambio (Sprint 4, selección en dos
-  pasos) — coherente con lo implementado.
+  pasos), coherente con lo implementado.
 - [x] `para_sofi.md`: bloque "✅ Resuelto (2026-10-12)" al final de la sección 3 con cómo
   quedó la selección; sección 6 (pendientes) y fecha de última actualización al día.
-- [x] Mensaje de commit redactado (sin commit automático) — ver abajo.
+- [x] Mensaje de commit redactado (sin commit automático): ver abajo.
 
 **Dependencias:** T2.
 
@@ -90,7 +90,7 @@ vía secundaria. Sin cambios de backend (D4).
 ### Mensaje de commit redactado
 
 ```
-Selección de documento en dos pasos (persona → contrato) — RF-24
+Selección de documento en dos pasos (persona → contrato): RF-24
 
 - VerificarIntegridadPage: elegir primero la persona responsable y luego
   su contrato, en vez de una lista plana de nombres de archivo. Resuelve

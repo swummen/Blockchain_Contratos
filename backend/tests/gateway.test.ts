@@ -1,5 +1,5 @@
 // Único test directo de gateway.ts (T3): protege el contrato de errores que
-// T4 ya depende de que se cumpla — que submitChaincodeTransaction no envuelva
+// T4 ya depende de que se cumpla, que submitChaincodeTransaction no envuelva
 // ni descarte el error original del SDK (GatewayError.details, donde vive el
 // motivo real de un rechazo del chaincode). queryChaincode nunca tuvo tests
 // unitarios propios (solo verificación real contra la red, Sprint 1); acá se

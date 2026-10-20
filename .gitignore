@@ -41,9 +41,7 @@ build/Release
 node_modules/
 jspm_packages/
 
-# Go: generado por `go mod vendor` (network.sh/packageCC.sh lo corre solo al
-# empaquetar el chaincode, Sprint 2): go.sum ya alcanza para reproducibilidad,
-# no hace falta versionar las dependencias vendorizadas.
+# Go: lo genera `go mod vendor` al empaquetar el chaincode; go.sum basta.
 chaincode/vendor/
 
 # Snowpack dependency directory (https://snowpack.dev/)

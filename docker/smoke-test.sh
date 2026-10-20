@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Smoke test de HU-021 (T8): asevera los dos escenarios Gherkin CA-01/CA-02 y
-# deja evidencia para el PPS. Requiere el stack completo arriba (docker/up.sh).
-# No usa "set -e": queremos acumular todos los fallos en un solo reporte en
-# vez de cortar en el primer chequeo que falle.
+# Comprueba HU-021 (CA-01 y CA-02) con el sistema encendido. Sin "set -e" para
+# reportar todos los fallos juntos.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,9 +30,7 @@ done
 
 echo
 echo "==> CA-01: el chaincode responde en contratoschannel (GET /fabric/ping)"
-# Desde Sprint 2, /fabric/ping consulta GetMetadata (query de sistema de
-# contractapi) en vez de "GetAllAssets" del chaincode de ejemplo retirado:
-# la respuesta ya no trae "ID", pero sí el nombre del contrato real.
+# /fabric/ping devuelve la metadata del chaincode, con el nombre del contrato.
 if ping_output="$(curl -fsS --connect-timeout 5 --max-time 15 "http://127.0.0.1:${BACKEND_PORT}/fabric/ping" 2>&1)" \
    && echo "${ping_output}" | grep -q '"ContractsContract"'; then
   echo "OK: /fabric/ping devolvió la metadata del chaincode real."
@@ -45,10 +41,8 @@ fi
 
 echo
 echo "==> CA-02: frontend/src no referencia infraestructura directamente"
-# Case-sensitive a propósito (sin -i): "Fabric" con mayúscula (ya usado en
-# comentarios/nombres legítimos de frontend/src) no dispara el chequeo, pero
-# "fabric" en minúscula en cualquier comentario nuevo sí lo haría (pasó una
-# vez, Sprint 2 T7: ver claude_docs/tasks/todo-sprint2-documents-ledger.md).
+# Distingue mayúsculas: "Fabric" en textos del frontend es válido, pero escribir
+# "fabric" en minúscula, incluso en un comentario, hace fallar el chequeo.
 grep_output="$(grep -rIE "7051|9051|7050|27017|:5984|fabric|mongodb://" ../frontend/src 2>&1)"
 rc=$?
 if [ "${rc}" -eq 0 ]; then

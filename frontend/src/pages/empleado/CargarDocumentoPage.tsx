@@ -24,9 +24,7 @@ export default function CargarDocumentoPage() {
     setLoading(true)
     setError(null)
     try {
-      // El backend calcula y ancla su propia huella (no confía en la del
-      // cliente); esta se recalcula localmente solo para mostrarla en la UI
-      // sin esperar una segunda vuelta al servidor a buscarla.
+      // El backend calcula su propia huella; esta es solo para mostrarla.
       const [result, hash] = await Promise.all([
         uploadDocument(token, file),
         computeSha256Hex(file),
@@ -41,10 +39,6 @@ export default function CargarDocumentoPage() {
         status: "Pendiente",
       })
     } catch (err) {
-      // 401 (sesión vencida) llega con el mismo mensaje ya pensado para
-      // mostrarse ("Sesión inválida o vencida.") que cualquier otro rechazo
-      // del backend, no amerita un interceptor global todavía por un único
-      // caso, a diferencia de lo que sí necesitó /auth en Sprint 1.
       setError(err instanceof Error ? err.message : "No se pudo registrar el documento.")
     } finally {
       setLoading(false)

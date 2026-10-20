@@ -5,9 +5,7 @@ import { CopyButton } from "./CopyButton"
 import { formatDateTime } from "@/lib/format"
 import type { ContractDocument } from "@/types/domain"
 
-// Acepta tanto el listado real (`GET /documents`: trae hash y nombre del
-// responsable, no el tamaño) como el mock que todavía usan algunas pantallas
-// (trae tamaño, no `responsibleName`). Lo que falte simplemente no se muestra.
+// GET /documents no trae el tamaño: los campos que falten no se muestran.
 type ListedDocument = Omit<ContractDocument, "hash" | "sizeLabel"> &
   Partial<Pick<ContractDocument, "hash" | "sizeLabel">> & { responsibleName?: string }
 

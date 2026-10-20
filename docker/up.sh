@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# Orquesta todo el stack en una sola orden (T7 de Sprint 0): red Fabric ->
-# chaincode real del proyecto (contracts, Sprint 2) -> Mongo/backend/frontend.
-# Pensado para correr desde un checkout limpio. Cada paso ya es idempotente/
-# con guardas propias (network-up.sh, deploy-cc.sh); acá solo se encadenan en
-# el orden correcto.
+# Levanta todo en orden: red Fabric, chaincode, Mongo/backend/frontend y
+# usuarios de prueba. Cada paso tiene sus propias comprobaciones.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,10 +29,7 @@ bash deploy-cc.sh
 
 echo
 echo "==> [3/4] Mongo + backend + frontend..."
-# --build a propósito (no solo "up -d" como en el comando suelto que documenta
-# docker/README.md): el proyecto sigue en desarrollo activo, así que up.sh
-# siempre reconstruye backend/frontend en vez de arriesgarse a dejar una
-# imagen vieja corriendo con código que ya cambió.
+# --build: evita dejar corriendo una imagen con código viejo.
 docker compose --env-file .env -f compose.app.yml up -d --build mongo backend frontend
 
 echo

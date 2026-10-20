@@ -4,9 +4,8 @@ import { cn } from "@/lib/utils"
 interface HashDisplayProps {
   hash: string
   /**
-   * Único interruptor que decide si se imprime el hash completo o enmascarado.
-   * RF-27/RNF-08: la huella completa solo puede verla el Verificador.
-   * Ninguna pantalla debe interpolar `document.hash` fuera de este componente.
+   * Decide si se muestra el hash completo (RF-27: solo el Verificador).
+   * Ninguna pantalla debe mostrar `document.hash` fuera de este componente.
    */
   canViewFull: boolean
   label?: string

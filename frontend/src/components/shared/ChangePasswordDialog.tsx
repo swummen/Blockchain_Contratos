@@ -55,9 +55,7 @@ export function ChangePasswordDialog({
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
-        // Ignora el cierre (Escape/clic afuera) mientras hay una request en
-        // vuelo: si se reabriera antes de que resuelva, isSubmitting/error
-        // quedarían mostrando el resultado de la request vieja.
+        // No se cierra mientras hay una petición en curso: al reabrir mostraría su resultado.
         if (isSubmitting) return
         onOpenChange(nextOpen)
         if (!nextOpen) reset()

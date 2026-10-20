@@ -30,8 +30,7 @@ export function AppRoutes() {
         <Route path="/sesion-cerrada" element={<LoggedOutPage />} />
       </Route>
 
-      {/* Diagnóstico de infraestructura (T6, HU-021 CA-02), no forma parte
-          del flujo de negocio: sin layout ni sesión. */}
+      {/* Diagnóstico de infraestructura: sin layout ni sesión. */}
       <Route path="/system-status" element={<SystemStatusPage />} />
 
       <Route element={<ProtectedRoute allowedRole="Empleado" />}>

@@ -12,16 +12,14 @@ export default function MiTrazabilidadPage() {
 
   React.useEffect(() => {
     if (!token) return
-    // RF-21/22 (HU-009): el Empleado no tiene acceso a GET /events (solo
-    // Verificador/Administrador), su trazabilidad se arma con la de cada
-    // uno de sus documentos, que el backend ya acota a los propios.
+    // El Empleado no tiene GET /events: se arma con la trazabilidad de cada documento suyo.
     async function load(authToken: string) {
       const documents = await listDocuments(authToken)
       const perDocument = await Promise.all(
         documents.map((doc) => getDocumentEvents(authToken, doc.documentId))
       )
       setDocumentNames(Object.fromEntries(documents.map((d) => [d.documentId, d.name])))
-      // Más reciente primero, mismo orden que mostraba el mock.
+      // Más reciente primero.
       setEvents(perDocument.flat().sort((a, b) => b.timestamp.localeCompare(a.timestamp)))
     }
     load(token).catch((err) => {

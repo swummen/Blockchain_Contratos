@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Baja la test-network de Hyperledger Fabric: elimina contenedores, volúmenes y
-# material criptográfico. Deja el entorno limpio para volver a network-up.sh.
+# Baja la red Fabric: contenedores, volúmenes y material criptográfico.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,14 +14,8 @@ export FABRIC_CFG_PATH="${SCRIPT_DIR}/fabric-samples/config"
 
 cd "$SCRIPT_DIR/fabric-samples/test-network"
 
-# network.sh down limpia contenedores/volúmenes/red bien, pero su paso final
-# borra el material criptográfico con un contenedor busybox
-# (`docker run -v "$(pwd):/data" ...`) que en Git Bash (MSYS) sufre el mismo
-# problema de reescritura de rutas que el bind-mount de DOCKER_SOCK: la ruta
-# del host no llega intacta y el "cd /data" falla dentro del contenedor. Se
-# tolera ese fallo puntual (no es el teardown de contenedores, que si importa
-# y se verifica abajo) y la limpieza de organizations/ se fuerza desde el
-# host, sin pasar por Docker.
+# En Git Bash falla el paso final de network.sh (borra los certificados desde un
+# contenedor con una ruta mal convertida): se tolera y se borran desde el host.
 ./network.sh down || true
 
 if docker ps -a --format '{{.Names}}' | grep -q '^orderer\.example\.com$'; then

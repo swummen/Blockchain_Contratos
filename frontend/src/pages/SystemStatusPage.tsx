@@ -6,11 +6,7 @@ type LoadState =
   | { kind: "ok"; data: HealthStatus }
   | { kind: "error"; message: string }
 
-/**
- * Ruta de diagnóstico de infraestructura (T6, HU-021 CA-02), independiente
- * del flujo real de la app (login/roles). Prueba que el frontend solo le
- * habla al backend vía VITE_API_URL, nunca directo a Mongo/Fabric.
- */
+/** Diagnóstico de infraestructura, fuera del flujo de login (HU-021). */
 export default function SystemStatusPage() {
   const [state, setState] = React.useState<LoadState>({ kind: "loading" })
 

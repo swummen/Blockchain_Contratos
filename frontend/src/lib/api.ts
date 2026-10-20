@@ -1,7 +1,7 @@
 import type { Role, TraceAction, TraceResult, User } from "@/types/domain"
 
-// Único punto de contacto con el backend (RNF-20): el frontend nunca le
-// habla a Fabric ni a Mongo directamente, siempre a través de esta URL.
+// Único punto de contacto con el backend: el frontend nunca habla con Fabric
+// ni con MongoDB (RNF-20).
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080"
 
 export interface HealthStatus {
@@ -17,9 +17,7 @@ export async function getHealth(): Promise<HealthStatus> {
   return res.json()
 }
 
-// El backend siempre responde { message } en error, se propaga tal cual, ya
-// son mensajes pensados para mostrarse. Compartido por los helpers de abajo
-// (JSON y multipart) para no repetir el mismo parseo 4 veces.
+// Los errores del backend traen { message } listo para mostrar: se propaga tal cual.
 async function parseJsonResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -47,16 +45,11 @@ async function sendAuthJson<T>(
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(body),
-      // Sin esto, un servidor que acepta la conexión pero nunca responde
-      // deja la promesa colgada para siempre, el botón de submit (o el
-      // logout) quedaría deshabilitado sin salida. AbortSignal.timeout es
-      // nativo, sin librería nueva.
+      // Sin plazo, un servidor que nunca responde dejaría el botón bloqueado.
       signal: AbortSignal.timeout(10_000),
     })
   } catch {
-    // fetch() rechaza (sin llegar a res.ok) si el backend no responde, hay
-    // un problema de red o de CORS, el mensaje nativo del navegador viene
-    // en inglés ("Failed to fetch"), así que se normaliza acá.
+    // Error de red o de CORS: el mensaje del navegador viene en inglés.
     throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.")
   }
   return parseJsonResponse<T>(res)
@@ -102,9 +95,8 @@ export interface UploadDocumentResult {
   documentId: string
 }
 
-// multipart/form-data, no JSON, no puede pasar por postAuthJson (fija
-// Content-Type: application/json). El campo se llama "document" porque así
-// lo espera `upload.single("document")` en backend/src/routes/documents.ts.
+// multipart/form-data. El campo "document" debe coincidir con
+// upload.single("document") en backend/src/routes/documents.ts.
 export async function uploadDocument(
   token: string,
   file: File
@@ -118,9 +110,7 @@ export async function uploadDocument(
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
-      // Más largo que el de postAuthJson: además del round-trip HTTP, el
-      // backend espera un commit real de la red blockchain antes de
-      // responder (ver COMMIT_TIMEOUT_MS en el gateway del backend).
+      // Más largo: el backend espera la confirmación del bloque en Fabric.
       signal: AbortSignal.timeout(30_000),
     })
   } catch {
@@ -138,9 +128,7 @@ export interface DocumentLookup {
   status: "Pendiente" | "Verificado" | "Alterado"
 }
 
-// RF-25/26 (HU-010/011): consulta puntual por identificador exacto, 404 si
-// no existe (HU-010-CA-02). Es la fuente real de hash/status (el ledger es
-// la autoridad); `listDocuments` de abajo es solo para elegir cuál consultar.
+// Hash y estado leídos del ledger; 404 si no existe.
 export async function getDocument(token: string, documentId: string): Promise<DocumentLookup> {
   return getAuthJson(`/documents/${encodeURIComponent(documentId)}`, token)
 }
@@ -149,17 +137,16 @@ export interface DocumentSummary {
   documentId: string
   name: string
   responsibleUser: string
-  /** Nombre legible del responsable (cae al userId si el usuario no existe). */
+  /** Cae al userId si el usuario no existe. */
   responsibleName: string
   registeredAt: string
-  /** Completo para Verificador/Administrador, ya enmascarado por el backend para el Empleado. */
+  /** Completo solo para el Verificador; el backend lo enmascara para el resto. */
   hash: string
   status: "Pendiente" | "Verificado" | "Alterado"
 }
 
-// Listado (Sprint 3 T5, ampliado en Sprint 4): para el Empleado, solo sus
-// documentos. El hash es la copia de Mongo: antes de verificar, la fuente
-// real sigue siendo getDocument() (el ledger).
+// Para el Empleado, solo sus documentos. La autoridad sobre el hash sigue
+// siendo getDocument() (el ledger).
 export async function listDocuments(token: string): Promise<DocumentSummary[]> {
   return getAuthJson("/documents", token)
 }
@@ -168,16 +155,14 @@ export interface DocumentEvent {
   documentId: string
   action: TraceAction
   user: string
-  /** Nombre legible de `user` (cae al userId si no es un usuario registrado). */
+  /** Cae al userId si no es un usuario registrado. */
   userName: string
   txId: string
   timestamp: string
   result?: TraceResult
 }
 
-// RF-21/22 (HU-009): trazabilidad de un documento, ya ordenada
-// cronológicamente por el backend. Un Empleado solo puede pedir la de sus
-// propios documentos (403 si no).
+// Ya viene en orden cronológico. Un Empleado recibe 403 si no es el dueño.
 export async function getDocumentEvents(
   token: string,
   documentId: string
@@ -185,9 +170,7 @@ export async function getDocumentEvents(
   return getAuthJson(`/documents/${encodeURIComponent(documentId)}/events`, token)
 }
 
-// RF-39/40/50/51 (HU-016/020): trazabilidad general, solo Verificador y
-// Administrador. Ya ordenada cronológicamente (más antiguo primero) y acotada
-// a los 200 eventos más recientes por el backend.
+// Trazabilidad general: los 200 eventos más recientes, del más antiguo al más nuevo.
 export async function getAllEvents(token: string): Promise<DocumentEvent[]> {
   return getAuthJson("/events", token)
 }
@@ -199,8 +182,7 @@ export interface DocumentsSummary {
   alterado: number
 }
 
-// RF-41/42 (HU-017): totales reales por estado, solo Administrador. Contados
-// en Mongo con un aggregate: nunca limitados a los 100 de listDocuments.
+// Totales por estado de todos los documentos (no solo los 100 del listado).
 export async function getDocumentsSummary(token: string): Promise<DocumentsSummary> {
   return getAuthJson("/documents/summary", token)
 }
@@ -226,8 +208,7 @@ export async function verifyDocument(
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
-      // Mismo motivo que uploadDocument: el backend espera el commit real de
-      // RecordVerification en la blockchain antes de responder.
+      // Más largo: el backend espera la confirmación del bloque en Fabric.
       signal: AbortSignal.timeout(30_000),
     })
   } catch {
@@ -242,13 +223,12 @@ export interface UserInput {
   role: Role
 }
 
-// RF-43…47 (HU-018): gestión de usuarios, solo Administrador.
+// Gestión de usuarios (solo Administrador).
 export async function listUsers(token: string): Promise<User[]> {
   return getAuthJson("/users", token)
 }
 
-// D7b: el usuario nuevo entra con una contraseña temporal fija que el
-// backend devuelve para que el Administrador se la comunique.
+// Devuelve la contraseña temporal para que el Administrador la comunique.
 export async function createUser(
   token: string,
   input: UserInput
@@ -256,8 +236,7 @@ export async function createUser(
   return postAuthJson("/users", input, token)
 }
 
-// Si cambia el rol, el backend cierra las sesiones abiertas de ese usuario
-// (el rol viaja en el JWT), tendrá que volver a iniciar sesión.
+// Si cambia el rol, el backend cierra las sesiones de ese usuario.
 export async function updateUser(
   token: string,
   userId: string,
@@ -266,7 +245,7 @@ export async function updateUser(
   return sendAuthJson("PUT", `/users/${encodeURIComponent(userId)}`, input, token)
 }
 
-// RF-47: baja lógica, sin reactivación. Corta también sus sesiones abiertas.
+// Baja lógica (no hay reactivación); cierra también sus sesiones.
 export async function deactivateUser(token: string, userId: string): Promise<void> {
   await postAuthJson(`/users/${encodeURIComponent(userId)}/deactivate`, undefined, token)
 }

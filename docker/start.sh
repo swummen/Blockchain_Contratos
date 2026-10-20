@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Vuelve a encender el sistema SIN perder datos (p. ej. después de reiniciar el
-# computador). Requiere que antes se haya corrido `bash docker/up.sh` al menos una vez.
-# Fabric primero y la aplicación después: el backend se conecta al peer al arrancar.
+# Enciende el sistema sin perder datos (por ejemplo, tras reiniciar el PC).
+# Fabric primero: el backend se conecta al peer al arrancar.
 set -euo pipefail
 
 docker info >/dev/null 2>&1 || { echo "Docker no está corriendo. Abre Docker Desktop y espera a que diga 'Engine running'." >&2; exit 1; }

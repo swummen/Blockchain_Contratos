@@ -31,9 +31,7 @@ export default function DashboardPage() {
     if (!token) return
     let cancelled = false
 
-    // RF-41/42 (HU-017): los totales y la actividad reciente se cargan por
-    // separado, si el ledger no responde, los totales (Mongo) se muestran
-    // igual, y viceversa.
+    // Totales y actividad se cargan por separado: si una falla, la otra se muestra.
     getDocumentsSummary(token)
       .then((s) => {
         if (!cancelled) setSummary(s)
@@ -55,8 +53,7 @@ export default function DashboardPage() {
         }
       })
 
-    // Solo para mostrar nombres de archivo en vez del identificador; si
-    // falla, la actividad sigue mostrando el identificador.
+    // Solo para mostrar nombres de archivo; si falla se muestra el identificador.
     listDocuments(token)
       .then((docs) => {
         if (!cancelled) {

@@ -11,9 +11,7 @@ export default function DocumentosPage() {
 
   React.useEffect(() => {
     if (!token) return
-    // RF-37/38 (HU-015): para el Verificador, GET /documents no se acota por
-    // dueño, trae todos (hasta 100), con la huella completa (RF-27) y el
-    // nombre del responsable.
+    // Todos los documentos (hasta 100) con la huella completa.
     listDocuments(token)
       .then(setDocuments)
       .catch((err) => {

@@ -4,10 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2 } from "lucide-react"
 
-// RF-07 (HU-003 CA-01): cerrar sesión invalida el token y redirige al inicio
-// de sesión. Esta pantalla intermedia solo confirma al usuario que la
-// invalidación ya ocurrió, antes de mandarlo de vuelta a LoginPage: no
-// cambia el destino final que exige el requisito.
+// Confirma el cierre de sesión y luego vuelve al inicio (HU-003 CA-01).
 const REDIRECT_MS = 2500
 
 export default function LoggedOutPage() {

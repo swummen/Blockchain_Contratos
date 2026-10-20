@@ -1,7 +1,5 @@
-# Servicios de aplicación (mongo, y luego backend/frontend en T4/T6), separados
-# del compose de la red Fabric para poder reiniciar la app sin bajar la red
-# (decisión D7 en claude_docs/tasks/plan.md). Se unen a la red externa
-# `fabric_test` que crea docker/network-up.sh.
+# Mongo, backend y frontend, separados de la red Fabric para poder reiniciar la
+# aplicación sin bajar la red. Usan la red fabric_test que crea network-up.sh.
 name: contratos
 
 services:
@@ -13,9 +11,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
     ports:
-      # Solo localhost: el backend (T4) lo alcanza por DNS interno de
-      # fabric_test como mongo:27017; publicar en 0.0.0.0 expondría las
-      # credenciales por defecto de .env.example a toda la red del host.
+      # Solo localhost: en 0.0.0.0 expondría las credenciales por defecto a la red.
       - "127.0.0.1:${MONGO_PORT:-27017}:27017"
     volumes:
       - mongo_data:/data/db
@@ -34,26 +30,15 @@ services:
     container_name: backend
     restart: unless-stopped
     environment:
-      # PORT no se pasa: el contenedor siempre escucha en 8080 (EXPOSE del
-      # Dockerfile); BACKEND_PORT solo controla el puerto publicado en el
-      # host, para no tener que mantener las dos cosas sincronizadas.
+      # El contenedor siempre escucha en 8080; BACKEND_PORT solo cambia el puerto del host.
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-root}:${MONGO_ROOT_PASSWORD:-changeme}@mongo:27017/?authSource=admin
-      # FABRIC_* no se pasan: los defaults de backend/src/config/fabric.ts ya
-      # apuntan a este mismo contexto (peer0.org1.example.com:7051, /crypto/...).
-      # Derivado de FRONTEND_PORT (no un valor fijo aparte) para que el CORS
-      # de /auth (Sprint 1, T2) no se desincronice si se cambia el puerto del
-      # frontend: el navegador corre en el host, así que el origen real es
-      # localhost:FRONTEND_PORT, igual que VITE_API_URL de más abajo.
+      # FABRIC_* usan los valores por defecto de backend/src/config/fabric.ts.
+      # El origen se deriva de FRONTEND_PORT para que el CORS siga al puerto real.
       FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
-      # Sprint 1, T3: config/auth.ts no trae ningún default propio para esto
-      # (es un secreto), el default de acá es exclusivamente para que
-      # docker/up.sh funcione sin pasos extra en desarrollo, mismo criterio
-      # que MONGO_ROOT_PASSWORD arriba.
+      # Valor de desarrollo para que up.sh funcione sin configurar nada.
       JWT_SECRET: ${JWT_SECRET:-contratos-dev-secret-cambiar-en-produccion}
       JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-60}
-      # Envío real del OTP por un proveedor SMTP externo (Brevo). Con
-      # SMTP_HOST vacío el código se loguea en `docker logs backend`
-      # (modo desarrollo, ver backend/src/services/emailService.ts).
+      # Correo del código (Brevo). Vacío: el código se imprime en docker logs backend.
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -64,13 +49,8 @@ services:
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     volumes:
-      # Identidad + certificados TLS que genera network-up.sh (T1). Se
-      # regenera en cada ciclo down/up, ver docker/README.md. Solo lectura:
-      # el backend nunca debe modificar el material criptográfico. Se monta
-      # solo la carpeta de Org1 (mínimo privilegio): gateway.ts hoy no usa
-      # nada de Org2 ni del orderer, así que el backend no tiene por qué
-      # poder leer esas llaves privadas, la ruta de destino coincide con el
-      # default de FABRIC_CRYPTO_PATH en backend/src/config/fabric.ts.
+      # Solo Org1 y en solo lectura (mínimo privilegio). El destino coincide con
+      # FABRIC_CRYPTO_PATH de backend/src/config/fabric.ts.
       - ./fabric-samples/test-network/organizations/peerOrganizations/org1.example.com:/crypto/peerOrganizations/org1.example.com:ro
     depends_on:
       mongo:
@@ -82,10 +62,8 @@ services:
     build:
       context: ../frontend
       args:
-        # Vite bakea esto en el bundle en tiempo de build (no de arranque del
-        # contenedor): el navegador corre en el host, así que necesita
-        # localhost:8080 (el puerto publicado de backend), no backend:8080
-        # (solo resoluble dentro de la red fabric_test).
+        # Se fija al compilar. Lo usa el navegador del host, por eso es localhost y
+        # no backend:8080, que solo existe dentro de la red de Docker.
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
     container_name: frontend
     restart: unless-stopped

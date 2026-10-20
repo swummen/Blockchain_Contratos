@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Apaga el sistema SIN borrar nada (documentos, usuarios y blockchain se conservan).
-# Para volver a encenderlo: bash docker/start.sh. Para borrar todo: bash docker/down.sh.
+# Apaga el sistema sin borrar datos. Se enciende de nuevo con start.sh.
 set -euo pipefail
 
 echo "==> Apagando la aplicación y la red Fabric (los datos se conservan)..."

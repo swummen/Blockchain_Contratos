@@ -12,9 +12,8 @@ export default function TrazabilidadGlobalPage() {
 
   React.useEffect(() => {
     if (!token) return
-    // RF-39/40 (HU-016): GET /events trae la trazabilidad de todos los
-    // documentos. El listado solo aporta nombres legibles: si falla, la
-    // tabla sigue mostrando el identificador, no se bloquea por eso.
+    // Trazabilidad de todos los documentos; el listado solo aporta los nombres
+    // y, si falla, se muestra el identificador.
     getAllEvents(token)
       .then((all) => setEvents([...all].reverse()))
       .catch((err) => {

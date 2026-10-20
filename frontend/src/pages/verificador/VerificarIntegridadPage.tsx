@@ -33,12 +33,9 @@ interface Person {
 export default function VerificarIntegridadPage() {
   const { token } = useSession()
 
-  // HU-010-CA-01: "el Verificador lo selecciona". Selección en dos pasos
-  // (RF-24, nota de cambio Sprint 4): primero la persona responsable, luego
-  // su contrato, así dos archivos homónimos (`contrato.pdf`) de empleados
-  // distintos nunca se confunden. El ingreso manual del identificador queda
-  // como vía secundaria, por si el documento no aparece en esta primera
-  // página de 100 o el listado no cargó.
+  // Selección en dos pasos (RF-24): primero la persona y luego su contrato,
+  // para que dos archivos con el mismo nombre de personas distintas no se
+  // confundan. El identificador a mano queda para documentos fuera del listado.
   const [documents, setDocuments] = React.useState<DocumentSummary[]>([])
   const [documentsError, setDocumentsError] = React.useState<string | null>(null)
 
@@ -65,8 +62,7 @@ export default function VerificarIntegridadPage() {
       })
   }, [token])
 
-  // Agrupa el listado por persona responsable (una sola vez cada una), para
-  // el paso 1. El `documentId` real queda dentro de cada persona, sin exponerse.
+  // Personas del paso 1; el documentId queda interno.
   const people = React.useMemo<Person[]>(() => {
     const byId = new Map<string, Person>()
     for (const doc of documents) {
@@ -83,9 +79,7 @@ export default function VerificarIntegridadPage() {
 
   const selectedPerson = people.find((p) => p.id === selectedPersonId) ?? null
 
-  // Nombre legible del responsable del documento ya elegido (para el panel):
-  // viene del listado; si el documento se buscó a mano y no está en la lista,
-  // cae al userId que trae getDocument.
+  // Del listado; si se buscó a mano y no está en él, cae al userId.
   const selectedResponsibleName =
     documents.find((d) => d.documentId === document?.documentId)?.responsibleName ??
     document?.responsibleUser
@@ -127,8 +121,7 @@ export default function VerificarIntegridadPage() {
     }
   }
 
-  // HU-014-CA-02: "Nueva verificación" vuelve al formulario vacío de
-  // selección de documento, no solo limpia el resultado.
+  // "Nueva verificación" vuelve a la selección vacía (HU-014 CA-02).
   function handleReset() {
     setSelectedPersonId(null)
     setManualOpen(false)
@@ -154,9 +147,7 @@ export default function VerificarIntegridadPage() {
       {result ? (
         <Card>
           <CardContent className="space-y-4">
-            {/* RF-33: la evidencia no es solo el hash, hace falta ver
-                claramente qué documento registrado se comparó contra qué
-                archivo subido, para poder justificar el resultado. */}
+            {/* RF-33: evidencia de qué documento se comparó contra qué archivo. */}
             <div className="grid gap-3 rounded-xl border border-border bg-card p-4 text-sm sm:grid-cols-2">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Documento registrado</p>
@@ -226,9 +217,7 @@ export default function VerificarIntegridadPage() {
                             Contrato de {selectedPerson.name}
                           </Label>
                           <Select
-                            // Siempre sin seleccionar a propósito: elegir una
-                            // opción dispara handleLookup, que pone `document`
-                            // y esconde todo este bloque.
+                            // Sin valor: elegir dispara handleLookup y oculta este bloque.
                             value={undefined}
                             onValueChange={(id) => handleLookup(id)}
                             disabled={lookupLoading}
@@ -255,8 +244,7 @@ export default function VerificarIntegridadPage() {
                     </p>
                   )}
 
-                  {/* Vía secundaria: ingreso manual del identificador (RF-24, D5),
-                      por si el documento no aparece en el listado. */}
+                  {/* Vía secundaria: ingresar el identificador a mano. */}
                   <div className="pt-1">
                     {!manualOpen ? (
                       <button

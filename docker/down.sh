@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# Inversa de up.sh (T7): baja app + red + volúmenes, deja el checkout listo
-# para volver a correr up.sh desde cero. A diferencia del "docker compose
-# down" suelto que documenta docker/README.md (que preserva el volumen de
-# Mongo para uso iterativo), acá se borra todo a propósito -v.
+# Inverso de up.sh: borra la aplicación, la red y los volúmenes (todos los datos).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# Despliega el chaincode real del proyecto (`contracts`, Go: ver chaincode/) en
-# contratoschannel: package -> install -> approve -> commit -> invocación de
-# prueba de RegisterDocument. Reemplaza a deploy-sample-cc.sh (asset-transfer-
-# basic), retirado según la decisión D9 de Sprint 0 ("se elimina cuando entre
-# el chaincode real"). Ver T2 en claude_docs/tasks/todo-sprint2-documents-ledger.md.
+# Despliega el chaincode contracts en contratoschannel (empaquetar, instalar,
+# aprobar y confirmar) y prueba un registro y el rechazo de un duplicado.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,8 +23,7 @@ export FABRIC_CFG_PATH="${SCRIPT_DIR}/fabric-samples/config"
 
 cd "${SCRIPT_DIR}/fabric-samples/test-network"
 
-# Identidad de Org1 para el chequeo de idempotencia y la invocación de prueba.
-# network.sh arma sus propias variables internamente para deployCC/cc invoke.
+# Identidad de Org1 para las consultas e invocaciones de este script.
 export CORE_PEER_TLS_ENABLED=true
 export CORE_PEER_LOCALMSPID="Org1MSP"
 export CORE_PEER_TLS_ROOTCERT_FILE="${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
@@ -43,42 +39,25 @@ fi
 
 echo
 echo "==> Invocando RegisterDocument con un documento de prueba..."
-# ponytail: cada corrida deja dos eventos de humo en el ledger (no es
-# idempotente como InitLedger de Sprint 0, que siempre pisa los mismos 6
-# activos): aceptable para un script de verificación manual; si esto se
-# llega a llamar en cada `up.sh` de un flujo de desarrollo repetido (T5),
-# conviene acotarlo a la primera vez que se despliega (dentro del `else` de
-# arriba), no en cada corrida.
+# ponytail: cada corrida deja un documento de prueba en el ledger; moverlo al
+# else de arriba si molesta en corridas repetidas.
 SMOKE_DOC_ID="smoke-test-$(date +%s)-$$"
 SMOKE_HASH="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 ./network.sh cc invoke -c "${CHANNEL_NAME}" -ccn "${CC_NAME}" \
   -ccic "{\"Args\":[\"RegisterDocument\",\"${SMOKE_DOC_ID}\",\"${SMOKE_HASH}\",\"smoke-test-user\"]}"
 
-# Espera proactiva antes de intentar el duplicado (no solo reactiva vía el
-# retry-loop de abajo): el invoke de arriba devuelve éxito apenas el peer
-# endosante simula la transacción, no cuando el orderer ya cortó el bloque
-# que la confirma (por defecto ~2s de BatchTimeout): verificado en la
-# práctica que sin esta espera la segunda invocación llega casi siempre
-# *antes* de ese commit y el chequeo de duplicado da un falso "no rechazado".
+# El invoke responde antes de que se corte el bloque (BatchTimeout de 2 s): sin
+# esta espera, el duplicado llega antes y no se rechaza.
 sleep 3
 
 echo
 echo "==> Confirmando que un documentID ya registrado se rechaza (no se puede alterar lo ya anclado)..."
-# No se usa 'network.sh cc invoke' acá: su wrapper trata cualquier fallo del
-# chaincode como fatal (sale con exit 1), pero acá el fallo ES el resultado
-# esperado: se invoca 'peer chaincode invoke' directo para poder inspeccionar
-# el error sin que el script entero aborte.
+# peer chaincode invoke directo: network.sh aborta ante cualquier fallo, y aquí
+# el fallo es el resultado esperado.
 ORDERER_CA="${PWD}/organizations/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem"
 PEER0_ORG1_CA="${PWD}/organizations/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem"
 
-# El invoke de arriba reporta éxito (status 200) apenas el peer endosante
-# simula la transacción, pero el world state recién refleja el bloque después
-# de que el orderer lo corta y el peer lo valida/comete: un instante después,
-# no en el mismo momento (mismo desfase ya documentado en deploy-sample-cc.sh
-# de Sprint 0 para InitLedger→GetAllAssets). Probado en la práctica: sin
-# reintentos, esta segunda invocación llegaba antes de ese commit y
-# `documentExists` todavía veía el mundo vacío, registrando un duplicado en
-# vez de rechazarlo.
+# Reintentos por si el bloque del registro todavía no está confirmado.
 attempt=1
 max_attempts=5
 while true; do
@@ -88,10 +67,7 @@ while true; do
     -C "${CHANNEL_NAME}" -n "${CC_NAME}" \
     --peerAddresses localhost:7051 --tlsRootCertFiles "${PEER0_ORG1_CA}" \
     -c "{\"Args\":[\"RegisterDocument\",\"${SMOKE_DOC_ID}\",\"${SMOKE_HASH}\",\"smoke-test-user\"]}" 2>&1)"; then
-    # Éxito inesperado: es exactamente el estado que este chequeo existe para
-    # prevenir (un duplicado real quedó anclado), nunca algo por lo que
-    # reintentar, a diferencia de un fallo transitorio de red/TLS, que sí
-    # amerita otro intento.
+    # Un duplicado aceptado es el error que se busca detectar: no se reintenta.
     echo "Falló: la invocación duplicada tuvo éxito (no fue rechazada)." >&2
     echo "${duplicate_output}" >&2
     exit 1

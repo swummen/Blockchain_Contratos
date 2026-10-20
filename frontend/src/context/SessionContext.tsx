@@ -7,9 +7,7 @@ type AuthStage = "anonymous" | "pending-otp" | "authenticated"
 interface SessionState {
   stage: AuthStage
   user: User | null
-  // D7 del plan de Sprint 1: el JWT vive solo en memoria (no localStorage),
-  // se pierde al recargar la página, aceptable, no hay RF que pida
-  // "recordarme".
+  // Solo en memoria (no localStorage): recargar la página cierra la sesión.
   token: string | null
   pendingEmail: string | null
 }
@@ -80,9 +78,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         return { ok: false, error: errorMessage(err, "No se pudo verificar el código.") }
       }
 
-      // Guarda contra un 200 con body inesperado (ej. no-JSON silencioso en
-      // postAuthJson): sin esto, un resultado incompleto dejaría la UI en un
-      // estado "authenticated" sin usuario, sin poder volver atrás.
+      // Evita quedar "autenticado" sin usuario si la respuesta llega incompleta.
       if (!result.token || !result.user) {
         return { ok: false, error: "No se pudo verificar el código." }
       }
@@ -104,9 +100,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       try {
         await api.logout(token)
       } catch {
-        // Best-effort (AC de T7): si el backend no responde o la sesión ya
-        // estaba vencida, igual se limpia el estado local, no dejar al
-        // usuario atrapado esperando una llamada que puede fallar.
+        // Si el backend falla o la sesión ya venció, igual se limpia el estado local.
       }
     }
     setState(initialState)

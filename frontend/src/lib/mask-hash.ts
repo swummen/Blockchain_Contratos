@@ -1,6 +1,6 @@
 /**
- * Enmascara una huella SHA-256 para roles sin permiso de ver el hash completo (RF-27, RNF-08).
- * Deja visibles los primeros y últimos 8 caracteres, el resto se reemplaza por puntos.
+ * Deja visibles los primeros y últimos 8 caracteres (RF-27).
+ * Mismo algoritmo que maskHash en backend/src/services/documentService.ts.
  */
 export function maskHash(hash: string): string {
   if (hash.length <= 20) return hash

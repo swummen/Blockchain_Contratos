@@ -14,8 +14,7 @@ export default function TrazabilidadPage() {
     if (!token) return
     let cancelled = false
 
-    // RF-50/51 (HU-020): mismo GET /events y mismo nivel de detalle que el
-    // Verificador (HU-020-CA-02). El listado solo aporta nombres legibles.
+    // Mismo detalle que ve el Verificador (HU-020 CA-02); el listado aporta los nombres.
     getAllEvents(token)
       .then((all) => {
         if (!cancelled) setEvents([...all].reverse())

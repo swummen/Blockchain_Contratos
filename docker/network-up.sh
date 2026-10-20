@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Levanta la test-network de Hyperledger Fabric (fabric-samples) con Fabric CA
-# y crea/une el canal contratoschannel. Ver decisiones D1-D5 en claude_docs/tasks/plan.md.
+# Levanta la test-network de Fabric con Fabric CA y crea el canal contratoschannel.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,21 +21,14 @@ if [ ! -d fabric-samples/test-network ]; then
   rm -f install-fabric.sh
 fi
 
-# docker ps -a (no solo ps): una corrida anterior interrumpida a medias deja
-# contenedores creados pero no "Up", y ese estado también debe bloquear un
-# nuevo "up" en vez de chocar con contenedores/volúmenes existentes.
+# ps -a: una corrida interrumpida deja contenedores detenidos que también estorban.
 if docker ps -a --format '{{.Names}}' | grep -q '^orderer\.example\.com$'; then
   echo "Ya hay contenedores de una corrida anterior. Corre 'bash docker/network-down.sh' antes de volver a levantarla." >&2
   exit 1
 fi
 
-# Git Bash (MSYS) reescribe valores tipo /var/run/docker.sock pasados como
-# argumento/variable de entorno a un binario nativo de Windows (docker.exe) en
-# rutas de Windows (p.ej. C:\Program Files\Git\var\...), lo que rompe el
-# bind-mount ${DOCKER_SOCK} que network.sh arma para los peers. Como ese valor
-# vive en el YAML del compose (no en argv), lo fijamos aquí en el archivo en
-# vez de tocar la variable de entorno: docker-compose lee el YAML directo del
-# disco, sin pasar por la conversión de rutas de MSYS.
+# Git Bash convierte /var/run/docker.sock en una ruta de Windows si viaja en una
+# variable; se escribe fijo en el YAML, que Docker lee sin esa conversión.
 for f in fabric-samples/test-network/compose/docker/docker-compose-test-net.yaml \
          fabric-samples/test-network/compose/docker/docker-compose-bft-test-net.yaml; do
   if [ -f "$f" ] && grep -q '\${DOCKER_SOCK}' "$f"; then
@@ -44,15 +36,9 @@ for f in fabric-samples/test-network/compose/docker/docker-compose-test-net.yaml
   fi
 done
 
-# Windows con Smart App Control / App Control activo bloquea algunos binarios
-# nativos sin firma de install-fabric.sh (verificado: configtxlator.exe y
-# orderer.exe; Git Bash solo muestra "Permission denied"). orderer corre en su
-# contenedor, pero configtxlator lo usa network.sh para fijar los anchor peers
-# (setAnchorPeer). Si el .exe no puede ejecutarse, dejamos un wrapper
-# bin/configtxlator (sin extensión: Git Bash lo prefiere al .exe) que corre la
-# misma versión dentro de hyperledger/fabric-tools, montando fabric-samples en
-# la misma ruta POSIX para que las rutas absolutas /c/... de los argumentos
-# sigan valiendo dentro del contenedor.
+# Smart App Control de Windows puede bloquear configtxlator.exe ("Permission
+# denied"). En ese caso se usa un reemplazo que corre la misma versión en Docker,
+# montando fabric-samples en la misma ruta para que valgan las rutas /c/...
 if [ -f fabric-samples/bin/configtxlator.exe ] && ! fabric-samples/bin/configtxlator.exe version >/dev/null 2>&1; then
   echo "==> configtxlator.exe bloqueado por Windows; uso hyperledger/fabric-tools:${FABRIC_VERSION} vía Docker."
   docker image inspect "hyperledger/fabric-tools:${FABRIC_VERSION}" >/dev/null 2>&1 \
@@ -67,8 +53,7 @@ EOF
   chmod +x fabric-samples/bin/configtxlator
 fi
 
-# El peer CLI que usa network.sh (checkPrereqs) necesita los binarios y config
-# descargados por install-fabric.sh -f/-c en el paso anterior.
+# network.sh necesita los binarios y la configuración descargados arriba.
 export PATH="${SCRIPT_DIR}/fabric-samples/bin:${PATH}"
 export FABRIC_CFG_PATH="${SCRIPT_DIR}/fabric-samples/config"
 

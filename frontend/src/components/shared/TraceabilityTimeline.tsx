@@ -6,8 +6,7 @@ const ACTION_LABEL: Record<TraceEvent["action"], string> = {
   verificacion: "Verificación de integridad",
 }
 
-// Los eventos reales del ledger no traen eventId (el mock sí), el txId ya
-// es único por evento (una transacción escribe un solo evento).
+// El txId sirve de clave: cada transacción escribe un solo evento.
 type TimelineEvent = Omit<TraceEvent, "eventId">
 
 interface TraceabilityTimelineProps {

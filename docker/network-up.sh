@@ -60,6 +60,12 @@ export FABRIC_CFG_PATH="${SCRIPT_DIR}/fabric-samples/config"
 cd fabric-samples/test-network
 ./network.sh up createChannel -ca -c "${CHANNEL_NAME}" -s goleveldb
 
+# La test-network crea sus contenedores sin política de reinicio: tras reiniciar
+# el PC, Docker encendía solo la aplicación y la trazabilidad fallaba.
+docker update --restart unless-stopped \
+  orderer.example.com peer0.org1.example.com peer0.org2.example.com \
+  ca_org1 ca_org2 ca_orderer >/dev/null
+
 echo
 echo "==> Canal '${CHANNEL_NAME}' creado. Contenedores activos:"
 docker ps --format 'table {{.Names}}\t{{.Status}}'

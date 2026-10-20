@@ -123,6 +123,23 @@ describe("GET /events", () => {
     const res = await request(createApp()).get("/events").set("Authorization", `Bearer ${token("Verificador")}`);
 
     expect(res.status).toBe(502);
+    expect(res.body).toEqual({ message: "No se pudo consultar la trazabilidad. Intenta de nuevo." });
+  });
+
+  it.each([
+    [14, "UNAVAILABLE"],
+    [4, "DEADLINE_EXCEEDED"],
+  ])("la red Fabric no responde (gRPC %i %s): 502 con mensaje claro", async (code, name) => {
+    (queryChaincode as jest.Mock).mockRejectedValue(
+      Object.assign(new Error(`${code} ${name}: peer apagado`), { code }),
+    );
+
+    const res = await request(createApp()).get("/events").set("Authorization", `Bearer ${token("Verificador")}`);
+
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({
+      message: "La red blockchain no está disponible en este momento. Intenta de nuevo en unos minutos.",
+    });
   });
 
   it("sin JWT: 401, no llega a consultar el chaincode", async () => {

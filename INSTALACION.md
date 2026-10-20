@@ -254,13 +254,14 @@ trazabilidad*.
 | Quiero… | Comando (en Git Bash, carpeta del proyecto) | ¿Se borran los datos? |
 |---|---|---|
 | **Apagar** al terminar el día | `bash docker/stop.sh` | **No** |
-| **Encender** de nuevo (o después de reiniciar el computador) | `bash docker/start.sh` | **No** |
+| **Encender** de nuevo después de `stop.sh` | `bash docker/start.sh` | **No** |
 | **Empezar de cero** (borrar documentos, usuarios y blockchain) | `bash docker/down.sh` y luego `bash docker/up.sh` | **Sí, todo** |
 | Ver si todo está corriendo | `docker ps` | No |
 
-> **Después de reiniciar el computador:** abre Docker Desktop, espera *Engine running* y
-> ejecuta `bash docker/start.sh`. (Docker enciende solo la aplicación, pero la red
-> blockchain hay que encenderla con este comando.)
+> **Después de reiniciar el computador:** basta con abrir Docker Desktop y esperar
+> *Engine running*: todos los contenedores (aplicación y red blockchain) se encienden
+> solos en menos de un minuto. Si una instalación hecha antes del 2026-10-20 no lo hace,
+> corre `bash docker/start.sh` una vez y desde entonces también arrancará sola.
 >
 > **`down.sh` borra todo:** documentos, usuarios, la blockchain y sus certificados.
 > Úsalo solo cuando quieras un entorno limpio (por ejemplo, antes de una demo).
@@ -298,7 +299,9 @@ Otras comprobaciones rápidas (en el navegador):
 | Cambié `docker/.env` y no se nota | Los contenedores leen `.env` al crearse | `docker compose --env-file docker/.env -f docker/compose.app.yml up -d backend` (o `bash docker/down.sh && bash docker/up.sh`). |
 | Al entrar: *"Cuenta bloqueada temporalmente"* | 5 contraseñas incorrectas seguidas | Esperar 15 minutos. |
 | *"Sesión inválida o vencida"* | 15 minutos sin actividad, o el Administrador cambió tu rol | Vuelve a iniciar sesión. |
-| La página no abre después de reiniciar el computador | La red blockchain no se enciende sola | `bash docker/start.sh`. |
+| La página no abre después de reiniciar el computador | Docker Desktop no se abrió solo | Abre Docker Desktop y espera *Engine running* (o activa *Start Docker Desktop when you sign in*, sección 3). |
+| La aplicación abre y deja entrar, pero la **trazabilidad** (y el registro o la verificación) dice *"La red blockchain no está disponible"* | La red Fabric está apagada: los listados salen de MongoDB y funcionan, pero todo lo que lee la blockchain falla | `bash docker/start.sh`. Si dice *ports are not available*, aplica la solución de la fila del puerto reservado. |
+| *"Mi trazabilidad"* avisa que no se pudo cargar la de algunos documentos | Esos documentos están en MongoDB pero no en la blockchain (se reinició la red sin borrar MongoDB) | `bash docker/down.sh && bash docker/up.sh` deja ambas partes consistentes (borra los datos de prueba). |
 | `configtxlator.exe` bloqueado / *Permission denied* (Windows Smart App Control) | Windows bloquea un binario sin firma de Fabric | No hay que hacer nada: `up.sh` lo detecta y usa la versión en Docker. |
 | Todo muy lento, o Docker se cierra | Poca memoria para Docker | Cierra programas pesados; en Docker Desktop → *Settings → Resources*, asigna al menos 4 GB. |
 

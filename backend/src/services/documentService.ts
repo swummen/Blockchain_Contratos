@@ -74,6 +74,16 @@ function describeFabricError(err: unknown): string {
   return detailMessage ? `${baseMessage} (${detailMessage})` : baseMessage;
 }
 
+// gRPC 14 (UNAVAILABLE) y 4 (DEADLINE_EXCEEDED): el peer no responde, casi
+// siempre porque la red Fabric está apagada (por ejemplo, tras reiniciar el PC).
+const LEDGER_UNAVAILABLE =
+  "La red blockchain no está disponible en este momento. Intenta de nuevo en unos minutos.";
+
+function ledgerErrorMessage(err: unknown, fallback: string): string {
+  const code = (err as { code?: number })?.code;
+  return code === 14 || code === 4 ? LEDGER_UNAVAILABLE : fallback;
+}
+
 // Exige `.details`, que solo existe cuando respondió el peer: así una caída de
 // red o un timeout nunca se confunde con un 404 de "documento inexistente".
 function isDocumentNotFoundError(err: unknown): boolean {
@@ -115,7 +125,7 @@ export async function registerDocument(
     return {
       ok: false,
       status: 502,
-      message: "No se pudo registrar el documento en la blockchain. Intenta de nuevo.",
+      message: ledgerErrorMessage(err, "No se pudo registrar el documento en la blockchain. Intenta de nuevo."),
     };
   }
 
@@ -194,7 +204,7 @@ async function queryLedgerDocument(documentId: string): Promise<LedgerDocumentRe
       return { ok: false, status: 404, message: "El documento no está registrado." };
     }
     console.error("No se pudo consultar el documento en la blockchain:", describeFabricError(err));
-    return { ok: false, status: 502, message: "No se pudo consultar el documento. Intenta de nuevo." };
+    return { ok: false, status: 502, message: ledgerErrorMessage(err, "No se pudo consultar el documento. Intenta de nuevo.") };
   }
   return { ok: true, doc: JSON.parse(raw) as LedgerDocument };
 }
@@ -252,7 +262,7 @@ export async function verifyDocument(
     return {
       ok: false,
       status: 502,
-      message: "No se pudo registrar la verificación en la blockchain. Intenta de nuevo.",
+      message: ledgerErrorMessage(err, "No se pudo registrar la verificación en la blockchain. Intenta de nuevo."),
     };
   }
 
@@ -341,7 +351,7 @@ export async function getDocumentEvents(
     raw = await queryChaincode("GetDocumentEvents", documentId);
   } catch (err) {
     console.error("No se pudo consultar la trazabilidad en la blockchain:", describeFabricError(err));
-    return { ok: false, status: 502, message: "No se pudo consultar la trazabilidad. Intenta de nuevo." };
+    return { ok: false, status: 502, message: ledgerErrorMessage(err, "No se pudo consultar la trazabilidad. Intenta de nuevo.") };
   }
 
   const events = sortByTimestamp(await toEventViews(JSON.parse(raw) as LedgerEvent[]));
@@ -373,7 +383,7 @@ export async function getAllEvents(): Promise<GetAllEventsResult> {
     raw = await queryChaincode("GetAllEvents");
   } catch (err) {
     console.error("No se pudo consultar la trazabilidad general en la blockchain:", describeFabricError(err));
-    return { ok: false, status: 502, message: "No se pudo consultar la trazabilidad. Intenta de nuevo." };
+    return { ok: false, status: 502, message: ledgerErrorMessage(err, "No se pudo consultar la trazabilidad. Intenta de nuevo.") };
   }
 
   // Se ordena antes de recortar para quedarse con los más recientes, y se

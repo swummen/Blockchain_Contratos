@@ -63,7 +63,7 @@ Contraseña de todos: **`Contratos123!`** · El código de verificación llega a
 |---|---|
 | Encender por primera vez / desde cero | `bash docker/up.sh` |
 | Apagar sin perder datos | `bash docker/stop.sh` |
-| Encender de nuevo (o tras reiniciar el PC) | `bash docker/start.sh` |
+| Encender de nuevo después de `stop.sh` | `bash docker/start.sh` |
 | Borrar todo y empezar limpio | `bash docker/down.sh` y luego `bash docker/up.sh` |
 | Comprobar que todo funciona | `bash docker/smoke-test.sh` |
 

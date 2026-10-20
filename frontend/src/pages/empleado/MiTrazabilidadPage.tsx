@@ -9,18 +9,30 @@ export default function MiTrazabilidadPage() {
   const [events, setEvents] = React.useState<DocumentEvent[] | null>(null)
   const [documentNames, setDocumentNames] = React.useState<Record<string, string>>({})
   const [error, setError] = React.useState<string | null>(null)
+  const [partialWarning, setPartialWarning] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     if (!token) return
     // El Empleado no tiene GET /events: se arma con la trazabilidad de cada documento suyo.
     async function load(authToken: string) {
       const documents = await listDocuments(authToken)
-      const perDocument = await Promise.all(
+      // allSettled: si falla un documento, se muestran igual los demás.
+      const results = await Promise.allSettled(
         documents.map((doc) => getDocumentEvents(authToken, doc.documentId))
       )
+      const failed = results.filter((r) => r.status === "rejected")
+      if (documents.length > 0 && failed.length === documents.length) {
+        throw failed[0].reason
+      }
+      if (failed.length > 0) {
+        setPartialWarning(
+          `No se pudo cargar la trazabilidad de ${failed.length} de tus ${documents.length} documentos. Intenta de nuevo más tarde.`
+        )
+      }
       setDocumentNames(Object.fromEntries(documents.map((d) => [d.documentId, d.name])))
+      const loaded = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []))
       // Más reciente primero.
-      setEvents(perDocument.flat().sort((a, b) => b.timestamp.localeCompare(a.timestamp)))
+      setEvents(loaded.sort((a, b) => b.timestamp.localeCompare(a.timestamp)))
     }
     load(token).catch((err) => {
       setError(err instanceof Error ? err.message : "No se pudo cargar tu trazabilidad.")
@@ -41,7 +53,10 @@ export default function MiTrazabilidadPage() {
       ) : events === null ? (
         <p className="text-sm text-muted-foreground">Cargando trazabilidad…</p>
       ) : (
-        <TraceabilityTimeline events={events} documentNames={documentNames} />
+        <>
+          {partialWarning && <p className="text-sm text-destructive">{partialWarning}</p>}
+          <TraceabilityTimeline events={events} documentNames={documentNames} />
+        </>
       )}
     </div>
   )

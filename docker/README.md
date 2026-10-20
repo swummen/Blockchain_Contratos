@@ -49,7 +49,7 @@ suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas 
 |---|---|
 | `bash docker/up.sh` | Orquesta todo el stack: red Fabric → chaincode real del proyecto (`contracts`, Sprint 2) → Mongo/backend/frontend → usuarios de prueba (`node dist/scripts/seedUsers.js` dentro del contenedor `backend`, con `SEED_EMAIL` de `docker/.env`; idempotente). Crea `docker/.env` desde `.env.example` si no existe. Verifica `go` y `jq` en el `PATH` antes de arrancar. A diferencia de la fila de `compose up` de abajo, usa `--build` siempre: reconstruye las imágenes de `backend`/`frontend` aunque ya existan, para no quedarse con una imagen vieja mientras el proyecto sigue en desarrollo activo. Seguro de correr desde un checkout limpio. |
 | `bash docker/stop.sh` | Apaga todos los contenedores del proyecto **sin borrar nada** (datos, blockchain y certificados se conservan). |
-| `bash docker/start.sh` | Vuelve a encender lo que apagó `stop.sh` o un reinicio del computador: primero la red Fabric y luego Mongo/backend/frontend (el backend se reinicia para reconectarse al peer). Falla con un mensaje claro si nunca se corrió `up.sh`. |
+| `bash docker/start.sh` | Vuelve a encender lo que apagó `stop.sh`: primero la red Fabric (contenedor por contenedor; si una CA no arranca solo avisa, porque las CA no se usan en la operación normal) y luego Mongo/backend/frontend. También aplica `restart: unless-stopped` a los contenedores de Fabric de instalaciones viejas. Falla con un mensaje claro si nunca se corrió `up.sh` o si un puerto está reservado por Windows. |
 | `bash docker/down.sh` | Inversa de `up.sh`: baja Mongo/backend/frontend (con `-v`, borra también el volumen de Mongo) y la red Fabric. Deja el checkout listo para volver a `up.sh`. |
 | `bash docker/network-up.sh` | 1ª vez: descarga `fabric-samples` + binarios + imágenes Docker fijadas en Fabric 2.5.16 / CA 1.5.22. Luego levanta la test-network con Fabric CA (`-ca`) y crea/une el canal `contratoschannel` con LevelDB como state DB (decisión D3). |
 | `bash docker/network-down.sh` | Baja la red: elimina contenedores, volúmenes y material criptográfico. Deja el entorno limpio para volver a `network-up.sh`. |
@@ -58,6 +58,12 @@ suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas 
 | `docker compose -f docker/compose.app.yml down` | Baja **todos** los servicios que comparten este compose file (`mongo`, `backend`, `frontend`). El volumen de Mongo (`contratos_mongo_data`) sobrevive; agregar `-v` para borrarlo también. |
 
 ## Notas
+
+- **Reinicio automático (desde 2026-10-20):** `network-up.sh` pone `restart: unless-stopped`
+  a los contenedores de la red Fabric, igual que ya tenían Mongo/backend/frontend. Antes,
+  al reiniciar el PC Docker encendía solo la aplicación: el login y los listados
+  funcionaban (salen de MongoDB) pero la trazabilidad, el registro y la verificación
+  fallaban con `DEADLINE_EXCEEDED`, porque el peer no respondía.
 
 - `fabric-samples/` no se versiona (ver `docker/.gitignore`); se descarga con versión
   fijada cada vez que no existe localmente: nunca se usa `latest`.

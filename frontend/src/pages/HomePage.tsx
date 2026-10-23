@@ -5,10 +5,19 @@ import { FileCheck2, FileText, ShieldCheck } from "lucide-react"
 // A pedido de Sofia, a propósito NO están acá:
 // - el botón "Comenzar ahora" (queda solo "Verificación simple y segura"),
 // - la tarjeta flotante blanca "Integridad verificada / SHA-256 registrado".
+// Degradado radial (no lineal esquina-a-esquina): azul-cian en el centro,
+// verde-azulado hacia las esquinas/bordes — medido en píxeles sobre el PDF
+// del diseño, no es una lectura a ojo.
+const HERO_BACKGROUND =
+  "radial-gradient(ellipse at center, #0f8aad 0%, #0a7f95 45%, #087b78 100%)"
+
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white p-4 md:p-8">
-      <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl shadow-xl shadow-teal-900/10">
+    <div className="min-h-screen bg-slate-100 p-3 md:p-6">
+      {/* Tarjeta flotante: mismo marco redondeado que el diseño, pero ocupando
+          casi todo el alto de pantalla (el problema anterior no era la
+          tarjeta en sí, era que quedaba chica y con mucho blanco debajo). */}
+      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-6xl flex-col overflow-hidden rounded-3xl shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)]">
         <header className="flex items-center justify-between bg-white px-6 py-4 md:px-10">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-slate-900 text-white">
@@ -30,8 +39,11 @@ export default function HomePage() {
           </Link>
         </header>
 
-        <section className="bg-gradient-to-br from-cyan-700 to-teal-800 px-6 py-14 md:px-10 md:py-20">
-          <div className="grid items-center gap-10 md:grid-cols-2">
+        <section
+          className="flex flex-1 items-center px-6 py-14 md:px-16 md:py-20"
+          style={{ background: HERO_BACKGROUND }}
+        >
+          <div className="mx-auto grid w-full max-w-6xl items-center gap-10 md:grid-cols-2">
             <div className="space-y-6 text-white">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-50 uppercase">
                 <FileCheck2 className="size-3.5" />

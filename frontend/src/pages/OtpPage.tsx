@@ -1,10 +1,11 @@
 import * as React from "react"
-import { useNavigate } from "react-router-dom"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Link, useNavigate } from "react-router-dom"
 import { OtpInput } from "@/components/shared/OtpInput"
 import { useSession } from "@/context/SessionContext"
-import { Mail, RotateCcw } from "lucide-react"
+import { Mail, RotateCcw, ShieldCheck } from "lucide-react"
+
+const PAGE_BACKGROUND =
+  "radial-gradient(ellipse at center, #0f8aad 0%, #0a7f95 45%, #087b78 100%)"
 
 function maskEmail(email: string): string {
   const [user, domain] = email.split("@")
@@ -48,52 +49,78 @@ export default function OtpPage() {
     setError(null)
   }
 
+  const complete = code.length === 6
+
   return (
-    <div className="space-y-4 text-center">
-      <div>
-        <h2 className="font-heading text-lg font-semibold">Verificación de acceso</h2>
-        <p className="text-sm text-muted-foreground">
-          Ingresa el código enviado a tu correo registrado
-        </p>
-      </div>
+    <div
+      className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-10"
+      style={{ background: PAGE_BACKGROUND }}
+    >
+      <Link
+        to="/login"
+        className="inline-flex items-center gap-1.5 text-sm text-white/80 transition-colors hover:text-white"
+      >
+        <span aria-hidden>←</span>
+        Volver al login
+      </Link>
 
-      <Card>
-        <CardContent className="space-y-4 text-left">
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Mail className="size-4" />
-            Código enviado a {maskEmail(pendingEmail)}
-          </div>
+      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl shadow-teal-900/20">
+        {/* Diseño 2.0 muestra acá un badge con el rol (p. ej. "Empleado") y dice
+            "código de cuatro dígitos". No agregué ninguna de las dos cosas:
+            el rol recién se conoce después de verificar el código (se eliminó
+            de pedido previo, por seguridad — no debe filtrarse antes), y el
+            código real que emite el backend es de 6 dígitos, no 4. Avisame si
+            querés que resolvamos esto distinto. */}
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-slate-900 text-white">
+          <ShieldCheck className="size-6" />
+        </div>
 
-          <OtpInput value={code} onChange={setCode} />
-
-          <p className="text-center text-xs text-muted-foreground">
-            {code.length}/6 dígitos
+        <div className="mt-6 space-y-1.5">
+          <h1 className="text-2xl font-bold text-slate-900">Verifica tu acceso</h1>
+          <p className="text-sm text-slate-500">
+            Ingresa el código de seis dígitos enviado a tu correo.
           </p>
+        </div>
 
-          {error && (
-            <p className="text-center text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          )}
+        <div className="mt-6 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <Mail className="mt-0.5 size-4 shrink-0 text-slate-400" />
+          <span>
+            Código enviado a{" "}
+            <span className="font-medium break-all text-slate-900">
+              {maskEmail(pendingEmail)}
+            </span>
+          </span>
+        </div>
 
-          <Button
-            className="w-full"
-            disabled={code.length !== 6 || isSubmitting}
-            onClick={handleVerify}
-          >
-            {isSubmitting ? "Verificando..." : "Verificar código"}
-          </Button>
+        <div className="mt-6">
+          <OtpInput value={code} onChange={setCode} />
+        </div>
 
-          <button
-            type="button"
-            onClick={() => setCode("")}
-            className="mx-auto flex items-center gap-1.5 text-sm text-primary hover:underline"
-          >
-            <RotateCcw className="size-3.5" />
-            Reenviar código
-          </button>
-        </CardContent>
-      </Card>
+        {error && (
+          <p className="mt-4 text-center text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="button"
+          disabled={!complete || isSubmitting}
+          onClick={handleVerify}
+          className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#9dc9c8] py-3 text-sm font-medium text-white transition-colors enabled:bg-[#0a7f95] enabled:hover:bg-[#087f9b] disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? "Verificando..." : "Verificar código"}
+          {!isSubmitting && <span aria-hidden>→</span>}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCode("")}
+          className="mx-auto mt-4 flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-900"
+        >
+          <RotateCcw className="size-3.5" />
+          Reenviar código
+        </button>
+      </div>
     </div>
   )
 }

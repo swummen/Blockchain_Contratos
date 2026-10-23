@@ -58,7 +58,7 @@ export function OtpInput({
           maxLength={1}
           aria-label={`Dígito ${i + 1} de ${length}`}
           className={cn(
-            "h-11 w-10 rounded-lg border border-input bg-transparent text-center text-lg font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 dark:bg-input/30"
+            "h-12 w-11 rounded-xl border border-slate-200 bg-slate-50 text-center text-lg font-medium text-slate-900 outline-none transition-colors focus-visible:border-[#087f9b] focus-visible:bg-white focus-visible:ring-3 focus-visible:ring-[#087f9b]/20 disabled:pointer-events-none disabled:opacity-50"
           )}
         />
       ))}

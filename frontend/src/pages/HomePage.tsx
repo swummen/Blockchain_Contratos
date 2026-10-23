@@ -17,7 +17,7 @@ export default function HomePage() {
       {/* Tarjeta flotante: mismo marco redondeado que el diseño, pero ocupando
           casi todo el alto de pantalla (el problema anterior no era la
           tarjeta en sí, era que quedaba chica y con mucho blanco debajo). */}
-      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-6xl flex-col overflow-hidden rounded-3xl shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)]">
+      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl flex-col overflow-hidden rounded-3xl shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)]">
         <header className="flex items-center justify-between bg-white px-6 py-4 md:px-10">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-slate-900 text-white">
@@ -43,7 +43,7 @@ export default function HomePage() {
           className="flex flex-1 items-center px-6 py-14 md:px-16 md:py-20"
           style={{ background: HERO_BACKGROUND }}
         >
-          <div className="mx-auto grid w-full max-w-6xl items-center gap-10 md:grid-cols-2">
+          <div className="mx-auto grid w-full max-w-7xl items-center gap-10 md:grid-cols-2">
             <div className="space-y-6 text-white">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-50 uppercase">
                 <FileCheck2 className="size-3.5" />

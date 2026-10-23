@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 p-3 md:p-6">
-      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-6xl flex-col overflow-hidden rounded-3xl shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)] md:flex-row">
+      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl flex-col overflow-hidden rounded-3xl shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)] md:flex-row">
         {/* Panel izquierdo: decorativo, oculto en mobile. */}
         <div
           className="hidden flex-col justify-between p-10 text-white md:flex md:w-[42%]"

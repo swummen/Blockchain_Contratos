@@ -25,11 +25,13 @@ import SystemStatusPage from "@/pages/SystemStatusPage"
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Diseño 2.0: landing pública antes del login, sin layout ni sesión. */}
+      {/* Diseño 2.0: landing pública y login son autocontenidas (su propio
+          fondo/layout de 2 columnas), sin el AuthLayout de tarjeta centrada
+          que todavía usan OTP y "sesión cerrada". */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
 
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
         <Route path="/verificacion" element={<OtpPage />} />
         <Route path="/sesion-cerrada" element={<LoggedOutPage />} />
       </Route>

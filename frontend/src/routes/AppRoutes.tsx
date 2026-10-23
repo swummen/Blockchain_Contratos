@@ -3,6 +3,7 @@ import AuthLayout from "@/layouts/AuthLayout"
 import RoleLayout from "@/layouts/RoleLayout"
 import { ProtectedRoute } from "./ProtectedRoute"
 
+import HomePage from "@/pages/HomePage"
 import LoginPage from "@/pages/LoginPage"
 import OtpPage from "@/pages/OtpPage"
 import LoggedOutPage from "@/pages/LoggedOutPage"
@@ -24,8 +25,11 @@ import SystemStatusPage from "@/pages/SystemStatusPage"
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Diseño 2.0: landing pública antes del login, sin layout ni sesión. */}
+      <Route path="/" element={<HomePage />} />
+
       <Route element={<AuthLayout />}>
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/verificacion" element={<OtpPage />} />
         <Route path="/sesion-cerrada" element={<LoggedOutPage />} />
       </Route>

@@ -7,7 +7,7 @@ export function ProtectedRoute({ allowedRole }: { allowedRole: Role }) {
   const { stage, user } = useSession()
 
   if (stage !== "authenticated" || !user || user.role !== allowedRole) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   }
 
   return <Outlet />

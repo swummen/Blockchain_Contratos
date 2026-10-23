@@ -11,7 +11,7 @@ export default function LoggedOutPage() {
   const navigate = useNavigate()
 
   React.useEffect(() => {
-    const timer = setTimeout(() => navigate("/", { replace: true }), REDIRECT_MS)
+    const timer = setTimeout(() => navigate("/login", { replace: true }), REDIRECT_MS)
     return () => clearTimeout(timer)
   }, [navigate])
 
@@ -25,7 +25,7 @@ export default function LoggedOutPage() {
             Tu sesión se cerró correctamente.
           </p>
         </div>
-        <Button className="w-full" onClick={() => navigate("/", { replace: true })}>
+        <Button className="w-full" onClick={() => navigate("/login", { replace: true })}>
           Volver a iniciar sesión
         </Button>
       </CardContent>

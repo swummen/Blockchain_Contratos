@@ -138,18 +138,18 @@
 }
 
 .theme-verificador {
-    --sidebar: #022f2e;
-    --sidebar-foreground: #5eead4;
+    --sidebar: #2D3E73;
+    --sidebar-foreground: #dedfdf;
     --sidebar-primary: #ffffff;
     --sidebar-primary-foreground: #0f172a;
-    --sidebar-accent: #0b4f4a;
+    --sidebar-accent: #433084;
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #0b4440;
-    --sidebar-ring: #14b8a6;
+    --sidebar-border: #3f419a;
+    --sidebar-ring: #506c8c;
 }
 
 .theme-administrador {
-    --sidebar: #1e3a8a;
+    --sidebar: #28749e;
     --sidebar-foreground: #dbeafe;
     --sidebar-primary: #ffffff;
     --sidebar-primary-foreground: #0f172a;

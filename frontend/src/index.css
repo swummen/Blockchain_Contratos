@@ -117,29 +117,46 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* Paneles laterales con color fijo por rol (independiente de claro/oscuro):
-   Empleado/Administrador = navy, Verificador = verde. Solo sobreescriben los
-   tokens --sidebar* que ya define el sistema shadcn, no se inventan colores nuevos. */
-.theme-navy {
-    --sidebar: oklch(0.24 0.05 258);
-    --sidebar-foreground: oklch(0.96 0.01 258);
-    --sidebar-primary: oklch(0.6 0.17 258);
-    --sidebar-primary-foreground: oklch(0.98 0 0);
-    --sidebar-accent: oklch(0.3 0.05 258);
-    --sidebar-accent-foreground: oklch(0.98 0 0);
-    --sidebar-border: oklch(0.33 0.05 258);
-    --sidebar-ring: oklch(0.6 0.17 258);
+/* Paneles laterales con color fijo por rol (independiente de claro/oscuro),
+   uno distinto por rol (Diseño 2.0): Empleado = teal, Verificador = teal muy
+   oscuro (casi negro), Administrador = azul (reemplaza el morado original
+   del diseño, a pedido de Sofia, para que combine con los otros dos sin
+   perder su propio color representativo). Valores medidos en píxeles sobre
+   el PDF del diseño, no una lectura a ojo. El ítem activo del menú es
+   blanco con texto oscuro en los 3 (ver RoleSidebar.tsx: usa
+   --sidebar-primary, no --sidebar-accent, que queda para el hover). Solo
+   sobreescriben los tokens --sidebar* que ya define el sistema shadcn. */
+.theme-empleado {
+    --sidebar: #075f63;
+    --sidebar-foreground: #ccfbf1;
+    --sidebar-primary: #ffffff;
+    --sidebar-primary-foreground: #0f172a;
+    --sidebar-accent: #0a7a74;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #0a6f6a;
+    --sidebar-ring: #0d9488;
 }
 
-.theme-verde {
-    --sidebar: oklch(0.24 0.045 165);
-    --sidebar-foreground: oklch(0.96 0.01 165);
-    --sidebar-primary: oklch(0.6 0.14 165);
-    --sidebar-primary-foreground: oklch(0.98 0 0);
-    --sidebar-accent: oklch(0.3 0.045 165);
-    --sidebar-accent-foreground: oklch(0.98 0 0);
-    --sidebar-border: oklch(0.33 0.045 165);
-    --sidebar-ring: oklch(0.6 0.14 165);
+.theme-verificador {
+    --sidebar: #022f2e;
+    --sidebar-foreground: #5eead4;
+    --sidebar-primary: #ffffff;
+    --sidebar-primary-foreground: #0f172a;
+    --sidebar-accent: #0b4f4a;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #0b4440;
+    --sidebar-ring: #14b8a6;
+}
+
+.theme-administrador {
+    --sidebar: #1e3a8a;
+    --sidebar-foreground: #dbeafe;
+    --sidebar-primary: #ffffff;
+    --sidebar-primary-foreground: #0f172a;
+    --sidebar-accent: #2748a8;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #24418f;
+    --sidebar-ring: #3b82f6;
 }
 
 @layer base {

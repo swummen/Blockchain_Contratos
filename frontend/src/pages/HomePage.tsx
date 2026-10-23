@@ -17,7 +17,7 @@ export default function HomePage() {
       {/* Tarjeta flotante: mismo marco redondeado que el diseño, pero ocupando
           casi todo el alto de pantalla (el problema anterior no era la
           tarjeta en sí, era que quedaba chica y con mucho blanco debajo). */}
-      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl flex-col overflow-hidden rounded-3xl shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)]">
+      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl flex-col overflow-hidden rounded-3xl shadow-2xl shadow-teal-900/30 md:min-h-[calc(100vh-3rem)]">
         <header className="flex items-center justify-between bg-white px-6 py-4 md:px-10">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-slate-900 text-white">

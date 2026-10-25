@@ -1,22 +1,16 @@
 import { Link } from "react-router-dom"
 import { FileCheck2, FileText, ShieldCheck } from "lucide-react"
 
-// Diseño 2.0 (docs/Diseño 2.0.pdf, pág. 1): landing pública antes del login.
-// A pedido de Sofia, a propósito NO están acá:
-// - el botón "Comenzar ahora" (queda solo "Verificación simple y segura"),
-// - la tarjeta flotante blanca "Integridad verificada / SHA-256 registrado".
-// Degradado radial (no lineal esquina-a-esquina): azul-cian en el centro,
-// verde-azulado hacia las esquinas/bordes — medido en píxeles sobre el PDF
-// del diseño, no es una lectura a ojo.
+// Página pública de inicio (docs/Diseño 2.0.pdf, pág. 1). Se omiten a
+// propósito el botón "Comenzar ahora" y la tarjeta "Integridad verificada".
+// Degradado tomado en píxeles del PDF del diseño.
 const HERO_BACKGROUND =
   "radial-gradient(ellipse at center, #0f8aad 0%, #0a7f95 45%, #087b78 100%)"
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-100 p-3 md:p-6">
-      {/* Tarjeta flotante: mismo marco redondeado que el diseño, pero ocupando
-          casi todo el alto de pantalla (el problema anterior no era la
-          tarjeta en sí, era que quedaba chica y con mucho blanco debajo). */}
+      {/* Tarjeta flotante que ocupa casi todo el alto de la pantalla. */}
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl flex-col overflow-hidden rounded-3xl shadow-2xl shadow-teal-900/30 md:min-h-[calc(100vh-3rem)]">
         <header className="flex items-center justify-between bg-white px-6 py-4 md:px-10">
           <div className="flex items-center gap-2.5">
@@ -63,8 +57,7 @@ export default function HomePage() {
                 historial de trazabilidad claro y seguro.
               </p>
 
-              {/* Único elemento de la fila de botones del diseño (el otro, "Comenzar
-                  ahora", se excluyó a pedido de Sofia). Es informativo, no navega. */}
+              {/* Informativo: no navega. */}
               <span className="inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-medium text-white">
                 <FileText className="size-4" />
                 Verificación simple y segura

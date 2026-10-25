@@ -7,7 +7,7 @@ function parsePositiveInt(name: string, raw: string | undefined, fallback: numbe
 }
 
 // Sin valor por defecto: un secreto conocido firmaría los JWT de cualquier
-// instalación que olvide configurarlo.
+
 function requireSecret(name: string): string {
   const value = process.env[name];
   if (!value) {

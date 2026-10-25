@@ -33,6 +33,11 @@ export function TraceabilityTimeline({ events, documentNames }: TraceabilityTime
             <div className="min-w-0">
               <p className="text-sm font-medium">
                 {ACTION_LABEL[event.action]}
+                {event.result === "confirmada" && (
+                  <span className="ml-2 text-xs font-normal text-emerald-600">
+                    (Verificado)
+                  </span>
+                )}
                 {event.result === "comprometida" && (
                   <span className="ml-2 text-xs font-normal text-destructive">
                     (Alterado)

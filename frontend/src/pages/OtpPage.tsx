@@ -53,18 +53,13 @@ export default function OtpPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 p-3 md:p-6">
-      {/* Misma tarjeta flotante que inicio/login, con el mismo ancho que esas
-          dos (max-w-7xl): el degradado azul vive adentro del marco
-          redondeado, la página en general es blanco/gris. */}
+      {/* Misma tarjeta flotante y ancho que inicio y login. */}
       <div
         className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl items-center justify-center rounded-3xl p-6 shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)]"
         style={{ background: PANEL_BACKGROUND }}
       >
         <div className="w-full max-w-md">
           <div className="w-full rounded-3xl bg-white p-8 shadow-xl shadow-teal-900/20">
-            {/* "Volver al login" adentro de la tarjeta blanca, igual que en
-                LoginPage (ahí también vive dentro del panel de contenido, no
-                en el panel decorativo). */}
             <Link
               to="/login"
               className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-900"
@@ -73,13 +68,8 @@ export default function OtpPage() {
               Volver al login
             </Link>
 
-            {/* Diseño 2.0 muestra acá un badge con el rol (p. ej. "Empleado") y
-                dice "código de cuatro dígitos". No agregué ninguna de las dos
-                cosas: el rol recién se conoce después de verificar el código
-                (se eliminó de pedido previo, por seguridad — no debe
-                filtrarse antes), y el código real que emite el backend es de
-                6 dígitos, no 4. Avisame si querés que resolvamos esto
-                distinto. */}
+            {/* Difiere del Diseño 2.0 a propósito: no muestra el rol (se conoce
+                solo después de validar el código) y el código es de 6 dígitos. */}
             <div className="mt-6 flex size-14 items-center justify-center rounded-2xl bg-slate-900 text-white">
               <ShieldCheck className="size-6" />
             </div>

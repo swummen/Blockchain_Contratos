@@ -290,6 +290,7 @@ Otras comprobaciones rápidas (en el navegador):
 | `Ya hay contenedores de una corrida anterior` | Quedó una red de una ejecución anterior | `bash docker/down.sh` y luego `bash docker/up.sh`. |
 | Ese mismo mensaje **después de volver a clonar el repo** (y `down.sh` dice "Nada que bajar") | La red vieja pertenece al clon anterior | Borrar los restos: ver "Después de re-clonar el repo" en [`docker/README.md`](docker/README.md#notas). |
 | `bash: docker/up.sh: No such file or directory` | No estás en la carpeta del proyecto | `cd /c/proyectos/Blockchain_Contratos` |
+| `bash: $'\E[200~docker': command not found` (aparece `^[[200~` antes del comando) | Git Bash agregó caracteres invisibles al pegar | Pega con **Shift + Insert**, escribe el comando a mano, o corre una vez `bind 'set enable-bracketed-paste off'`. |
 | Errores raros al ejecutar desde PowerShell o CMD | Los scripts son de Bash | Usa **Git Bash**. |
 | `$'\r': command not found` | El archivo se guardó con finales de línea de Windows | `git checkout -- docker/` para restaurar los scripts (el repo los fuerza a formato Linux). |
 | `port is already allocated` / puerto ocupado | Otro programa usa el puerto (5173, 8080, 27017, 7050‑9054) | Cierra ese programa, o cambia `FRONTEND_PORT` / `BACKEND_PORT` / `MONGO_PORT` en `docker/.env`. |

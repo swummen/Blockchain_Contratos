@@ -42,9 +42,7 @@ export function UserMenu() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left outline-none hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-sidebar-ring/50">
-          {/* bg-white/10, no bg-sidebar-primary (ver RoleLayout.tsx): mismo
-              motivo, ese token quedó reservado para el blanco del ítem
-              activo del menú. */}
+          {/* Fondo translúcido: bg-sidebar-primary es el del ítem activo. */}
           <Avatar>
             <AvatarFallback className="bg-white/10 text-sidebar-foreground">
               {initials}

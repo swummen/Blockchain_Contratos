@@ -3,8 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useSession } from "@/context/SessionContext"
 import { Eye, EyeOff, FileCheck2, Lock, ShieldCheck, User } from "lucide-react"
 
-// Mismo degradado radial que HomePage (azul al centro, verde en los bordes):
-// consistencia visual entre las dos pantallas públicas (Diseño 2.0).
+// Mismo degradado que HomePage.
 const PANEL_BACKGROUND =
   "radial-gradient(ellipse at center, #0f8aad 0%, #0a7f95 45%, #087b78 100%)"
 
@@ -137,8 +136,7 @@ export default function LoginPage() {
                 </p>
               )}
 
-              {/* Por pedido de Sofia: hover pasa del azul oscuro por defecto al
-                  azul del fondo (mismo tono del panel izquierdo), no al negro. */}
+              {/* Al pasar el mouse toma el azul del panel izquierdo. */}
               <button
                 type="submit"
                 disabled={isSubmitting}

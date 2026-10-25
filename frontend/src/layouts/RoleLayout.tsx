@@ -17,11 +17,8 @@ export default function RoleLayout() {
   if (!user) return null
 
   return (
-    // Mismo patrón de "tarjetas flotantes" que inicio/login/OTP: fondo
-    // general gris (bg-slate-100), nunca el color del rol — eso queda solo
-    // adentro de las 2 tarjetas redondeadas (sidebar + contenido), cada una
-    // con su propia sombra, con un espacio gris entre ambas en vez del
-    // border-r que separaba antes.
+    // Fondo gris con dos tarjetas flotantes (menú y contenido); el color del
+    // rol va solo dentro del menú.
     <div className="min-h-screen bg-slate-100 p-3 md:p-6">
       <div
         className={cn(
@@ -31,10 +28,8 @@ export default function RoleLayout() {
       >
         <aside className="flex w-64 shrink-0 flex-col rounded-3xl bg-sidebar text-sidebar-foreground shadow-xl shadow-slate-900/10">
           <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-4">
-            {/* No usa bg-sidebar-primary a propósito: ese token ahora es
-                blanco (reservado para el ítem activo del menú, ver
-                RoleSidebar.tsx). El logo es un cuadrado translúcido sobre el
-                propio color del sidebar, igual en los 3 roles (Diseño 2.0). */}
+            {/* bg-sidebar-primary es el blanco del ítem activo (RoleSidebar.tsx):
+                el logo usa un fondo translúcido. */}
             <div className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-sidebar-foreground">
               <ShieldCheck className="size-4" />
             </div>

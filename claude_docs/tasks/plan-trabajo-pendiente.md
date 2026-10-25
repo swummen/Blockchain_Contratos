@@ -90,7 +90,7 @@ exige medir (con fechas fijas), **(4)** entregables, **(5)** deuda técnica opci
 | # | Tarea | KPI / RNF | Nota |
 |---|---|---|---|
 | 3.1 | **Benchmark de verificación**: script listo (`tests/perf/latencia-verificacion.mjs`, guía en `tests/perf/README.md`); corrida de prueba 2026‑10‑15: P95 = 2040 ms → PASS. **Falta la corrida oficial en S11 y en S13** (ver R6) con un PDF realista. | RNF‑10, P95 ≤ 3000 ms | La latencia ≈ `BatchTimeout: 2s` del orderer. |
-| 3.2 | **Set de 20 documentos sintéticos** (12 contratos + 8 NDA, según el benchmarking) + script de mutación + corrida que confirme 100 % de detección. | RNF‑14, 100 % | `tests/integrity/` |
+| 3.2 | **Set de 20 documentos sintéticos** (12 contratos + 8 NDA) en `docs/documentos-prueba/` + generador y prueba en `tests/integrity/`. Ensayo local 2026‑10‑25: 20/20 detectadas, 0 falsos positivos, trazabilidad 20/20. **Falta la corrida oficial contra Azure** (ver `tests/integrity/README.md`). | RNF‑14, 100 % | `tests/integrity/` |
 | 3.3 | **Plan de Pruebas de Software (PPS)**: un caso por escenario Gherkin (~51 tras P1.1), ejecución y % PASS; automatizar los críticos. | RNF‑28, ≥ 90 % PASS | Base de la matriz de cumplimiento |
 | 3.4 | Prueba de trazabilidad/inmutabilidad: historial del ledger vs. acciones realizadas. | RNF‑26/27 | Reusa `GET /events` |
 | 3.5 | Prueba de consistencia Mongo ↔ ledger (documentId, hash, estado). | RNF‑13 | Script de comparación |

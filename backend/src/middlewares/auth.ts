@@ -71,8 +71,11 @@ export function requireAuth(...allowedRoles: Role[]) {
       return;
     }
 
-    // Sin await: la marca de actividad no debe demorar la respuesta.
-    void touchSession(jti);
+    // Sin await: la marca de actividad no debe demorar la respuesta. El catch
+    // es obligatorio: un rechazo sin manejar termina el proceso de Node.
+    touchSession(jti).catch((err) => {
+      console.error("No se pudo actualizar la actividad de la sesión:", err);
+    });
 
     req.user = { sub, role: role as Role, jti };
     next();

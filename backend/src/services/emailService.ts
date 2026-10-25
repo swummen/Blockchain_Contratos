@@ -13,6 +13,11 @@ function getTransporter(): Transporter | undefined {
     auth: authConfig.smtp.user
       ? { user: authConfig.smtp.user, pass: authConfig.smtp.password }
       : undefined,
+    // Por defecto nodemailer espera hasta 2 y 10 minutos; el frontend corta a
+    // los 10 s, así que el usuario vería un error mientras el correo sigue saliendo.
+    connectionTimeout: 8000,
+    greetingTimeout: 5000,
+    socketTimeout: 8000,
   });
   return transporter;
 }

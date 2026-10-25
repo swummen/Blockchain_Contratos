@@ -107,6 +107,7 @@ inactividad.
 | Carpeta / archivo | Qué hay |
 |---|---|
 | [`INSTALACION.md`](INSTALACION.md) | Guía completa de instalación, uso y solución de problemas |
+| [`DESPLIEGUE-AZURE.md`](DESPLIEGUE-AZURE.md) | Publicación en una VM de Azure con HTTPS |
 | [`frontend/`](frontend/) | Aplicación web (React 19 + Vite + Tailwind), una sección por rol |
 | [`backend/`](backend/README.md) | API REST (Node.js + Express + TypeScript) |
 | [`chaincode/`](chaincode/README.md) | Contrato inteligente en Go (5 funciones) |
@@ -133,6 +134,7 @@ inactividad.
 | Documento | Dónde |
 |---|---|
 | Instalación y uso | [`INSTALACION.md`](INSTALACION.md) |
+| Despliegue en Azure | [`DESPLIEGUE-AZURE.md`](DESPLIEGUE-AZURE.md) |
 | API (OpenAPI / Swagger, importable en Postman) | [`docs/api/`](docs/api/README.md) |
 | Diagramas UML y cambios respecto al diseño | [`docs/uml/`](docs/uml/README.md) |
 | Matriz de infraestructura | [`docs/Matriz_Infraestructura.xlsx`](docs/Matriz_Infraestructura.xlsx) |

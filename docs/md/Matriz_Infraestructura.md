@@ -24,7 +24,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
 | ID | Capa | Componente | Tecnología / imagen | Versión | Función en el sistema | Contenedor | Puertos (host → contenedor) | Persistencia | Seguridad | Depende de | Requisitos | Lo levanta |
-| INF-01 | Presentación | Frontend web | React 19 + Vite + TypeScript, servido por nginx (nginx:alpine) | build de producción | SPA de los 3 roles (Empleado, Verificador, Administrador). Solo conoce la URL del backend (VITE\_API\_URL). | frontend | 127.0.0.1:5173 → 80 | Ninguna (estático) | No conoce ni contacta Fabric ni MongoDB. Publicado solo en localhost. | INF-02 | RNF-19, RNF-20, RNF-25 | docker/compose.app.yml (up.sh paso 3) |
+| INF-01 | Presentación | Frontend web | React 19 + Vite + TypeScript, servido por nginx (nginx:alpine) | build de producción | SPA de los 3 roles (Empleado, Verificador, Administrador). Su nginx reenvía /api/\* al backend (mismo origen). | frontend | 127.0.0.1:5173 → 80 | Ninguna (estático) | No conoce ni contacta Fabric ni MongoDB. Publicado solo en localhost. nginx: límite de intentos de login por IP, cabeceras CSP/HSTS/nosniff, bloquea /api/fabric. | INF-02 | RNF-19, RNF-20, RNF-25 | docker/compose.app.yml (up.sh paso 3) |
 | INF-02 | Aplicación / integración | Backend API | Node.js + Express + TypeScript + Fabric Gateway SDK (node:20-alpine) | Node 20 LTS | API REST: autenticación (JWT + OTP), documentos, verificación, trazabilidad, usuarios. Única puerta hacia Fabric y MongoDB. | backend | 127.0.0.1:8080 → 8080 | Ninguna propia. Monta en solo lectura el material criptográfico de Org1 en /crypto. | Usuario no-root; JWT + sesión revocable; RBAC; CORS acotado al frontend; TLS (grpcs) hacia el peer; identidad Admin de Org1 de solo lectura. | INF-03 (healthy), INF-05, INF-13 | RNF-01, 02, 03, 07, 19, 20 | docker/compose.app.yml (up.sh paso 3) |
 | INF-03 | Persistencia | Base de datos off-chain | MongoDB (mongo) | 7.0.41 | Metadatos de documentos (nombre, responsable, fecha, copia de hash y estado), usuarios, sesiones y códigos OTP. Nunca el PDF. | mongo | 127.0.0.1:27017 → 27017 | Volumen contratos\_mongo\_data (/data/db) | Autenticación root; publicado solo en localhost; healthcheck cada 10 s; índices TTL para OTP y sesiones. | NaN | RNF-04, RNF-13 | docker/compose.app.yml (up.sh paso 3) |
 | INF-04 | Blockchain | Orderer | hyperledger/fabric-orderer | 2.5.16 | Ordena las transacciones endosadas y corta los bloques del canal (consenso Raft, 1 nodo). | orderer.example.com | 7050 (gRPC), 7053 (admin del canal), 9443 (operaciones) | Volumen compose\_orderer.example.com | TLS mutuo; identidad emitida por INF-09. | INF-09 | RNF-05, RNF-27 | docker/network-up.sh (up.sh paso 1) |
@@ -37,6 +37,7 @@
 | INF-11 | Blockchain (lógico) | Canal contratoschannel | Canal de aplicación de Fabric | NaN | Ledger compartido entre Org1 y Org2 donde vive el chaincode contracts. | NaN | NaN | Ledger en INF-05 e INF-06 | Políticas de lectura/escritura/endoso por organización (ver hoja 2). | INF-04, INF-05, INF-06 | RNF-05, RNF-27 | docker/network-up.sh (up.sh paso 1) |
 | INF-12 | Red | Red Docker fabric\_test | Red bridge de Docker | NaN | Une todos los contenedores; resuelven por nombre DNS (p. ej. peer0.org1.example.com, mongo). | NaN | NaN | NaN | Tráfico interno entre contenedores; el backend nunca usa localhost para llegar al peer. | NaN | RNF-19, RNF-21 | docker/network-up.sh (la crea); compose.app.yml la usa como externa |
 | INF-13 | Servicio externo | Correo transaccional | Brevo SMTP relay (smtp-relay.sendinblue.com) | Plan gratuito (300 correos/día) | Envía el código de verificación (OTP) del segundo factor al correo del usuario. | : (servicio en la nube) | Saliente 587 (STARTTLS) | NaN | Clave SMTP por persona en docker/.env (no versionado); remitente verificado contratosblockchain@gmail.com. | NaN | RNF-02 | Variables SMTP\_\* en docker/.env |
+| INF-14 | Presentación / borde | Proxy HTTPS (solo servidor público) | Caddy (caddy:2.10.2-alpine) | 2.10.2 | Termina TLS con certificado Let's Encrypt automático para PUBLIC\_DOMAIN y reenvía todo al frontend. Redirige HTTP a HTTPS. | caddy | 80, 443 (0.0.0.0) | Volumen caddy\_data (certificado) | Único servicio expuesto a internet; el NSG de Azure solo abre 80, 443 y 22. | INF-01 | RNF-05, RNF-21 | docker/up.sh si PUBLIC\_DOMAIN tiene valor |
 
 ## 2. Red Fabric
 | 2. Topología de la red Hyperledger Fabric | Unnamed: 1 | Unnamed: 2 |
@@ -64,17 +65,18 @@
 | 5173 | frontend | HTTP | 127.0.0.1 (solo local) | Aplicación web (navegador). |
 | 8080 | backend | HTTP | 127.0.0.1 (solo local) | API REST que consume el frontend. |
 | 27017 | mongo | MongoDB wire | 127.0.0.1 (solo local) | Acceso de desarrollo (npm run seed, MongoDB Compass). |
-| 7050 | orderer.example.com | gRPC + TLS | 0.0.0.0 (todas las interfaces) | Recepción de transacciones para ordenar. |
-| 7053 | orderer.example.com | HTTPS | 0.0.0.0 | API de administración de canales (osnadmin). |
-| 9443 | orderer.example.com | HTTP | 0.0.0.0 | Servicio de operaciones (salud y métricas). |
-| 7051 | peer0.org1.example.com | gRPC + TLS | 0.0.0.0 | Endpoint del peer de Org1 / Fabric Gateway. |
-| 9444 | peer0.org1.example.com | HTTP | 0.0.0.0 | Servicio de operaciones del peer de Org1. |
-| 9051 | peer0.org2.example.com | gRPC + TLS | 0.0.0.0 | Endpoint del peer de Org2. |
-| 9445 | peer0.org2.example.com | HTTP | 0.0.0.0 | Servicio de operaciones del peer de Org2. |
-| 7054 | ca\_org1 | HTTPS | 0.0.0.0 | Emisión de identidades de Org1. |
-| 8054 | ca\_org2 | HTTPS | 0.0.0.0 | Emisión de identidades de Org2. |
-| 9054 | ca\_orderer | HTTPS | 0.0.0.0 | Emisión de identidades del orderer. |
-| 17054 / 18054 / 19054 | ca\_org1 / ca\_org2 / ca\_orderer | HTTP | 0.0.0.0 | Servicio de operaciones de cada CA. |
+| 7050 | orderer.example.com | gRPC + TLS | 127.0.0.1 (solo local) | Recepción de transacciones para ordenar. |
+| 7053 | orderer.example.com | HTTPS | 127.0.0.1 (solo local) | API de administración de canales (osnadmin). |
+| 9443 | orderer.example.com | HTTP | 127.0.0.1 (solo local) | Servicio de operaciones (salud y métricas). |
+| 7051 | peer0.org1.example.com | gRPC + TLS | 127.0.0.1 (solo local) | Endpoint del peer de Org1 / Fabric Gateway. |
+| 9444 | peer0.org1.example.com | HTTP | 127.0.0.1 (solo local) | Servicio de operaciones del peer de Org1. |
+| 9051 | peer0.org2.example.com | gRPC + TLS | 127.0.0.1 (solo local) | Endpoint del peer de Org2. |
+| 9445 | peer0.org2.example.com | HTTP | 127.0.0.1 (solo local) | Servicio de operaciones del peer de Org2. |
+| 7054 | ca\_org1 | HTTPS | 127.0.0.1 (solo local) | Emisión de identidades de Org1. |
+| 8054 | ca\_org2 | HTTPS | 127.0.0.1 (solo local) | Emisión de identidades de Org2. |
+| 9054 | ca\_orderer | HTTPS | 127.0.0.1 (solo local) | Emisión de identidades del orderer. |
+| 17054 / 18054 / 19054 | ca\_org1 / ca\_org2 / ca\_orderer | HTTP | 127.0.0.1 (solo local) | Servicio de operaciones de cada CA. |
+| 80 / 443 | caddy (solo servidor público) | HTTP / HTTPS | 0.0.0.0 | Entrada pública: certificado y aplicación por HTTPS. |
 | 587 | Brevo (externo) | SMTP + STARTTLS | Saliente | Envío del correo con el código OTP. |
 
 ## 4. Configuración
@@ -87,8 +89,10 @@
 | BACKEND\_PORT | docker/.env | 8080 | No | Puerto publicado del backend en el host. |
 | JWT\_SECRET | docker/.env | valor de desarrollo documentado | Sí | Clave de firma de los JWT de sesión; el backend no arranca sin ella. |
 | JWT\_EXPIRES\_MINUTES | docker/.env | 60 | No | Vida máxima de una sesión. |
-| FRONTEND\_PORT | docker/.env | 5173 | No | Puerto publicado del frontend; también define el origen permitido por CORS. |
-| VITE\_API\_URL | docker/.env | http://localhost:8080 | No | URL del backend que se compila dentro del frontend (cambiarla exige reconstruir la imagen). |
+| FRONTEND\_PORT | docker/.env | 5173 | No | Puerto publicado del frontend. |
+| VITE\_API\_URL | docker/.env | /api | No | Ruta del backend que se compila dentro del frontend; el nginx del frontend la reenvía (cambiarla exige reconstruir la imagen). |
+| PUBLIC\_DOMAIN | docker/.env | vacío | No | Dominio público (Azure). Con valor, up.sh exige secretos propios y enciende Caddy. |
+| FRONTEND\_ORIGIN | docker/.env | http://localhost:5173 | No | Origen permitido por CORS; solo importa con npm run dev. |
 | SMTP\_HOST / SMTP\_PORT | docker/.env | vacío / 587 | No | Servidor de correo (smtp-relay.sendinblue.com). Vacío = el OTP se imprime en los logs del backend (modo desarrollo). |
 | SMTP\_USER / SMTP\_PASSWORD | docker/.env | vacío | Sí | Login y clave SMTP de Brevo (una clave por persona). |
 | SMTP\_FROM | docker/.env | no-reply@contratos.local | No | Remitente verificado en Brevo (contratosblockchain@gmail.com). |
@@ -137,8 +141,8 @@
 | OBS-01 | Política de endoso | Plan de Sprint 0 (D2) y Sprint 2 (D7): OR('Org1MSP.peer','Org2MSP.peer'), basta una organización. | Política por defecto del canal: MAJORITY Endorsement → con 2 organizaciones firman AMBAS. | Funciona (el Gateway pide las dos firmas). Decidir: corregir la documentación a MAJORITY, o desplegar el chaincode con --signature-policy OR(...) si se quiere que baste una. |
 | OBS-02 | Base de estado | OBJETIVO 3 menciona CouchDB en el script de red. | LevelDB (goleveldb). | Decisión D3 de Sprint 0: no se usan consultas enriquecidas. Anotarlo en el registro de cambios respecto al diseño. |
 | OBS-03 | Topología en el benchmarking | benchmarking\_mvp\_gcp: 'Red local: 1 org, 1 peer, 1 orderer, 1 CA'. | 2 organizaciones, 2 peers, 1 orderer, 3 CA. | Actualizar el cuadro de benchmarking o explicar el cambio (D1 de Sprint 0). |
-| OBS-04 | Exposición de puertos de Fabric | NaN | Los puertos de la red Fabric se publican en 0.0.0.0 (todas las interfaces); los de la aplicación solo en 127.0.0.1. | Aceptable en local. Para Azure, restringir con reglas de red (NSG) o publicar solo en localhost. |
-| OBS-05 | Entorno de despliegue | Trabajo de grado: Docker local + VM de Azure (Azure Student) para pruebas. | Solo Docker local. | Pendiente: despliegue en Azure (criterio 4 de la Definición de Terminado). Las mediciones de rendimiento S11/S13 son en Docker local. |
+| OBS-04 | Exposición de puertos de Fabric | NaN | Resuelto: network-up.sh publica los puertos de Fabric solo en 127.0.0.1, igual que los de la aplicación. | En Azure solo Caddy escucha fuera (80/443); además el NSG solo abre 80, 443 y 22. |
+| OBS-05 | Entorno de despliegue | Trabajo de grado: Docker local + VM de Azure (Azure Student) para pruebas. | Docker local; despliegue en Azure preparado (Caddy + HTTPS, guía DESPLIEGUE-AZURE.md). | Pendiente ejecutarlo en la VM (criterio 4 de la Definición de Terminado). Las mediciones de rendimiento S11/S13 son en Docker local. |
 | OBS-06 | Material criptográfico | NaN | Se regenera en cada ciclo down/up; no hay respaldo de identidades. | Correcto para el MVP (entorno desechable). En producción se requeriría gestión de identidades persistente. |
 | OBS-07 | Proveedor de correo | SRS: OTP por correo corporativo. | Brevo con remitente Gmail verificado, por indicación del tutor. | Puede caer en spam sin dominio propio + DKIM; aceptable para el MVP. |
 

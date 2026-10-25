@@ -24,11 +24,10 @@ export default function CargarDocumentoPage() {
     setLoading(true)
     setError(null)
     try {
-      // El backend calcula su propia huella; esta es solo para mostrarla.
-      const [result, hash] = await Promise.all([
-        uploadDocument(token, file),
-        computeSha256Hex(file),
-      ])
+      // El backend calcula su propia huella; esta es solo para mostrarla. Va
+      // primero: si falla (crypto.subtle no existe sin HTTPS), nada se registró.
+      const hash = await computeSha256Hex(file)
+      const result = await uploadDocument(token, file)
       setRegistered({
         documentId: result.documentId,
         name: file.name,

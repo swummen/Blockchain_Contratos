@@ -5,7 +5,9 @@ import * as grpc from "@grpc/grpc-js";
 import { connect, Gateway, Identity, Signer, signers } from "@hyperledger/fabric-gateway";
 import { fabricConfig } from "../config/fabric";
 
-const EVALUATE_TIMEOUT_MS = 3000;
+// Cubre el arranque en frío del chaincode tras reiniciar la VM y queda por
+// debajo de los 10 s con que corta el frontend.
+const EVALUATE_TIMEOUT_MS = 8000;
 // Una escritura tiene tres fases: endoso, envío al orderer y confirmación.
 // La confirmación espera el corte del bloque (BatchTimeout de 2 s), por eso es
 // la más larga. Justo después de levantar la red, el primer envío puede

@@ -103,7 +103,9 @@ suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas 
   aceptable con `*` porque son endpoints de diagnóstico sin datos sensibles; se acotó a
   propósito para que los endpoints de negocio de Sprint 1+ no heredaran el wildcard en
   silencio: y así fue: `/auth` (Sprint 1) y `/documents` (Sprint 2) usan cada uno su
-  propio middleware CORS acotado a `FRONTEND_ORIGIN` (env var), no `*`.
+  propio middleware CORS acotado a `FRONTEND_ORIGIN` (env var), no `*`. Con Docker
+  el navegador ya no cruza orígenes: el nginx del frontend reenvía `/api/*` al backend
+  (`VITE_API_URL=/api`), así que el CORS solo actúa con `npm run dev`.
 - **Si `curl localhost:8080/...` devuelve una respuesta vieja o de otra corrida:**
   probablemente un proceso nativo de Windows (un `npm run dev` / `tsx watch` que no murió
   bien) sigue escuchando en `127.0.0.1:8080`, más específico que el `0.0.0.0:8080` real de

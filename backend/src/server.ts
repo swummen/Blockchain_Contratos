@@ -5,6 +5,7 @@ import { connectFabric } from "./fabric/gateway";
 import { connectMongo } from "./repositories/mongoClient";
 import { ensureIndexes as ensureOtpIndexes } from "./repositories/otpRepository";
 import { ensureIndexes as ensureSessionIndexes } from "./repositories/sessionRepository";
+import { ensureIndexes as ensureUserIndexes } from "./repositories/userRepository";
 import { authRouter } from "./routes/auth";
 import { documentsRouter } from "./routes/documents";
 import { eventsRouter } from "./routes/events";
@@ -14,6 +15,7 @@ import { usersRouter } from "./routes/users";
 
 export function createApp() {
   const app = express();
+  app.disable("x-powered-by");
   // CORS por ruta, nunca global, para que ninguna ruta de negocio herede "*".
   // "*" solo en los diagnósticos: no exponen datos ni usan sesión.
   app.use(["/health", "/fabric"], (_req, res, next) => {
@@ -95,6 +97,8 @@ async function main() {
     // Índices TTL: MongoDB borra solos los códigos y las sesiones vencidas.
     await ensureOtpIndexes();
     await ensureSessionIndexes();
+    // Correo único: sin él, dos altas simultáneas del mismo correo pasarían.
+    await ensureUserIndexes();
   } catch (err) {
     // No se aborta: /health reporta "mongo: down" en vez de tumbar el proceso.
     console.error("No se pudo conectar a MongoDB al arrancar:", err);

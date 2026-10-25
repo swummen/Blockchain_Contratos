@@ -28,7 +28,7 @@ jest.mock("../src/repositories/sessionRepository", () => ({
   createSession: jest.fn(),
   findSessionByJti: jest.fn(),
   deleteSession: jest.fn(),
-  touchSession: jest.fn(),
+  touchSession: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("../src/repositories/documentRepository", () => ({

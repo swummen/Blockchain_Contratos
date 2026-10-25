@@ -15,7 +15,7 @@ cd "$SCRIPT_DIR"
 if [ ! -d fabric-samples/test-network ]; then
   echo "==> fabric-samples no está presente. Descargando binarios + imágenes Docker" \
        "(versión fijada: Fabric ${FABRIC_VERSION} / CA ${CA_VERSION}) y clonando el repo..."
-  curl -fsSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
+  curl -fsSLO https://raw.githubusercontent.com/hyperledger/fabric/v${FABRIC_VERSION}/scripts/install-fabric.sh
   chmod +x install-fabric.sh
   ./install-fabric.sh -f "${FABRIC_VERSION}" -c "${CA_VERSION}" docker samples binary
   rm -f install-fabric.sh
@@ -35,6 +35,13 @@ for f in fabric-samples/test-network/compose/docker/docker-compose-test-net.yaml
     sed -i 's#\${DOCKER_SOCK}#/var/run/docker.sock#g' "$f"
   fi
 done
+
+# Puertos de Fabric solo en 127.0.0.1: en Linux Docker publica saltándose el
+# firewall del host, y la CA arranca con admin:adminpw. Los scripts del host
+# usan localhost y el backend entra por la red interna de Docker.
+sed -i 's/^\(\s*- \)"\?\([0-9]\{4,5\}:[0-9]\{4,5\}\)"\?$/\1"127.0.0.1:\2"/' \
+  fabric-samples/test-network/compose/compose-test-net.yaml \
+  fabric-samples/test-network/compose/compose-ca.yaml
 
 # Smart App Control de Windows puede bloquear configtxlator.exe ("Permission
 # denied"). En ese caso se usa un reemplazo que corre la misma versión en Docker,

@@ -33,8 +33,9 @@ services:
       # El contenedor siempre escucha en 8080; BACKEND_PORT solo cambia el puerto del host.
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-root}:${MONGO_ROOT_PASSWORD:-changeme}@mongo:27017/?authSource=admin
       # FABRIC_* usan los valores por defecto de backend/src/config/fabric.ts.
-      # El origen se deriva de FRONTEND_PORT para que el CORS siga al puerto real.
-      FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
+      # CORS solo importa con npm run dev: en Docker el navegador entra por el nginx
+      # del frontend (mismo origen).
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:${FRONTEND_PORT:-5173}}
       # Valor de desarrollo para que up.sh funcione sin configurar nada.
       JWT_SECRET: ${JWT_SECRET:-contratos-dev-secret-cambiar-en-produccion}
       JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-60}
@@ -62,13 +63,33 @@ services:
     build:
       context: ../frontend
       args:
-        # Se fija al compilar. Lo usa el navegador del host, por eso es localhost y
-        # no backend:8080, que solo existe dentro de la red de Docker.
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+        # Se fija al compilar. Ruta relativa: el nginx del frontend la reenvía al
+        # backend, así sirve igual en localhost y en el dominio público.
+        VITE_API_URL: ${VITE_API_URL:-/api}
     container_name: frontend
     restart: unless-stopped
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-5173}:80"
+    networks:
+      - fabric_test
+
+  # Solo en el servidor público: up.sh lo nombra cuando PUBLIC_DOMAIN tiene valor
+  # (nombrarlo activa el perfil). HTTPS con Let's Encrypt. Es lo único que escucha fuera de 127.0.0.1.
+  caddy:
+    image: caddy:2.10.2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    profiles: ["publico"]
+    command: caddy reverse-proxy --from ${PUBLIC_DOMAIN:-localhost} --to frontend:80
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Guarda el certificado: sin esto se pediría uno nuevo en cada arranque y
+      # Let's Encrypt limita cuántos se emiten por semana.
+      - caddy_data:/data
+    depends_on:
+      - frontend
     networks:
       - fabric_test
 
@@ -78,3 +99,4 @@ networks:
 
 volumes:
   mongo_data:
+  caddy_data:

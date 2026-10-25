@@ -22,7 +22,7 @@ function usersCollection(): Collection<UserDoc> {
   return getDb().collection<UserDoc>("users");
 }
 
-// Correo único. Idempotente; lo crea seedUsers.ts.
+// Correo único. Idempotente: lo llaman server.ts al arrancar y seedUsers.ts.
 export async function ensureIndexes(): Promise<void> {
   await usersCollection().createIndex({ email: 1 }, { unique: true });
 }

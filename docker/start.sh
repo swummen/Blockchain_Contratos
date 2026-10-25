@@ -45,7 +45,10 @@ sleep 5
 echo "==> Encendiendo MongoDB, backend y frontend..."
 docker start mongo >/dev/null
 docker restart backend frontend >/dev/null 2>&1 || docker start backend frontend >/dev/null
+# Solo existe en el servidor público.
+if docker ps -a --format '{{.Names}}' | grep -q '^caddy$'; then docker start caddy >/dev/null; fi
 sleep 5
 docker ps --format 'table {{.Names}}\t{{.Status}}'
 echo
-echo "Listo: abre http://localhost:5173"
+PUBLIC_DOMAIN="$(grep -E '^PUBLIC_DOMAIN=' "$(dirname "$0")/.env" 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)"
+if [ -n "$PUBLIC_DOMAIN" ]; then echo "Listo: abre https://$PUBLIC_DOMAIN"; else echo "Listo: abre http://localhost:5173"; fi

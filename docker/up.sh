@@ -20,6 +20,21 @@ if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
+env_value() { grep -E "^$1=" .env | tail -1 | cut -d= -f2- | tr -d ''; }
+PUBLIC_DOMAIN="$(env_value PUBLIC_DOMAIN)"
+APP_SERVICES="mongo backend frontend"
+if [ -n "$PUBLIC_DOMAIN" ]; then
+  # Vacío también cuenta: compose cae en el valor de desarrollo.
+  jwt="$(env_value JWT_SECRET)"; mongo_pw="$(env_value MONGO_ROOT_PASSWORD)"
+  if [ -z "$jwt" ] || [ "$jwt" = "contratos-dev-secret-cambiar-en-produccion" ] ||
+     [ -z "$mongo_pw" ] || [ "$mongo_pw" = "changeme" ]; then
+    echo "PUBLIC_DOMAIN tiene valor pero JWT_SECRET o MONGO_ROOT_PASSWORD siguen con el valor de ejemplo." >&2
+    echo "Genéralos con 'openssl rand -hex 32' en docker/.env (DESPLIEGUE-AZURE.md, paso 4)." >&2
+    exit 1
+  fi
+  APP_SERVICES="$APP_SERVICES caddy"
+fi
+
 echo "==> [1/4] Red Fabric + canal contratoschannel..."
 bash network-up.sh
 
@@ -28,9 +43,9 @@ echo "==> [2/4] Chaincode real del proyecto (contracts)..."
 bash deploy-cc.sh
 
 echo
-echo "==> [3/4] Mongo + backend + frontend..."
+echo "==> [3/4] Mongo + backend + frontend${PUBLIC_DOMAIN:+ + Caddy (https://$PUBLIC_DOMAIN)}..."
 # --build: evita dejar corriendo una imagen con código viejo.
-docker compose --env-file .env -f compose.app.yml up -d --build mongo backend frontend
+docker compose --env-file .env -f compose.app.yml up -d --build $APP_SERVICES
 
 echo
 echo "==> [4/4] Usuarios de prueba (idempotente: no toca los que ya existen)..."

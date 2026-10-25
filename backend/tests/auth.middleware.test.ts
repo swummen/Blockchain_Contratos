@@ -27,7 +27,7 @@ jest.mock("../src/repositories/sessionRepository", () => ({
   createSession: jest.fn(),
   findSessionByJti: jest.fn(),
   deleteSession: jest.fn(),
-  touchSession: jest.fn(),
+  touchSession: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("../src/repositories/userRepository", () => {
@@ -35,7 +35,7 @@ jest.mock("../src/repositories/userRepository", () => {
   return { ...actual, findUserByEmail: jest.fn(), findUserById: jest.fn() };
 });
 
-import { deleteSession, findSessionByJti } from "../src/repositories/sessionRepository";
+import { deleteSession, findSessionByJti, touchSession } from "../src/repositories/sessionRepository";
 import { findUserById } from "../src/repositories/userRepository";
 import { requireAuth } from "../src/middlewares/auth";
 import { createApp } from "../src/server";
@@ -196,6 +196,22 @@ describe("requireAuth(), unidad", () => {
     await requireAuth()(req, res, next);
 
     expect(next).toHaveBeenCalled();
+  });
+
+  it("si Mongo falla al marcar la actividad, la petición sigue y el error queda registrado", async () => {
+    // Sin catch, la promesa rechazada terminaría el proceso de Node.
+    (findSessionByJti as jest.Mock).mockResolvedValue(activeSession);
+    (touchSession as jest.Mock).mockRejectedValue(new Error("mongo caído"));
+    const next = jest.fn();
+
+    await requireAuth()(fakeReq(`Bearer ${signToken()}`), fakeRes(), next);
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(next).toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(
+      "No se pudo actualizar la actividad de la sesión:",
+      new Error("mongo caído")
+    );
   });
 
   it("403 si el rol del JWT no está en la lista permitida", async () => {

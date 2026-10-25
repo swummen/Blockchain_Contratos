@@ -27,7 +27,7 @@ En el portal de Azure: **Máquinas virtuales → Crear**.
 | Campo | Valor |
 |---|---|
 | Imagen | Ubuntu Server 24.04 LTS (x64) |
-| Tamaño | **Standard_B2ms** (2 vCPU, 8 GB). Con 4 GB (B2s) Fabric y MongoDB quedan justos |
+| Tamaño | **Standard_B2s** (2 vCPU, 4 GB, unos 30 USD/mes). En uso el sistema ocupa unos 510 MB; la holgura es para compilar las imágenes. La B1s (1 GB) no alcanza |
 | Autenticación | Clave pública SSH; usuario `azureuser` |
 | Disco | 30 GB o más, SSD estándar |
 | Puertos de entrada públicos | SSH (22) por ahora; se ajustan en el paso 2 |

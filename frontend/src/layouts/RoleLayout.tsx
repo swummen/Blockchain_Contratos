@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom"
+import { Outlet, useLocation } from "react-router-dom"
 import { useSession } from "@/context/SessionContext"
 import { BrandLogo } from "@/components/shared/BrandLogo"
 import { RoleSidebar } from "@/components/shared/RoleSidebar"
@@ -14,6 +14,7 @@ const THEME_BY_ROLE: Record<Role, string> = {
 
 export default function RoleLayout() {
   const { user } = useSession()
+  const { pathname } = useLocation()
   if (!user) return null
 
   return (
@@ -41,7 +42,13 @@ export default function RoleLayout() {
         </aside>
         <div className="flex min-w-0 flex-1 flex-col rounded-3xl bg-white shadow-xl shadow-slate-900/10">
           <main className="flex-1 overflow-y-auto p-6 md:p-8">
-            <Outlet />
+            {/* La key reinicia la animación de entrada en cada cambio de pantalla. */}
+            <div
+              key={pathname}
+              className="animate-in duration-500 fade-in slide-in-from-bottom-4"
+            >
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>

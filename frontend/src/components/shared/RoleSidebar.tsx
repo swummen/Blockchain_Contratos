@@ -45,13 +45,13 @@ export function RoleSidebar({ role }: { role: Role }) {
           to={to}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:translate-x-1.5 hover:bg-sidebar-accent hover:shadow-sm hover:text-sidebar-accent-foreground",
               isActive &&
-                "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm hover:translate-x-0 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
             )
           }
         >
-          <Icon className="size-4" />
+          <Icon className="size-4 transition-transform duration-200 group-hover:scale-125" />
           {label}
         </NavLink>
       ))}

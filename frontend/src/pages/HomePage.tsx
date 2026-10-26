@@ -26,10 +26,10 @@ export default function HomePage() {
           {/* Único punto de entrada al login: hover = fondo azul oscuro, letra blanca. */}
           <Link
             to="/login"
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 ring-1 ring-slate-200 transition-colors hover:bg-slate-900 hover:text-white"
+            className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-1 hover:bg-slate-900 hover:text-white hover:shadow-xl hover:shadow-slate-900/30 active:scale-[0.95]"
           >
             Iniciar sesión
-            <span aria-hidden>→</span>
+            <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-1.5">→</span>
           </Link>
         </header>
 
@@ -38,7 +38,7 @@ export default function HomePage() {
           style={{ background: HERO_BACKGROUND }}
         >
           <div className="mx-auto grid w-full max-w-7xl items-center gap-10 md:grid-cols-2">
-            <div className="space-y-6 text-white md:pl-12">
+            <div className="animate-in space-y-6 text-white duration-1000 fade-in slide-in-from-left-12 md:pl-12">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-50 uppercase">
                 <FileCheck2 className="size-3.5" />
                 Documentos confiables
@@ -66,11 +66,11 @@ export default function HomePage() {
 
             <div className="hidden justify-center md:flex">
               {/* Imagen 2 de claude_docs/imgs.docx con marco blanco de 4 px. */}
-              <div className="relative w-full max-w-md">
+              <div className="relative w-full max-w-md animate-in delay-200 duration-1000 fill-mode-backwards fade-in zoom-in-90">
                 <img
                   src={heroUrl}
                   alt="Bloques de una cadena de bloques conectados"
-                  className="aspect-[1351/830] w-full rounded-3xl border-4 border-white object-cover shadow-lg"
+                  className="aspect-[1351/830] w-full rounded-3xl border-4 border-white object-cover shadow-lg transition-all duration-500 hover:-translate-y-1 hover:scale-[1.05] hover:shadow-2xl hover:shadow-slate-900/50"
                 />
                 <div className="absolute -right-4 -bottom-4 flex size-16 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg">
                   <ShieldCheck className="size-8" />

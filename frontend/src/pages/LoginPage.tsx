@@ -65,7 +65,7 @@ export default function LoginPage() {
 
         {/* Panel derecho: formulario. */}
         <div className="flex flex-1 flex-col justify-center bg-white px-6 py-10 md:px-16">
-          <div className="mx-auto w-full max-w-sm space-y-8">
+          <div className="mx-auto w-full max-w-sm animate-in space-y-8 duration-700 fade-in slide-in-from-bottom-8">
             <Link
               to="/"
               className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-900"
@@ -139,10 +139,12 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-3 text-sm font-medium text-white transition-colors hover:bg-[#087f9b] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 enabled:hover:-translate-y-1 enabled:hover:bg-[#087f9b] enabled:hover:shadow-xl enabled:hover:shadow-teal-900/35 enabled:active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
-                {!isSubmitting && <span aria-hidden>→</span>}
+                {!isSubmitting && (
+                  <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-1.5">→</span>
+                )}
               </button>
             </form>
           </div>

@@ -31,7 +31,7 @@ export function DocumentListItem({
   ].filter(Boolean)
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">

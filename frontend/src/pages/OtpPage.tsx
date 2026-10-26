@@ -59,7 +59,7 @@ export default function OtpPage() {
         style={{ background: PANEL_BACKGROUND }}
       >
         <div className="w-full max-w-md">
-          <div className="w-full rounded-3xl bg-white p-8 shadow-xl shadow-teal-900/20">
+          <div className="w-full animate-in rounded-3xl bg-white p-8 shadow-xl shadow-teal-900/20 duration-700 fade-in zoom-in-90 slide-in-from-bottom-4">
             <Link
               to="/login"
               className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-900"
@@ -105,10 +105,12 @@ export default function OtpPage() {
               type="button"
               disabled={!complete || isSubmitting}
               onClick={handleVerify}
-              className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#9dc9c8] py-3 text-sm font-medium text-white transition-colors enabled:bg-[#0a7f95] enabled:hover:bg-[#087f9b] disabled:cursor-not-allowed"
+              className="group mt-6 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#9dc9c8] py-3 text-sm font-medium text-white transition-all duration-200 enabled:bg-[#0a7f95] enabled:hover:-translate-y-1 enabled:hover:bg-[#087f9b] enabled:hover:shadow-xl enabled:hover:shadow-teal-900/35 enabled:active:scale-[0.96] disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Verificando..." : "Verificar código"}
-              {!isSubmitting && <span aria-hidden>→</span>}
+              {!isSubmitting && (
+                <span aria-hidden className="transition-transform duration-200 group-enabled:group-hover:translate-x-1.5">→</span>
+              )}
             </button>
 
             <button

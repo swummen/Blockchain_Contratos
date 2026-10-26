@@ -19,11 +19,11 @@ const TONE_CLASS: Record<NonNullable<KpiCardProps["tone"]>, string> = {
 
 export function KpiCard({ label, value, icon: Icon, tone = "default" }: KpiCardProps) {
   return (
-    <Card>
+    <Card className="group transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       <CardContent className="flex items-center gap-3">
         <div
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-lg",
+            "flex size-10 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-125",
             TONE_CLASS[tone]
           )}
         >

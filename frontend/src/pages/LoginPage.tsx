@@ -34,6 +34,18 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-100 p-3 md:p-6">
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl flex-col overflow-hidden rounded-3xl shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)] md:flex-row">
+        {/* Solo en celular: franja con la marca, en lugar del panel izquierdo. */}
+        <div
+          className="flex items-center gap-2.5 px-6 py-4 text-white md:hidden"
+          style={{ background: PANEL_BACKGROUND }}
+        >
+          <BrandLogo className="size-9 rounded-xl" />
+          <div className="leading-tight">
+            <p className="text-sm font-semibold">TrazaDoc</p>
+            <p className="text-xs text-cyan-50/80">Integridad documental</p>
+          </div>
+        </div>
+
         {/* Panel izquierdo: decorativo, oculto en mobile. */}
         <div
           className="hidden flex-col justify-between p-10 text-white md:flex md:w-[42%]"
@@ -64,7 +76,7 @@ export default function LoginPage() {
         </div>
 
         {/* Panel derecho: formulario. */}
-        <div className="flex flex-1 flex-col justify-center bg-white px-6 py-10 md:px-16">
+        <div className="flex flex-1 flex-col justify-center bg-white px-6 py-8 md:px-16 md:py-10">
           <div className="mx-auto w-full max-w-sm animate-in space-y-8 duration-700 fade-in slide-in-from-bottom-8">
             <Link
               to="/"
@@ -135,11 +147,11 @@ export default function LoginPage() {
                 </p>
               )}
 
-              {/* Al pasar el mouse toma el azul del panel izquierdo. */}
+              {/* Botón en relieve (btn-3d) con el azul del panel izquierdo. */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="group flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 enabled:hover:-translate-y-1 enabled:hover:bg-[#087f9b] enabled:hover:shadow-xl enabled:hover:shadow-teal-900/35 enabled:active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group btn-3d flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 bg-[#0a7f95] text-base text-white [--btn-edge:#065a6a] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
                 {!isSubmitting && (

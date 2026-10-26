@@ -77,7 +77,7 @@ export default function DashboardPage() {
       {summaryError ? (
         <p className="text-sm text-destructive">{summaryError}</p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <KpiCard label="Total documentos" value={summary?.total ?? "..."} icon={FileText} />
           <KpiCard
             label="Verificados"

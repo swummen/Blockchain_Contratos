@@ -41,7 +41,8 @@ export function OtpInput({
   }
 
   return (
-    <div className="flex justify-between gap-2">
+    // Casillas flexibles: en celular se reparten el ancho disponible.
+    <div className="flex justify-between gap-1.5 sm:gap-2">
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
@@ -58,7 +59,7 @@ export function OtpInput({
           maxLength={1}
           aria-label={`Dígito ${i + 1} de ${length}`}
           className={cn(
-            "h-12 w-11 rounded-xl border border-slate-200 bg-slate-50 text-center text-lg font-medium text-slate-900 outline-none transition-colors focus-visible:border-[#087f9b] focus-visible:bg-white focus-visible:ring-3 focus-visible:ring-[#087f9b]/20 disabled:pointer-events-none disabled:opacity-50"
+            "h-12 w-full max-w-11 min-w-0 rounded-xl border border-slate-200 bg-slate-50 text-center text-lg font-medium text-slate-900 outline-none transition-colors focus-visible:border-[#087f9b] focus-visible:bg-white focus-visible:ring-3 focus-visible:ring-[#087f9b]/20 disabled:pointer-events-none disabled:opacity-50"
           )}
         />
       ))}

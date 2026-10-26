@@ -246,7 +246,7 @@ export default function UsuariosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 className="font-heading text-xl font-semibold">Gestión de usuarios</h1>
           <p className="text-sm text-muted-foreground">Usuarios registrados por rol</p>

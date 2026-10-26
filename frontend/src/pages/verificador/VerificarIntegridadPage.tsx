@@ -148,7 +148,7 @@ export default function VerificarIntegridadPage() {
         <Card>
           <CardContent className="space-y-4">
             {/* RF-33: evidencia de qué documento se comparó contra qué archivo. */}
-            <div className="grid gap-3 rounded-xl border border-border bg-card p-4 text-sm sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-card p-4 text-sm sm:grid-cols-2">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Documento registrado</p>
                 <p className="font-medium">{document?.name ?? document?.documentId}</p>
@@ -161,7 +161,7 @@ export default function VerificarIntegridadPage() {
                 <p className="font-medium">{compareFile?.name}</p>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <HashDisplay hash={result.registeredHash} canViewFull label="Hash registrado" />
               <HashDisplay
                 hash={result.computedHash}

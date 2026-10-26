@@ -45,7 +45,7 @@ export default function DocumentosPage() {
       ) : documents.length === 0 ? (
         <p className="text-sm text-muted-foreground">Todavía no hay documentos registrados.</p>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {documents.map((doc) => (
             <DocumentListItem
               key={doc.documentId}

@@ -55,11 +55,11 @@ export default function OtpPage() {
     <div className="min-h-screen bg-slate-100 p-3 md:p-6">
       {/* Misma tarjeta flotante y ancho que inicio y login. */}
       <div
-        className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl items-center justify-center rounded-3xl p-6 shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)]"
+        className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl items-center justify-center rounded-3xl p-3 shadow-xl sm:p-6 shadow-teal-900/15 md:min-h-[calc(100vh-3rem)]"
         style={{ background: PANEL_BACKGROUND }}
       >
         <div className="w-full max-w-md">
-          <div className="w-full animate-in rounded-3xl bg-white p-8 shadow-xl shadow-teal-900/20 duration-700 fade-in zoom-in-90 slide-in-from-bottom-4">
+          <div className="w-full animate-in rounded-3xl bg-white p-5 shadow-xl sm:p-8 shadow-teal-900/20 duration-700 fade-in zoom-in-90 slide-in-from-bottom-4">
             <Link
               to="/login"
               className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-900"
@@ -105,7 +105,7 @@ export default function OtpPage() {
               type="button"
               disabled={!complete || isSubmitting}
               onClick={handleVerify}
-              className="group mt-6 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#9dc9c8] py-3 text-sm font-medium text-white transition-all duration-200 enabled:bg-[#0a7f95] enabled:hover:-translate-y-1 enabled:hover:bg-[#087f9b] enabled:hover:shadow-xl enabled:hover:shadow-teal-900/35 enabled:active:scale-[0.96] disabled:cursor-not-allowed"
+              className="group btn-3d mt-6 flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 bg-[#9dc9c8] text-base text-white [--btn-edge:#7fb1b0] enabled:bg-[#0a7f95] enabled:[--btn-edge:#065a6a] disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Verificando..." : "Verificar código"}
               {!isSubmitting && (

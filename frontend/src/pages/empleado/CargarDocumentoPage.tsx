@@ -78,7 +78,7 @@ export default function CargarDocumentoPage() {
                   Identificador del documento
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="block flex-1 truncate rounded-md bg-muted px-2.5 py-1.5 font-mono text-xs text-foreground/80">
+                  <code className="block min-w-0 flex-1 truncate rounded-md bg-muted px-2.5 py-1.5 font-mono text-xs text-foreground/80">
                     {registered.documentId}
                   </code>
                   <CopyButton value={registered.documentId} />

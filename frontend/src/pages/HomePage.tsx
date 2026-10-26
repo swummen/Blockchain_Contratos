@@ -35,9 +35,18 @@ export default function HomePage() {
         </header>
 
         <section
-          className="flex flex-1 items-center px-6 py-10 md:px-16 md:py-20"
+          className="relative isolate flex flex-1 items-center overflow-hidden px-6 py-10 md:px-16 md:py-20"
           style={{ background: HERO_BACKGROUND }}
         >
+          {/* Fondo decorativo: cuadrícula tenue (bloques conectados) que se
+              desvanece hacia los bordes y tres manchas de luz que flotan lento. */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+            <div className="hero-grid absolute inset-0" />
+            <div className="hero-glow absolute -top-24 -left-20 size-80 bg-cyan-300/30 md:size-[28rem]" />
+            <div className="hero-glow hero-glow-delay absolute -right-24 -bottom-32 size-96 bg-teal-300/25 md:size-[32rem]" />
+            <div className="hero-glow hero-glow-slow absolute top-1/3 left-1/2 size-64 bg-sky-400/20" />
+          </div>
+
           <div className="mx-auto grid w-full max-w-7xl items-center gap-10 md:grid-cols-2">
             <div className="animate-in space-y-6 text-white duration-1000 fade-in slide-in-from-left-12 md:pl-12">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-50 uppercase">

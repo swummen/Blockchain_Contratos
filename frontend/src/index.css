@@ -186,6 +186,46 @@
   }
 }
 
+/* Fondo de la página de inicio (HomePage.tsx): cuadrícula de líneas blancas
+   al 7 % que se desvanece hacia los bordes. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+
+/* Manchas de luz difuminadas que flotan muy lento detrás del contenido. */
+.hero-glow {
+  border-radius: 9999px;
+  filter: blur(64px);
+  animation: hero-float 18s ease-in-out infinite;
+}
+
+.hero-glow-delay {
+  animation-delay: -6s;
+  animation-duration: 22s;
+}
+
+.hero-glow-slow {
+  animation-delay: -12s;
+  animation-duration: 26s;
+}
+
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(40px, -30px) scale(1.08);
+  }
+  66% {
+    transform: translate(-30px, 25px) scale(0.95);
+  }
+}
+
 /* Quien pide menos movimiento en su sistema no ve animaciones ni transiciones. */
 @media (prefers-reduced-motion: reduce) {
   *,

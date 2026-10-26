@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { FileCheck2, FileText, ShieldCheck } from "lucide-react"
+import { FileCheck2, FileText, Fingerprint, History, Link2, ShieldCheck } from "lucide-react"
 import heroUrl from "@/assets/home-blockchain.jpg"
 import { BrandLogo } from "@/components/shared/BrandLogo"
 
@@ -8,6 +8,24 @@ import { BrandLogo } from "@/components/shared/BrandLogo"
 // Degradado tomado en píxeles del PDF del diseño.
 const HERO_BACKGROUND =
   "radial-gradient(ellipse at center, #0f8aad 0%, #0a7f95 45%, #087b78 100%)"
+
+const FEATURES = [
+  {
+    icon: Fingerprint,
+    title: "Huella SHA-256",
+    description: "Cada PDF genera una huella única: si cambia un solo carácter, la huella cambia.",
+  },
+  {
+    icon: Link2,
+    title: "Registro en blockchain",
+    description: "La huella queda guardada en Hyperledger Fabric y no puede modificarse ni borrarse.",
+  },
+  {
+    icon: History,
+    title: "Trazabilidad completa",
+    description: "Cada carga y verificación queda en el historial con usuario, fecha y resultado.",
+  },
+]
 
 export default function HomePage() {
   return (
@@ -68,7 +86,7 @@ export default function HomePage() {
               </p>
 
               {/* Informativo: no navega. */}
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-medium text-white">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-medium whitespace-nowrap text-white">
                 <FileText className="size-4" />
                 Verificación simple y segura
               </span>
@@ -88,6 +106,28 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+
+            {/* Cómo funciona: tarjetas de vidrio con íconos de un solo trazo. */}
+            {/* Alineadas a la izquierda, al mismo borde que el texto (md:pl-12).
+                En fila desde lg; antes van apiladas con el ícono al lado del texto. */}
+            <ul className="grid w-full max-w-4xl gap-3 md:col-span-2 md:pl-12 lg:grid-cols-3">
+              {FEATURES.map(({ icon: Icon, title, description }, i) => (
+                <li
+                  key={title}
+                  className="group flex animate-in items-start gap-3 rounded-2xl lg:block border border-white/20 bg-white/10 px-4 py-3.5 text-white backdrop-blur-md transition-all duration-300 fill-mode-backwards fade-in slide-in-from-bottom-6 hover:-translate-y-1.5 hover:border-white/40 hover:bg-white/15 hover:shadow-xl hover:shadow-slate-900/20"
+                  style={{ animationDuration: "900ms", animationDelay: `${400 + i * 150}ms` }}
+                >
+                  <Icon
+                    className="size-6 shrink-0 text-cyan-50 transition-transform duration-300 group-hover:scale-110"
+                    strokeWidth={1.25}
+                  />
+                  <div>
+                    <h2 className="text-sm font-semibold lg:mt-2.5">{title}</h2>
+                    <p className="mt-1 text-xs leading-relaxed text-cyan-50/80">{description}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
       </div>

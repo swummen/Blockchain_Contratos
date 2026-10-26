@@ -171,6 +171,21 @@
     }
 }
 
+/* Botón en relieve: píldora con un canto inferior de 4 px en --btn-edge (lo pone
+   quien lo usa, normalmente el color del botón oscurecido). Al pasar el mouse
+   sube y al hacer clic se hunde hasta tapar el canto. */
+@utility btn-3d {
+  @apply rounded-full font-semibold shadow-[0_4px_0_0_var(--btn-edge)] transition-all duration-150 ease-out;
+
+  &:hover:not(:disabled) {
+    @apply -translate-y-0.5 shadow-[0_6px_0_0_var(--btn-edge)] brightness-105;
+  }
+
+  &:active:not(:disabled) {
+    @apply translate-y-1 shadow-[0_0_0_0_var(--btn-edge)];
+  }
+}
+
 /* Quien pide menos movimiento en su sistema no ve animaciones ni transiciones. */
 @media (prefers-reduced-motion: reduce) {
   *,

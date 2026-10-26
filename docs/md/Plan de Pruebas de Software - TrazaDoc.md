@@ -26,83 +26,83 @@ Bogotá D.C., octubre de 2026
 
 **Contenido**
 
-[1. Objetivo 4](#_Toc243846502)
+[1. Objetivo 4](#_Toc243848129)
 
-[1.1 A quién va dirigido 4](#_Toc243846503)
+[1.1 A quién va dirigido 4](#_Toc243848130)
 
-[1.2 Qué es TrazaDoc 4](#_Toc243846504)
+[1.2 Qué es TrazaDoc 4](#_Toc243848131)
 
-[1.3 Objetivos de la prueba 4](#_Toc243846505)
+[1.3 Objetivos de la prueba 4](#_Toc243848132)
 
-[1.4 Tecnologías del sistema bajo prueba 5](#_Toc243846506)
+[1.4 Tecnologías del sistema bajo prueba 5](#_Toc243848133)
 
-[2. Alcance 6](#_Toc243846507)
+[2. Alcance 6](#_Toc243848134)
 
-[2.1 Inclusiones 7](#_Toc243846508)
+[2.1 Inclusiones 7](#_Toc243848135)
 
-[2.2 Exclusiones 16](#_Toc243846509)
+[2.2 Exclusiones 16](#_Toc243848136)
 
-[3. Entornos de prueba 17](#_Toc243846510)
+[3. Entornos de prueba 17](#_Toc243848137)
 
-[3.1 Características de cada entorno 17](#_Toc243846511)
+[3.1 Características de cada entorno 17](#_Toc243848138)
 
-[3.2 Navegadores y dispositivos 17](#_Toc243846512)
+[3.2 Navegadores y dispositivos 17](#_Toc243848139)
 
-[3.3 Usuarios y permisos de prueba 17](#_Toc243846513)
+[3.3 Usuarios y permisos de prueba 17](#_Toc243848140)
 
-[3.4 Datos de prueba 18](#_Toc243846514)
+[3.4 Datos de prueba 18](#_Toc243848141)
 
-[4. Procedimiento de reporte de defectos 19](#_Toc243846515)
+[4. Procedimiento de reporte de defectos 19](#_Toc243848142)
 
-[4.1 Pasos para reportar un defecto 19](#_Toc243846516)
+[4.1 Pasos para reportar un defecto 19](#_Toc243848143)
 
-[4.2 Clasificación y priorización 19](#_Toc243846517)
+[4.2 Clasificación y priorización 19](#_Toc243848144)
 
-[4.3 Responsables por área 20](#_Toc243846518)
+[4.3 Responsables por área 20](#_Toc243848145)
 
-[4.4 Registro inicial de defectos 20](#_Toc243846519)
+[4.4 Registro inicial de defectos 20](#_Toc243848146)
 
-[5. Estrategia de pruebas 22](#_Toc243846520)
+[5. Estrategia de pruebas 22](#_Toc243848147)
 
-[5.1 Paso 1: diseño de escenarios y casos de prueba 22](#_Toc243846521)
+[5.1 Paso 1: diseño de escenarios y casos de prueba 22](#_Toc243848148)
 
-[5.2 Paso 2: procedimiento al recibir una versión para probar 23](#_Toc243846522)
+[5.2 Paso 2: procedimiento al recibir una versión para probar 23](#_Toc243848149)
 
-[5.3 Tipos de prueba 23](#_Toc243846523)
+[5.3 Tipos de prueba 23](#_Toc243848150)
 
-[5.4 Paso 3: buenas prácticas 24](#_Toc243846524)
+[5.4 Paso 3: buenas prácticas 24](#_Toc243848151)
 
-[6. Cronograma de pruebas 25](#_Toc243846525)
+[6. Cronograma de pruebas 25](#_Toc243848152)
 
-[7. Entregables de prueba 26](#_Toc243846526)
+[7. Entregables de prueba 26](#_Toc243848153)
 
-[8. Criterios de entrada y salida 27](#_Toc243846527)
+[8. Criterios de entrada y salida 27](#_Toc243848154)
 
-[8.1 Análisis de requerimientos 27](#_Toc243846528)
+[8.1 Análisis de requerimientos 27](#_Toc243848155)
 
-[8.2 Ejecución de pruebas 27](#_Toc243846529)
+[8.2 Ejecución de pruebas 27](#_Toc243848156)
 
-[8.3 Cierre de pruebas 28](#_Toc243846530)
+[8.3 Cierre de pruebas 28](#_Toc243848157)
 
-[9. Herramientas 28](#_Toc243846531)
+[9. Herramientas 28](#_Toc243848158)
 
-[10. Riesgos y mitigaciones 28](#_Toc243846532)
+[10. Riesgos y mitigaciones 28](#_Toc243848159)
 
-[11. Aprobaciones 29](#_Toc243846533)
+[11. Aprobaciones 29](#_Toc243848160)
 
-[Anexo A. Catálogo de casos de prueba 30](#_Toc243846534)
+[Anexo A. Catálogo de casos de prueba 30](#_Toc243848161)
 
-[A.1 EP-01 Autenticación y control de acceso 30](#_Toc243846535)
+[A.1 EP-01 Autenticación y control de acceso 30](#_Toc243848162)
 
-[A.2 EP-02 Registro y gestión documental (Empleado) 32](#_Toc243846536)
+[A.2 EP-02 Registro y gestión documental (Empleado) 32](#_Toc243848163)
 
-[A.3 EP-03 Verificación de integridad documental (Verificador) 33](#_Toc243846537)
+[A.3 EP-03 Verificación de integridad documental (Verificador) 33](#_Toc243848164)
 
-[A.4 EP-04 Administración del sistema 34](#_Toc243846538)
+[A.4 EP-04 Administración del sistema 34](#_Toc243848165)
 
-[A.5 EP-05 Infraestructura y despliegue 35](#_Toc243846539)
+[A.5 EP-05 Infraestructura y despliegue 35](#_Toc243848166)
 
-[A.6 Casos de integridad, trazabilidad y rendimiento 35](#_Toc243846540)
+[A.6 Casos de integridad, trazabilidad y rendimiento 35](#_Toc243848167)
 
 # 1. Objetivo
 
@@ -449,7 +449,7 @@ La **prioridad** indica el orden de corrección y la define la líder de pruebas
 
 ## 4.4 Registro inicial de defectos
 
-Durante la preparación de este plan, al revisar el sistema y tomar las capturas, se identificaron los siguientes defectos. Quedan registrados desde ya para hacerles seguimiento durante la ejecución:
+Durante la preparación de este plan, al revisar el sistema, tomar las capturas y ensayar los casos en el entorno local, se identificaron los siguientes defectos. Quedan registrados desde ya para hacerles seguimiento durante la ejecución:
 
 **Tabla 10.** Defectos identificados durante la preparación
 
@@ -460,6 +460,7 @@ Durante la preparación de este plan, al revisar el sistema y tomar las capturas
 | DEF-03 | No se registran los intentos fallidos de inicio de sesión (correo, fecha, hora y motivo), como pide HU-022 CA-03. | CP-11 | Media | Nuevo |
 | DEF-04 | No está implementada la aceptación de la política de tratamiento de datos en el primer ingreso (HU-023, RF-055, Ley 1581 de 2012). | CP-13 a CP-15 | Alta | Nuevo |
 | DEF-05 | Las insignias de estado aparecen en minúscula ("pendiente", "alterado"), distinto de como se nombran en el resto del sistema. | CP-22 | Baja | Nuevo |
+| DEF-06 | Un Empleado puede consultar por la API los datos de un documento de otra persona (nombre, responsable, fecha y estado); la huella sí sale enmascarada. Afecta la privacidad (RNF-08, Ley 1581 de 2012). | CP-29 | Media | Nuevo |
 
 *Fuente: elaboración propia.*
 
@@ -698,7 +699,7 @@ Estos son los riesgos posibles y cómo se mitigan:
 | Poco tiempo para probar. | Priorizar los casos Alta y los KPI; los Baja se ejecutan al final. |
 | Un cambio de código durante la ejecución invalida resultados anteriores. | Versión congelada durante el Ciclo 2; las correcciones se prueban en el Ciclo 3 con regresión. |
 | Los datos de prueba se mezclan con datos de demostración. | Los documentos de prueba tienen códigos únicos (C01 a C12, N01 a N08) y las ejecuciones se identifican por fecha y hora. |
-| Funcionalidades aún sin implementar (HU-023 y HU-022 CA-03). | Se registran como defectos (DEF-03 y DEF-04); si no se implementan a tiempo, sus casos se reportan como FAIL con su justificación. Aun así, la meta de 90 % se alcanza si pasan los demás 47 casos (92 %). |
+| Funcionalidades aún sin implementar (HU-023 y HU-022 CA-03). | Se registran como defectos (DEF-03 y DEF-04); si no se implementan a tiempo, sus casos se reportan como FAIL con su justificación. Aun así, la meta de 90 % se alcanza si pasan los demás 47 casos (92 %); si además sigue fallando CP-29 (DEF-06), quedan 46 de 51 (90 %), justo en el límite. |
 
 *Fuente: elaboración propia.*
 

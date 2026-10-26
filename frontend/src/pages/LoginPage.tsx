@@ -1,7 +1,8 @@
 import * as React from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useSession } from "@/context/SessionContext"
-import { Eye, EyeOff, FileCheck2, Lock, ShieldCheck, User } from "lucide-react"
+import { Eye, EyeOff, FileCheck2, Lock, User } from "lucide-react"
+import { BrandLogo } from "@/components/shared/BrandLogo"
 
 // Mismo degradado que HomePage.
 const PANEL_BACKGROUND =
@@ -39,9 +40,7 @@ export default function LoginPage() {
           style={{ background: PANEL_BACKGROUND }}
         >
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-white/15 text-white">
-              <ShieldCheck className="size-4.5" />
-            </div>
+            <BrandLogo className="size-9 rounded-xl" />
             <div className="leading-tight">
               <p className="text-sm font-semibold">TrazaDoc</p>
               <p className="text-xs text-cyan-50/80">Integridad documental</p>

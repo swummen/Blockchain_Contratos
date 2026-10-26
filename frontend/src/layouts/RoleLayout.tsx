@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom"
-import { ShieldCheck } from "lucide-react"
 import { useSession } from "@/context/SessionContext"
+import { BrandLogo } from "@/components/shared/BrandLogo"
 import { RoleSidebar } from "@/components/shared/RoleSidebar"
 import { UserMenu } from "@/components/shared/UserMenu"
 import { cn } from "@/lib/utils"
@@ -28,11 +28,7 @@ export default function RoleLayout() {
       >
         <aside className="flex w-64 shrink-0 flex-col rounded-3xl bg-sidebar text-sidebar-foreground shadow-xl shadow-slate-900/10">
           <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-4">
-            {/* bg-sidebar-primary es el blanco del ítem activo (RoleSidebar.tsx):
-                el logo usa un fondo translúcido. */}
-            <div className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-sidebar-foreground">
-              <ShieldCheck className="size-4" />
-            </div>
+            <BrandLogo className="size-8 rounded-lg" />
             <div className="min-w-0">
               <p className="truncate text-sm leading-tight font-semibold">TrazaDoc</p>
               <p className="truncate text-xs text-sidebar-foreground/60">{user.role}</p>

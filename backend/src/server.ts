@@ -17,6 +17,12 @@ import { usersRouter } from "./routes/users";
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
+  // Sin esto el navegador reutiliza listados guardados y muestra estados viejos
+  // (un documento recién verificado seguía apareciendo como Alterado).
+  app.use((_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
   // CORS por ruta, nunca global, para que ninguna ruta de negocio herede "*".
   // "*" solo en los diagnósticos: no exponen datos ni usan sesión.
   app.use(["/health", "/fabric"], (_req, res, next) => {

@@ -109,7 +109,6 @@ export default function VerificarIntegridadPage() {
     setCompareFile(file)
     setResult(null)
     setVerifyError(null)
-    setListVersion((v) => v + 1)
   }
 
   async function handleVerify() {
@@ -135,6 +134,7 @@ export default function VerificarIntegridadPage() {
     setCompareFile(null)
     setResult(null)
     setVerifyError(null)
+    setListVersion((v) => v + 1)
   }
 
   return (

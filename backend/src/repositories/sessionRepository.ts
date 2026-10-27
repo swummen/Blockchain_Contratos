@@ -13,6 +13,8 @@ export interface SessionDoc {
   expiresAt: Date;
   // Última actividad, para cerrar por inactividad (RNF-07).
   lastSeenAt: Date;
+  // RF-055: sin aceptar la política solo se permiten las rutas de /auth.
+  policyAccepted: boolean;
 }
 
 function sessionsCollection(): Collection<SessionDoc> {
@@ -34,6 +36,10 @@ export async function findSessionByJti(jti: string): Promise<SessionDoc | null> 
 
 export async function touchSession(jti: string): Promise<void> {
   await sessionsCollection().updateOne({ _id: jti }, { $set: { lastSeenAt: new Date() } });
+}
+
+export async function markPolicyAccepted(jti: string): Promise<void> {
+  await sessionsCollection().updateOne({ _id: jti }, { $set: { policyAccepted: true } });
 }
 
 export async function deleteSession(jti: string): Promise<void> {

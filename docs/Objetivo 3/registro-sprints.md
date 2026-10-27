@@ -9,36 +9,36 @@ comprometidas aprobadas al cierre de cada sprint"**.
 - **Fuentes:** historial de commits de GitHub (fechas), `claude_docs/SPEC.md` (HU, puntos,
   módulos) y el plan + lista de tareas de cada sprint en `claude_docs/tasks/` (detalle,
   decisiones y verificaciones).
-- **Actualizado:** 2026‑10‑15.
+- **Actualizado:** 2026‑10‑27.
 
 ## Resumen y KPI
 
 | Sprint | Fechas | Módulo | HU comprometidas | Puntos | Terminadas (criterios técnicos 2‑4 del DoD) | Aprobadas por el tutor (criterio 5) |
 |---|---|---|---|---|---|---|
-| 0 | 06‑sep → 19‑sep | `infra` | HU‑021 | 13 | 1 de 1 (100 %) | Pendiente |
-| 1 | 19‑sep → 20‑sep | `identity` | HU‑001, 002, 003, 004 | 11 | 4 de 4 (100 %) | Pendiente |
-| 2 | 20‑sep → 21‑sep | `documents` + `ledger` | HU‑005, 006, 007 | 21 | 3 de 3 (100 %) | Pendiente |
-| 3 | 07‑oct → 08‑oct | `verification` | HU‑010, 011, 012, 013, 014 | 22 | 5 de 5 (100 %) | Pendiente |
-| 4 | 08‑oct → 14‑oct | `administration` + consultas | HU‑008, 009, 015, 016, 017, 018, 019, 020 | 35 | 8 de 8 (100 %) | Pendiente |
-| **Total** | | | **21 HU** | **102** | **21 de 21 (100 %)** | **0 de 21 registradas** |
+| 0 | 06‑sep → 19‑sep | `infra` | HU‑021 | 13 | 1 de 1 (100 %) | Aprobado |
+| 1 | 19‑sep → 20‑sep | `identity` | HU‑001, 002, 003, 004 | 11 | 4 de 4 (100 %) | Aprobado |
+| 2 | 20‑sep → 21‑sep | `documents` + `ledger` | HU‑005, 006, 007 | 21 | 3 de 3 (100 %) | Aprobado |
+| 3 | 07‑oct → 08‑oct | `verification` | HU‑010, 011, 012, 013, 014 | 22 | 5 de 5 (100 %) | Aprobado |
+| 4 | 08‑oct → 14‑oct | `administration` + consultas | HU‑008, 009, 015, 016, 017, 018, 019, 020 | 35 | 8 de 8 (100 %) | Aprobado |
+| **Total** | | | **21 HU** | **102** | **21 de 21 (100 %)** | **21 de 21 (100 %)** |
 
 **Cómo leer el KPI.** La Definición de Terminado (SPEC §10.2) tiene 5 criterios. Los
 criterios técnicos (**2** (casos de prueba en PASS), **3** (RF/RNF actualizados) y
 **4** (desplegado y verificado en Docker Compose)) se cumplieron en todas las HU
 comprometidas: el **100 % en cada sprint, por encima de la meta del 80 %**. El KPI
-formal exige además **el criterio 5 (aceptación del director o la codirectora)**, que
-todavía no se ha registrado en ningún sprint, y el **criterio 1** (revisión por pares e
-integración a `main`), cumplido con pull requests solo en parte (ver cada sprint). **El
-porcentaje oficial se completa cuando el tutor registre su aprobación** en la última
-columna.
+formal exige además **el criterio 5 (aceptación del director o la codirectora)**, que ya
+se obtuvo para los cinco sprints (el acta de aprobación se conserva fuera del repositorio).
+Con eso el **KPI queda oficialmente en 100 % (21 de 21 HU)**. El **criterio 1** (revisión
+por pares e integración a `main`) se cumplió con pull requests solo en parte (ver cada
+sprint).
 
 **Historias agregadas al backlog después de la planeación** (RF‑054 y RF‑055, versión 2.0 del
 backlog):
 
 | HU | Estado |
 |---|---|
-| HU‑022 Protección ante intentos fallidos | Parcial: bloqueo tras 5 intentos (CA‑01, CA‑02) y cierre por inactividad (CA‑04) hechos; falta registrar cada intento fallido (CA‑03). |
-| HU‑023 Aceptación de la política de tratamiento de datos | No iniciada (falta el texto de la política). |
+| HU‑022 Protección ante intentos fallidos | Hecha: bloqueo tras 5 intentos (CA‑01, CA‑02), cierre por inactividad (CA‑04) y, desde el 27/10/2026, registro de cada intento fallido con correo, fecha, hora y motivo, sin la contraseña (CA‑03, colección `login_attempts`, se borra a los 90 días). |
+| HU‑023 Aceptación de la política de tratamiento de datos | Hecha el 27/10/2026: la política (versión 1.0) se presenta tras el primer ingreso; sin aceptarla el backend rechaza toda ruta de negocio (403) y se guarda usuario, fecha, hora y versión aceptada (CA‑01 a CA‑03). |
 | HU‑024 Edición y desactivación de usuarios | Hecha dentro de HU‑018 (Sprint 4): el cambio de rol aplica desde el siguiente ingreso. |
 
 **Velocidad:** 13 → 11 → 21 → 22 → 35 puntos. Sprints 1 y 2 fueron cortos porque se
@@ -175,19 +175,19 @@ Compose · **5** aceptación del director o la codirectora.
 
 | Sprint | HU | 1. Revisión por pares / `main` | 2. Pruebas PASS | 3. RF/RNF actualizados | 4. Docker Compose | 5. Aceptación del tutor |
 |---|---|---|---|---|---|---|
-| 0 | HU‑021 | ⏳ sin PR propio (solo el frontend entró por PR #3) | ✅ | ✅ | ✅ | ⏳ |
-| 1 | HU‑001…004 | ⏳ sin PR | ✅ | ✅ | ✅ | ⏳ |
-| 2 | HU‑005…007 | ⏳ excepción documentada | ✅ | ✅ | ✅ | ⏳ |
-| 3 | HU‑010…014 | ⏳ sin PR | ✅ | ✅ | ✅ | ⏳ |
-| 4 | HU‑008, 009, 015…020 | ⏳ sin PR | ✅ | ✅ | ✅ | ⏳ |
+| 0 | HU‑021 | ⏳ sin PR propio (solo el frontend entró por PR #3) | ✅ | ✅ | ✅ | ✅ |
+| 1 | HU‑001…004 | ⏳ sin PR | ✅ | ✅ | ✅ | ✅ |
+| 2 | HU‑005…007 | ⏳ excepción documentada | ✅ | ✅ | ✅ | ✅ |
+| 3 | HU‑010…014 | ⏳ sin PR | ✅ | ✅ | ✅ | ✅ |
+| 4 | HU‑008, 009, 015…020 | ⏳ sin PR | ✅ | ✅ | ✅ | ✅ |
 
-✅ cumplido · ⏳ pendiente. Con los criterios 2‑4 cumplidos, el 100 % de las HU
-comprometidas queda por encima de la meta del 80 % en cada sprint; el KPI formal se cierra
-cuando se registren los criterios 1 y 5.
+✅ cumplido · ⏳ pendiente. Con los criterios 2 a 5 cumplidos, el 100 % de las HU
+comprometidas queda aprobado en cada sprint, por encima de la meta del 80 %. El criterio 1
+queda como mejora de proceso (ver la auditoría QA en `docs/Pruebas_QA_QC_TrazaDoc.xlsx`).
 
 ## Pendiente para cerrar el KPI
 
-1. Registrar la **aceptación del tutor** (criterio 5) de cada sprint: completar la última
-   columna del resumen con la fecha de la sesión de revisión.
+1. ~~Registrar la aceptación del tutor (criterio 5)~~: obtenida para los cinco sprints;
+   falta subir el acta al repositorio.
 2. Abrir los **pull requests** de revisión que faltan (criterio 1), o dejar documentada la
    excepción por sprint.

@@ -65,6 +65,7 @@ const activeSession = {
   role: "Empleado" as const,
   expiresAt: new Date(Date.now() + 60_000),
   lastSeenAt: new Date(),
+  policyAccepted: true,
 };
 
 function token(role = "Empleado") {
@@ -278,6 +279,24 @@ describe("GET /documents/:id", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.hash).toBe(MASKED_HASH);
+  });
+
+  it("Empleado sobre un documento ajeno: 403, sin datos del documento (RNF-08, DEF-06)", async () => {
+    (findDocumentById as jest.Mock).mockResolvedValue({
+      _id: "doc1",
+      name: "contrato-ajeno.pdf",
+      responsibleUser: "U002",
+      registeredAt,
+      hash: FULL_HASH,
+      status: "Pendiente",
+    });
+
+    const res = await request(createApp())
+      .get("/documents/doc1")
+      .set("Authorization", `Bearer ${token("Empleado")}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({ message: "No tienes permiso para esta acción." });
   });
 
   it("documento inexistente: 404 (HU-010-CA-02)", async () => {

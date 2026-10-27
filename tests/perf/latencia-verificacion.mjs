@@ -49,6 +49,8 @@ if (!code) {
 }
 const otp = await post("/auth/verify-otp", { email: EMAIL, code });
 if (otp.status !== 200) throw new Error(`Código rechazado (${otp.status}): ${otp.json.message}`);
+// La aceptación es una autorización personal (Ley 1581): el script no la da por nadie.
+if (otp.json.policyAccepted === false) throw new Error(`La cuenta ${EMAIL} aún no acepta la política de tratamiento de datos: inicia sesión una vez en la interfaz, acéptala y vuelve a correr el script.`);
 const token = otp.json.token;
 
 async function verifyOnce() {

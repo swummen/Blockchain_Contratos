@@ -4,7 +4,7 @@ Cambios entre lo diseñado en la Fase 2 (OE2) y lo implementado en los Sprints 0
 Cada cambio indica su motivo, los requisitos o diagramas afectados y dónde está la evidencia.
 Los diagramas de `docs/uml/` ya reflejan el estado implementado.
 
-- **Actualizado:** 2026‑10‑18.
+- **Actualizado:** 2026‑10‑27.
 - **Convención de motivo:** lo marcado *(por confirmar)* no tiene motivo documentado en el repositorio y debe completarlo el equipo antes de la entrega.
 
 ## Arquitectura e infraestructura
@@ -17,7 +17,8 @@ Los diagramas de `docs/uml/` ya reflejan el estado implementado.
 | C‑04 | Conexión backend ↔ Fabric | SDK hacia peer y orderer | Fabric Gateway: una conexión al peer, que reenvía al orderer | Menos configuración que el SDK anterior. | UML 01, 02 | Registro de sprints, Sprint 0 |
 | C‑05 | Funciones del chaincode | `RegistrarHuella`, `ConsultarHuella`, `ActualizarEstado`, `RegistrarEvento`, `ConsultarTrazabilidad` | `RegisterDocument`, `GetDocument`, `RecordVerification`, `GetDocumentEvents`, `GetAllEvents` | Registro y verificación escriben estado y evento en una sola transacción. | UML 01, 05, 06; RF‑016, RF‑034, RF‑035 | `chaincode/contract/smartcontract_test.go` |
 | C‑06 | Correo del código OTP | Servidor SMTP corporativo | Brevo (SMTP relay) | Indicación del tutor. | UML 02, 04; RF‑003 | Registro de sprints, "Después de Sprint 4" |
-| C‑07 | Entorno de despliegue | VM de Azure | Docker local; Azure pendiente con el mismo esquema | *(por confirmar)* | UML 02; RNF‑019 | `docker/up.sh`, `docker/smoke-test.sh` |
+| C‑07 | Entorno de despliegue | VM de Azure | Docker local para el desarrollo y las mediciones del OE3; VM de Azure (Ubuntu 24.04, Standard_B2s) como entorno de validación desde el 25/10/2026 | El KPI de latencia del OE3 se mide en Docker local; Azure se reserva para las pruebas del OE4 durante un mes. | UML 02; RNF‑019 | `docker/up.sh`, `DESPLIEGUE-AZURE.md` |
+| C‑15 | Publicación del sistema | Frontend y backend expuestos por separado | Un solo punto de entrada: el nginx del frontend reenvía `/api` al backend y, en Azure, Caddy agrega HTTPS con certificado automático; solo los puertos 80 y 443 quedan abiertos | Seguridad del despliegue público: sin CORS entre orígenes, sin URL fija en el código y con los puertos de Fabric cerrados. | UML 02; RNF‑019, RNF‑021 | `frontend/nginx.conf`, `docker/compose.app.yml` |
 
 ## Funcionalidad y reglas de negocio
 
@@ -28,10 +29,11 @@ Los diagramas de `docs/uml/` ya reflejan el estado implementado.
 | C‑10 | Selección del documento a verificar | Ingresar el identificador | Dos pasos: persona → contrato | Un identificador de 36 caracteres no es práctico y dos contratos con el mismo nombre eran indistinguibles. | RF‑024; UML 06 | Registro de sprints, Sprints 3 y 4 |
 | C‑11 | Visibilidad de la huella completa | Verificador y Administrador | Solo el Verificador | Decisión tras la prueba manual (2026‑10‑15). | RF‑027, RF‑049; UML 06, 07 | `integracion-fabric.md`, paso 6 |
 | C‑12 | Eventos de gestión de usuarios | Se registraban en el ledger | No: el ledger solo guarda eventos de documentos | Los usuarios viven en MongoDB. | RF‑051; UML 03, 07 | Matriz de trazabilidad, HU‑020 |
-| C‑13 | Aceptación de la política de datos | Diseñada | Pendiente de implementar | Falta el texto de la política. | RF‑055 (HU‑023) | Matriz de trazabilidad, RF‑055 |
-| C‑14 | Registro de intentos fallidos | Registrar cada intento | Bloqueo a los 5 intentos implementado; falta registrar cada intento | Implementación parcial. | RF‑054 (HU‑022, CA‑03) | Matriz de trazabilidad, RF‑054 |
+| C‑13 | Aceptación de la política de datos | Pantalla de aceptación en el primer ingreso | Implementada el 27/10/2026 como se diseñó; además el backend rechaza (403) toda ruta de negocio hasta aceptar, y guarda usuario, fecha, hora y versión | Se completó al cierre del OE3, una vez redactado el texto de la política (versión 1.0). | RF‑055 (HU‑023) | `backend/tests/auth.policy.test.ts`; `docs/evidencias/politica-datos-primer-ingreso.jpg` |
+| C‑14 | Registro de intentos fallidos | Registrar cada intento | Implementado el 27/10/2026: correo, fecha, hora y motivo (sin la contraseña), con borrado automático a los 90 días | El plazo de 90 días aplica el principio de minimización de la Ley 1581. | RF‑054 (HU‑022, CA‑03) | `backend/tests/auth.login.test.ts`; colección `login_attempts` |
 
 ## Resumen
 
-14 cambios: 7 de arquitectura e infraestructura y 7 de funcionalidad. Ninguno elimina un
-requisito del SRS v2.0; C‑13 y C‑14 son alcance pendiente.
+15 cambios: 8 de arquitectura e infraestructura (C‑01 a C‑07 y C‑15) y 7 de funcionalidad
+(C‑08 a C‑14). Ninguno elimina un requisito del SRS v2.0. C‑13 y C‑14 quedaron implementados
+el 27/10/2026, con lo que los 55 RF del backlog están construidos.

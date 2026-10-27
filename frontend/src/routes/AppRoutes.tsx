@@ -7,6 +7,7 @@ import HomePage from "@/pages/HomePage"
 import LoginPage from "@/pages/LoginPage"
 import OtpPage from "@/pages/OtpPage"
 import LoggedOutPage from "@/pages/LoggedOutPage"
+import PoliticaDatosPage from "@/pages/PoliticaDatosPage"
 
 import CargarDocumentoPage from "@/pages/empleado/CargarDocumentoPage"
 import MisDocumentosPage from "@/pages/empleado/MisDocumentosPage"
@@ -25,10 +26,12 @@ import SystemStatusPage from "@/pages/SystemStatusPage"
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Inicio, login y OTP traen su propio diseño; "sesión cerrada" usa AuthLayout. */}
+      {/* Inicio, login, OTP y política traen su propio diseño; "sesión cerrada" usa AuthLayout. */}
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/verificacion" element={<OtpPage />} />
+      {/* RF-055: tras el código, antes de cualquier panel. */}
+      <Route path="/politica-datos" element={<PoliticaDatosPage />} />
 
       <Route element={<AuthLayout />}>
         <Route path="/sesion-cerrada" element={<LoggedOutPage />} />

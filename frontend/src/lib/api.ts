@@ -72,11 +72,20 @@ export async function login(email: string, password: string): Promise<void> {
   await postAuthJson("/auth/login", { email, password })
 }
 
-export async function verifyOtp(
-  email: string,
-  code: string
-): Promise<{ token: string; user: User }> {
+export interface VerifyOtpResult {
+  token: string
+  user: User
+  // RF-055: sin aceptar la política vigente el backend rechaza las rutas de negocio.
+  policyAccepted: boolean
+  policyVersion: string
+}
+
+export async function verifyOtp(email: string, code: string): Promise<VerifyOtpResult> {
   return postAuthJson("/auth/verify-otp", { email, code })
+}
+
+export async function acceptPolicy(token: string, version: string): Promise<void> {
+  await postAuthJson("/auth/policy/accept", { version }, token)
 }
 
 export async function logout(token: string): Promise<void> {

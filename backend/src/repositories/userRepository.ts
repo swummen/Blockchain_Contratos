@@ -16,6 +16,8 @@ export interface UserDoc {
   // RF-054. Si faltan se interpretan como 0 intentos y sin bloqueo.
   failedLoginAttempts?: number;
   lockedUntil?: Date;
+  // RF-055 / Ley 1581: qué versión de la política aceptó y cuándo.
+  policyAcceptance?: { version: string; acceptedAt: Date };
 }
 
 function usersCollection(): Collection<UserDoc> {
@@ -49,6 +51,10 @@ export async function findUserNamesByIds(userIds: string[]): Promise<Map<string,
     .find({ _id: { $in: unique } }, { projection: { name: 1 } })
     .toArray();
   return new Map(users.map((u) => [u._id, u.name]));
+}
+
+export async function recordPolicyAcceptance(userId: string, version: string, acceptedAt: Date): Promise<void> {
+  await usersCollection().updateOne({ _id: userId }, { $set: { policyAcceptance: { version, acceptedAt } } });
 }
 
 export async function countUsers(): Promise<number> {

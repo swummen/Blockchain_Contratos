@@ -2,6 +2,7 @@ import * as React from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { OtpInput } from "@/components/shared/OtpInput"
 import { useSession } from "@/context/SessionContext"
+import { ROLE_HOME } from "@/lib/role-home"
 import { Mail, RotateCcw, ShieldCheck } from "lucide-react"
 
 const PANEL_BACKGROUND =
@@ -14,15 +15,9 @@ function maskEmail(email: string): string {
   return `${visible}${"*".repeat(Math.max(user.length - 3, 3))}@${domain}`
 }
 
-const ROLE_HOME: Record<string, string> = {
-  Empleado: "/empleado",
-  Verificador: "/verificador",
-  Administrador: "/administrador",
-}
-
 export default function OtpPage() {
   const navigate = useNavigate()
-  const { stage, user, pendingEmail, verifyOtp } = useSession()
+  const { stage, user, pendingEmail, policyAccepted, verifyOtp } = useSession()
 
   const [code, setCode] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
@@ -30,11 +25,11 @@ export default function OtpPage() {
 
   React.useEffect(() => {
     if (stage === "authenticated" && user) {
-      navigate(ROLE_HOME[user.role], { replace: true })
+      navigate(policyAccepted ? ROLE_HOME[user.role] : "/politica-datos", { replace: true })
     } else if (stage === "anonymous") {
       navigate("/", { replace: true })
     }
-  }, [stage, user, navigate])
+  }, [stage, user, policyAccepted, navigate])
 
   if (!pendingEmail) return null
 

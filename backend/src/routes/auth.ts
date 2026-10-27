@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../middlewares/auth";
+import { requireSession } from "../middlewares/auth";
 import {
+  acceptPolicy,
   changePassword,
   getPublicUserById,
   login,
@@ -46,25 +47,40 @@ authRouter.post("/auth/verify-otp", async (req, res) => {
     res.status(result.status).json({ message: result.message });
     return;
   }
-  res.status(200).json({ token: result.token, user: result.user });
+  res.status(200).json({
+    token: result.token,
+    user: result.user,
+    policyAccepted: result.policyAccepted,
+    policyVersion: result.policyVersion,
+  });
 });
 
 // Usuario de la sesión activa (cualquier rol).
-authRouter.get("/auth/me", requireAuth(), async (req, res) => {
+authRouter.get("/auth/me", requireSession(), async (req, res) => {
   const user = await getPublicUserById(req.user!.sub);
   if (!user) {
     res.status(401).json({ message: "Sesión inválida o vencida." });
     return;
   }
-  res.status(200).json({ user });
+  res.status(200).json({ user, policyAccepted: req.user!.policyAccepted });
 });
 
-authRouter.post("/auth/logout", requireAuth(), async (req, res) => {
+// RF-055 / HU-023: aceptación de la política de tratamiento de datos.
+authRouter.post("/auth/policy/accept", requireSession(), async (req, res) => {
+  const result = await acceptPolicy(req.user!.sub, req.user!.jti, req.body?.version);
+  if (!result.ok) {
+    res.status(result.status).json({ message: result.message });
+    return;
+  }
+  res.status(200).json({ policyAccepted: true, version: result.version, acceptedAt: result.acceptedAt.toISOString() });
+});
+
+authRouter.post("/auth/logout", requireSession(), async (req, res) => {
   await logout(req.user!.jti);
   res.status(204).send();
 });
 
-authRouter.post("/auth/change-password", requireAuth(), async (req, res) => {
+authRouter.post("/auth/change-password", requireSession(), async (req, res) => {
   const { currentPassword, newPassword } = req.body ?? {};
 
   if (

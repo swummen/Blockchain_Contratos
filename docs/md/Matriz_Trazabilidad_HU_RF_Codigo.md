@@ -7,8 +7,8 @@
 | Fuentes: backlog v2.0 (docs/md/Requisitos\_Historias\_Usuario\_ (backlog incluido).md), claude\_docs/SPEC.md y el código del repositorio. Versión 1.0 · 2026-10-15. |
 | NaN |
 | Resumen |
-| Historias de usuario: 24, Implementadas 22 · Parciales 1 · No implementadas 1 |
-| Requisitos funcionales: 55, Implementados 53 · Parciales 1 · No implementados 1 (96 % implementado) |
+| Historias de usuario: 24, Implementadas 24 · Parciales 0 · No implementadas 0 |
+| Requisitos funcionales: 55, Implementados 55 · Parciales 0 · No implementados 0 (100 % implementado) |
 | Pruebas automáticas: backend 141 (Jest, 14 archivos en backend/tests/) · chaincode 34 (go test, chaincode/contract/smartcontract\_test.go) · entorno: docker/smoke-test.sh |
 | Evidencia de integración con Fabric: docs/evidencias/integracion-fabric.md |
 | NaN |
@@ -43,8 +43,8 @@
 | HU-019 | Consulta administrativa de documentos | EP-04 | 4 | RF-48, RF-49 | RNF-04, RNF-08 | DocumentosPage ( /administrador/documentos ) | GET /documents | documentService.listDocuments (huella enmascarada para el Administrador) | NaN | documents, users | documents.test.ts (GET /documents) | integracion-fabric.md (paso 6) | Implementado |
 | HU-020 | Consulta administrativa de trazabilidad | EP-04 | 4 | RF-50, RF-51 | RNF-26, RNF-27 | TrazabilidadPage ( /administrador/trazabilidad ) | GET /events | documentService.getAllEvents (mismo detalle que el Verificador) | GetAllEvents | users (nombres) | events.test.ts | Prueba en navegador | Implementado |
 | HU-021 | Despliegue de la red blockchain y del entorno con Docker | EP-05 | 0 | NaN | RNF-19, RNF-20, RNF-21, RNF-22 | SystemStatusPage ( /system-status ) | GET /health, GET /fabric/ping | docker/up.sh, network-up.sh, deploy-cc.sh, compose.app.yml | (despliegue de contracts) | NaN | health.test.ts, fabric.test.ts, cors.test.ts; docker/smoke-test.sh | claude\_docs/tasks/sprint-0-resultados.md; smoke test PASS | Implementado |
-| HU-022 | Protección ante intentos fallidos de acceso | EP-01 | Fuera de plan | RF-054 | RNF-06, RNF-07 | LoginPage | POST /auth/login (423), toda ruta protegida (401 por inactividad) | authService.login (failedLoginAttempts, lockedUntil), requireAuth (lastSeenAt) | NaN | users, sessions | auth.login.test.ts, auth.middleware.test.ts | Prueba en navegador | Parcial (falta CA-03: registrar cada intento fallido) |
-| HU-023 | Aceptación de la política de tratamiento de datos | EP-01 | Fuera de plan | RF-055 | RNF-30 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | No implementado (falta el texto de la política) |
+| HU-022 | Protección ante intentos fallidos de acceso | EP-01 | Fuera de plan | RF-054 | RNF-06, RNF-07 | LoginPage | POST /auth/login (423), toda ruta protegida (401 por inactividad) | authService.login (failedLoginAttempts, lockedUntil, recordFailedLoginAttempt), requireAuth (lastSeenAt) | NaN | users, sessions, login\_attempts | auth.login.test.ts, auth.middleware.test.ts | Prueba en navegador; intentos registrados en login\_attempts (27/10/2026) | Implementado |
+| HU-023 | Aceptación de la política de tratamiento de datos | EP-01 | Fuera de plan | RF-055 | RNF-30 | PoliticaDatosPage ( /politica-datos ), ProtectedRoute | POST /auth/policy/accept; 403 POLICY\_REQUIRED en rutas de negocio | authService.acceptPolicy, middlewares/auth requireAuth / requireSession | NaN | users (policyAcceptance), sessions (policyAccepted) | auth.policy.test.ts | docs/evidencias/politica-datos-primer-ingreso.jpg | Implementado |
 | HU-024 | Edición y desactivación de usuarios | EP-04 | 4 (dentro de HU-018) | RF-46, RF-47 | RNF-03, RNF-06 | UsuariosPage | PUT /users/{id}, POST /users/{id}/deactivate | userService.updateUser (corta sesiones si cambia el rol), deactivateUser | NaN | users, sessions | users.test.ts | Prueba en navegador | Implementado |
 
 ## 2. RF-Implementación
@@ -105,5 +105,5 @@
 | RF-051 | Registro administrativo de trazabilidad | HU-020 | GET /events · documentService.getAllEvents · TrazabilidadPage · chaincode GetAllEvents | Implementado | NaN |
 | RF-052 | Cambio de contraseña | HU-004 | POST /auth/change-password · authService.changePassword · ChangePasswordDialog | Implementado | NaN |
 | RF-053 | Validación de cambio de contraseña | HU-004 | POST /auth/change-password (valida la contraseña actual, ≥ 8 caracteres, distinta) · ChangePasswordDialog | Implementado | NaN |
-| RF-054 | Bloqueo por intentos fallidos | HU-022 | authService.login · POST /auth/login (423) · LoginPage | Parcial | Bloqueo de 15 min tras 5 intentos; falta registrar cada intento (HU-022 CA-03). |
-| RF-055 | Aceptación de la política de tratamiento de datos | HU-023 | NaN | No implementado | NaN |
+| RF-054 | Bloqueo por intentos fallidos | HU-022 | authService.login (bloqueo y recordFailedLoginAttempt) · POST /auth/login (423) · LoginPage | Implementado | Bloqueo de 15 min tras 5 intentos y registro de cada intento fallido (sin contraseña, 90 días). |
+| RF-055 | Aceptación de la política de tratamiento de datos | HU-023 | POST /auth/policy/accept · authService.acceptPolicy · requireAuth (403 POLICY\_REQUIRED) · PoliticaDatosPage | Implementado | Política versión 1.0 (Ley 1581); se exige en el backend hasta aceptarla. |

@@ -8,7 +8,7 @@ import { Role, VALID_ROLES } from "../repositories/userRepository";
 declare global {
   namespace Express {
     interface Request {
-      user?: { sub: string; role: Role; jti: string };
+      user?: { sub: string; role: Role; jti: string; policyAccepted: boolean };
     }
   }
 }
@@ -20,8 +20,19 @@ function extractBearerToken(req: Request): string | undefined {
 }
 
 // Sin argumentos exige solo una sesión válida; con roles, además que el rol del
-// JWT esté en la lista (RNF-03).
+// JWT esté en la lista (RNF-03). También exige haber aceptado la política de
+// tratamiento de datos (RF-055).
 export function requireAuth(...allowedRoles: Role[]) {
+  return authenticate(allowedRoles, true);
+}
+
+// Solo para /auth: deja entrar con la política pendiente, para poder aceptarla,
+// consultar el usuario o cerrar sesión.
+export function requireSession() {
+  return authenticate([], false);
+}
+
+function authenticate(allowedRoles: Role[], enforcePolicy: boolean) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const token = extractBearerToken(req);
     if (!token) {
@@ -66,6 +77,14 @@ export function requireAuth(...allowedRoles: Role[]) {
       return;
     }
 
+    if (enforcePolicy && session.policyAccepted !== true) {
+      res.status(403).json({
+        code: "POLICY_REQUIRED",
+        message: "Debes aceptar la política de tratamiento de datos para continuar.",
+      });
+      return;
+    }
+
     if (allowedRoles.length > 0 && !allowedRoles.includes(role as Role)) {
       res.status(403).json({ message: "No tienes permiso para esta acción." });
       return;
@@ -77,7 +96,7 @@ export function requireAuth(...allowedRoles: Role[]) {
       console.error("No se pudo actualizar la actividad de la sesión:", err);
     });
 
-    req.user = { sub, role: role as Role, jti };
+    req.user = { sub, role: role as Role, jti, policyAccepted: session.policyAccepted === true };
     next();
   };
 }

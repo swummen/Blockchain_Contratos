@@ -17,6 +17,9 @@ function requireSecret(name: string): string {
 }
 
 export const authConfig = {
+  // RF-055: al cambiar el texto de la política (frontend/src/lib/policy.ts) se
+  // sube esta versión y todos deben aceptarla de nuevo.
+  policyVersion: "1.0",
   // El SRS no fija estos valores: 5 minutos y 5 intentos.
   otpTtlMinutes: parsePositiveInt("OTP_TTL_MINUTES", process.env.OTP_TTL_MINUTES, 5),
   otpMaxAttempts: parsePositiveInt("OTP_MAX_ATTEMPTS", process.env.OTP_MAX_ATTEMPTS, 5),

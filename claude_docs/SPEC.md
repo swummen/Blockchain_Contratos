@@ -188,6 +188,18 @@ sin correr) y la búsqueda/paginación de RF‑37…40 (topes defensivos de 100 
 200 eventos). **Pendiente de sincronizar:** el backlog fuente creció a 55 RF / 24 HU
 (RF‑054, RF‑055, HU‑022…024), ver `claude_docs/tasks/plan-trabajo-pendiente.md` (P0.3).
 
+**Nota de cambio (2026‑10‑27, cierre del OE3):** quedan implementados **RF‑054 completo**
+(registro de cada intento fallido de inicio de sesión: correo, fecha, hora y motivo, nunca
+la contraseña; colección `login_attempts` con borrado a los 90 días, HU‑022 CA‑03) y
+**RF‑055** (política de tratamiento de datos versión 1.0: se presenta tras el primer ingreso,
+el backend responde 403 `POLICY_REQUIRED` en las rutas de negocio hasta aceptarla y guarda
+usuario, fecha y versión, HU‑023). Con esto **los 55 RF del backlog fuente están
+implementados**. Además, `GET /documents/:id` niega (403) a un Empleado los documentos
+ajenos (RNF‑08). KPI‑3.1 medido oficialmente: P95 = 2059 ms (2026‑10‑27, Docker local,
+`docs/evidencias/latencia-verificacion-2026-10-27-13-12.md`). Este documento sigue listando
+53 RF / 21 HU en §13 y §15; el detalle de RF‑054/055 y HU‑022…024 está en el backlog
+fuente (`docs/md/Requisitos_Historias_Usuario_ (backlog incluido).md`).
+
 Cada módulo se especifica en su propio `claude_docs/SPEC-<id>.md` **solo si** su diseño
 necesita más detalle del que cabe aquí. El mapa de arriba es el índice de lo que existe.
 

@@ -71,6 +71,7 @@ const activeSession = {
   role: "Empleado" as const,
   expiresAt: new Date(Date.now() + 60_000),
   lastSeenAt: new Date(),
+  policyAccepted: true,
 };
 
 beforeEach(() => {
@@ -165,6 +166,7 @@ describe("requireAuth(), unidad", () => {
       sub: "U001",
       role: "Empleado",
       jti: "jti-1",
+      policyAccepted: true,
     });
   });
 
@@ -245,6 +247,7 @@ describe("GET /auth/me, ruta protegida real", () => {
         role: "Empleado",
         status: "Activo",
       },
+      policyAccepted: true,
     });
   });
 

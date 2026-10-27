@@ -76,6 +76,8 @@ async function signIn(role, defaultEmail) {
   }
   const otp = await call("POST", "/auth/verify-otp", { json: { email, code } });
   if (otp.status !== 200) throw new Error(`Código rechazado (${otp.status}): ${otp.body.message}`);
+  // La aceptación es una autorización personal (Ley 1581): el script no la da por nadie.
+  if (otp.body.policyAccepted === false) throw new Error(`La cuenta ${email} aún no acepta la política de tratamiento de datos: inicia sesión una vez en la interfaz, acéptala y vuelve a correr el script.`);
   return otp.body.token;
 }
 

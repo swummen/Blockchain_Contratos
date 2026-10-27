@@ -3,18 +3,21 @@ import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { authConfig } from "../config/auth";
 import { env } from "../config/env";
+import { FailedLoginReason, recordFailedLoginAttempt } from "../repositories/loginAttemptRepository";
 import {
   deleteOtp,
   findOtpByUserId,
   incrementOtpAttempts,
   upsertOtp,
 } from "../repositories/otpRepository";
-import { createSession, deleteSession } from "../repositories/sessionRepository";
+import { createSession, deleteSession, markPolicyAccepted } from "../repositories/sessionRepository";
 import {
   findUserByEmail,
   findUserById,
   lockUser,
+  normalizeEmail,
   PublicUser,
+  recordPolicyAcceptance,
   registerFailedLogin,
   resetFailedLogin,
   toPublicUser,
@@ -27,7 +30,11 @@ export type LoginResult =
   | { ok: false; status: number; message: string };
 
 export type VerifyOtpResult =
-  | { ok: true; token: string; user: PublicUser }
+  | { ok: true; token: string; user: PublicUser; policyAccepted: boolean; policyVersion: string }
+  | { ok: false; status: number; message: string };
+
+export type AcceptPolicyResult =
+  | { ok: true; version: string; acceptedAt: Date }
   | { ok: false; status: number; message: string };
 
 export type ChangePasswordResult =
@@ -54,6 +61,13 @@ function lockedMessage(lockedUntil: Date): string {
   return `Cuenta bloqueada temporalmente por intentos fallidos. Intenta de nuevo en ${minutesLeft} minuto(s).`;
 }
 
+// Un fallo al registrar no debe cambiar la respuesta del inicio de sesión.
+function logFailedAttempt(email: string, reason: FailedLoginReason): void {
+  recordFailedLoginAttempt(normalizeEmail(email), reason).catch((err) => {
+    console.error("No se pudo registrar el intento fallido de inicio de sesión:", err);
+  });
+}
+
 export async function login(
   email: string,
   password: string,
@@ -61,6 +75,7 @@ export async function login(
   const user = await findUserByEmail(email);
 
   if (user?.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+    logFailedAttempt(email, "cuenta_bloqueada");
     return { ok: false, status: 423, message: lockedMessage(user.lockedUntil) };
   }
 
@@ -69,6 +84,10 @@ export async function login(
   // Mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta
   // inactiva: no se revela cuál dato falló (RF-002 CA-02).
   if (!user || !passwordOk || user.status === "Inactivo") {
+    logFailedAttempt(
+      email,
+      !user ? "usuario_inexistente" : !passwordOk ? "contrasena_incorrecta" : "usuario_inactivo",
+    );
     // Solo se cuentan intentos de cuentas que existen.
     if (user) {
       const attempts = await registerFailedLogin(user._id);
@@ -154,7 +173,8 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
   const now = new Date();
   const expiresAt = new Date(now.getTime() + authConfig.jwtExpiresMinutes * 60_000);
 
-  await createSession({ _id: jti, userId: user._id, role: user.role, expiresAt, lastSeenAt: now });
+  const policyAccepted = user.policyAcceptance?.version === authConfig.policyVersion;
+  await createSession({ _id: jti, userId: user._id, role: user.role, expiresAt, lastSeenAt: now, policyAccepted });
 
   const token = jwt.sign({ role: user.role }, authConfig.jwtSecret, {
     subject: user._id,
@@ -162,7 +182,19 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
     expiresIn: authConfig.jwtExpiresMinutes * 60,
   });
 
-  return { ok: true, token, user: toPublicUser(user) };
+  return { ok: true, token, user: toPublicUser(user), policyAccepted, policyVersion: authConfig.policyVersion };
+}
+
+// RF-055 / HU-023 CA-02: guarda quién aceptó, cuándo y qué versión, y habilita
+// la sesión actual sin obligar a iniciar sesión de nuevo.
+export async function acceptPolicy(userId: string, jti: string, version: unknown): Promise<AcceptPolicyResult> {
+  if (version !== authConfig.policyVersion) {
+    return { ok: false, status: 400, message: "La versión de la política no es la vigente. Recarga la página." };
+  }
+  const acceptedAt = new Date();
+  await recordPolicyAcceptance(userId, version, acceptedAt);
+  await markPolicyAccepted(jti);
+  return { ok: true, version, acceptedAt };
 }
 
 // Borra la sesión en Mongo: el mismo JWT deja de servir aunque no haya vencido.

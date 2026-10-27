@@ -8,10 +8,12 @@ import OtpPage from "@/pages/OtpPage"
 import PolicyPage from "@/pages/PolicyPage"
 import LoggedOutPage from "@/pages/LoggedOutPage"
 
+import InicioEmpleadoPage from "@/pages/empleado/InicioPage"
 import CargarDocumentoPage from "@/pages/empleado/CargarDocumentoPage"
 import MisDocumentosPage from "@/pages/empleado/MisDocumentosPage"
 import MiTrazabilidadPage from "@/pages/empleado/MiTrazabilidadPage"
 
+import InicioVerificadorPage from "@/pages/verificador/InicioPage"
 import VerificarIntegridadPage from "@/pages/verificador/VerificarIntegridadPage"
 import DocumentosVerificadorPage from "@/pages/verificador/DocumentosPage"
 import TrazabilidadGlobalPage from "@/pages/verificador/TrazabilidadGlobalPage"
@@ -38,7 +40,8 @@ export function AppRoutes() {
 
       <Route element={<ProtectedRoute allowedRole="Empleado" />}>
         <Route element={<RoleLayout />}>
-          <Route path="/empleado" element={<Navigate to="/empleado/cargar" replace />} />
+          <Route path="/empleado" element={<Navigate to="/empleado/inicio" replace />} />
+          <Route path="/empleado/inicio" element={<InicioEmpleadoPage />} />
           <Route path="/empleado/cargar" element={<CargarDocumentoPage />} />
           <Route path="/empleado/documentos" element={<MisDocumentosPage />} />
           <Route path="/empleado/trazabilidad" element={<MiTrazabilidadPage />} />
@@ -49,8 +52,9 @@ export function AppRoutes() {
         <Route element={<RoleLayout />}>
           <Route
             path="/verificador"
-            element={<Navigate to="/verificador/verificar" replace />}
+            element={<Navigate to="/verificador/inicio" replace />}
           />
+          <Route path="/verificador/inicio" element={<InicioVerificadorPage />} />
           <Route path="/verificador/verificar" element={<VerificarIntegridadPage />} />
           <Route path="/verificador/documentos" element={<DocumentosVerificadorPage />} />
           <Route path="/verificador/trazabilidad" element={<TrazabilidadGlobalPage />} />

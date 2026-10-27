@@ -47,7 +47,10 @@ interface GreetingCardProps {
 // Saludo con accesos rápidos; la mascota se asoma por encima de la tarjeta.
 export function GreetingCard({ firstName, question, links, action }: GreetingCardProps) {
   return (
-    <section className="relative min-w-0 rounded-[1.5rem] bg-gradient-to-br from-sky-50 via-white to-white p-6 shadow-[0_0_0_1px_rgb(226_232_240/0.8),0_12px_24px_-16px_rgb(15_23_42/0.25)] sm:mt-10 sm:p-8 2xl:col-span-2">
+    // En pantallas muy anchas va al lado de RecentSection: arranca donde empieza
+    // su primera tarjeta (1.5rem de margen + 1.5rem del título + 0.75rem de
+    // espacio = 3.75rem) y se estira hasta el final de la última.
+    <section className="relative flex min-w-0 flex-col justify-center rounded-[1.5rem] bg-gradient-to-br from-sky-50 via-white to-white p-6 shadow-[0_0_0_1px_rgb(226_232_240/0.8),0_12px_24px_-16px_rgb(15_23_42/0.25)] sm:mt-8 sm:p-8 2xl:col-span-2 2xl:mt-[3.75rem]">
       <DocumentMascot className="pointer-events-none absolute -top-12 right-4 hidden w-36 sm:block md:right-10 md:w-44" />
 
       <div className="sm:pr-40 md:pr-56">
@@ -125,8 +128,9 @@ export function RecentSection({
   emptyText,
 }: RecentSectionProps) {
   return (
-    <section className="min-w-0 space-y-3 2xl:mt-10">
-      <div className="flex items-center justify-between">
+    <section className="min-w-0 space-y-3 2xl:mt-6">
+      {/* Alto fijo (1.5rem): GreetingCard lo usa para alinearse con las tarjetas. */}
+      <div className="flex h-6 items-center justify-between">
         <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
           <TitleIcon className="size-4 text-slate-400" />
           {title}
@@ -177,9 +181,10 @@ export function RecentSection({
   )
 }
 
-// Saludo y lo reciente: lado a lado solo en pantallas muy anchas.
+// Saludo y lo reciente: lado a lado solo en pantallas muy anchas, con la misma
+// altura (items-stretch) para que sus bordes queden alineados.
 export function DashboardTopRow({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 gap-6 2xl:grid-cols-3 2xl:items-start">{children}</div>
+  return <div className="grid grid-cols-1 gap-6 2xl:grid-cols-3 2xl:items-stretch">{children}</div>
 }
 
 export function KpiGrid({ children }: { children: React.ReactNode }) {

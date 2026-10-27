@@ -52,6 +52,9 @@ export default function VerificarIntegridadPage() {
   const [verifyError, setVerifyError] = React.useState<string | null>(null)
   const [verifyLoading, setVerifyLoading] = React.useState(false)
 
+  // Sube con cada "Nueva verificación" para recargar estados ya cambiados.
+  const [listVersion, setListVersion] = React.useState(0)
+
   React.useEffect(() => {
     if (!token) return
     listDocuments(token)
@@ -60,7 +63,7 @@ export default function VerificarIntegridadPage() {
         // No bloqueante: si falla, queda la búsqueda manual por identificador.
         setDocumentsError(err instanceof Error ? err.message : "No se pudo cargar el listado.")
       })
-  }, [token])
+  }, [token, listVersion])
 
   // Personas del paso 1; el documentId queda interno.
   const people = React.useMemo<Person[]>(() => {
@@ -106,6 +109,7 @@ export default function VerificarIntegridadPage() {
     setCompareFile(file)
     setResult(null)
     setVerifyError(null)
+    setListVersion((v) => v + 1)
   }
 
   async function handleVerify() {

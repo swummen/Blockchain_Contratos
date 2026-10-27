@@ -5,7 +5,7 @@ documentos modificados, sin marcar como alterado ningún original.
 
 | Archivo | Qué hace |
 |---|---|
-| [`generar-documentos.mjs`](generar-documentos.mjs) | Crea los 20 documentos sintéticos y sus copias alteradas en [`docs/documentos-prueba/`](../../docs/documentos-prueba/README.md). Siempre produce los mismos bytes |
+| [`generar-documentos.py`](generar-documentos.py) | Crea los 20 documentos sintéticos y sus copias alteradas en [`docs/documentos-prueba/`](../../docs/documentos-prueba/README.md) a partir de las plantillas del equipo (contrato laboral y acuerdo de confidencialidad). Usa Microsoft Word para exportar a PDF (solo Windows) |
 | [`ejecutar-prueba.mjs`](ejecutar-prueba.mjs) | Registra, verifica y comprueba la trazabilidad de los 20 documentos por la API; escribe el informe |
 | `resultados/` | Un `.csv` por corrida, con los datos crudos |
 
@@ -28,7 +28,6 @@ No cambia nada en el servidor: el script usa la API igual que el navegador. Desd
 raíz del repositorio, en tu PC:
 
 ```bash
-cd tests/integrity && npm install && cd ../..          # solo la primera vez
 node tests/integrity/ejecutar-prueba.mjs --api https://<tu-dominio>/api
 ```
 
@@ -54,11 +53,13 @@ node tests/integrity/ejecutar-prueba.mjs --otp-desde-logs
 
 ## Volver a generar los documentos
 
-Solo si cambian los datos o las alteraciones:
+Solo si cambian las plantillas, los datos o las alteraciones (requiere Windows con
+Microsoft Word y el paquete de Python `pymupdf`):
 
 ```bash
-node tests/integrity/generar-documentos.mjs
+python tests/integrity/generar-documentos.py
 ```
 
-Como las fechas internas son fijas, salen los mismos archivos y los mismos hashes de
-[`manifiesto.json`](../../docs/documentos-prueba/manifiesto.json).
+Cada generación produce PDF nuevos (Word escribe la fecha de creación en el archivo),
+así que los hashes de [`manifiesto.json`](../../docs/documentos-prueba/manifiesto.json)
+cambian. Después de regenerar hay que volver a correr la prueba.

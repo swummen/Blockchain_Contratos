@@ -6,9 +6,9 @@ const CONFIG: Record<
   DocumentStatus,
   { variant: "success" | "warning" | "destructive"; icon: LucideIcon; label: string }
 > = {
-  Verificado: { variant: "success", icon: CheckCircle2, label: "verificado" },
-  Pendiente: { variant: "warning", icon: Clock, label: "pendiente" },
-  Alterado: { variant: "destructive", icon: AlertTriangle, label: "alterado" },
+  Verificado: { variant: "success", icon: CheckCircle2, label: "Verificado" },
+  Pendiente: { variant: "warning", icon: Clock, label: "Pendiente" },
+  Alterado: { variant: "destructive", icon: AlertTriangle, label: "Alterado" },
 }
 
 export function StatusBadge({ status }: { status: DocumentStatus }) {

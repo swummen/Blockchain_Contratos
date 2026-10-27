@@ -34,3 +34,16 @@ describe("GET /health", () => {
     expect(res.body).toEqual({ status: "error", mongo: "down" });
   });
 });
+
+describe("Caché de las respuestas de la API (DEF-01)", () => {
+  it("toda respuesta lleva Cache-Control: no-store, para que el navegador no muestre datos viejos", async () => {
+    (isMongoHealthy as jest.Mock).mockResolvedValue(true);
+
+    const ok = await request(createApp()).get("/health");
+    const sinSesion = await request(createApp()).get("/documents");
+
+    expect(ok.headers["cache-control"]).toBe("no-store");
+    expect(sinSesion.status).toBe(401);
+    expect(sinSesion.headers["cache-control"]).toBe("no-store");
+  });
+});

@@ -319,7 +319,7 @@ export default function UsuariosPage() {
                       {isSelf && <span className="ml-1.5 text-xs text-muted-foreground">(tú)</span>}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{u.role.toLowerCase()}</Badge>
+                      <Badge variant="outline">{u.role}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{u.email}</TableCell>
                     <TableCell>

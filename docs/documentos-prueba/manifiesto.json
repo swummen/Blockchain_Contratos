@@ -4,165 +4,165 @@
     "tipo": "Contrato laboral",
     "persona": "Laura Camila Ruiz Ficticia",
     "alteracion": "texto",
-    "detalle": "Texto: salario de $3.200.000 a $3.500.000",
+    "detalle": "Texto: salario mensual de $3.200.000 a $3.500.000",
     "original": "originales/C01-contrato-laura-camila.pdf",
     "alterado": "alterados/C01-contrato-laura-camila-alterado-texto.pdf",
-    "sha256Original": "96e0f727f155e0c8dd61f99b33287b9803fe53fb282a8bb90237e7d6fa6cd5bf",
-    "sha256Alterado": "68a065760bbfa40899a641d4097eb9dbae9dc1194bda2ef1ae06b6ab9150b515"
+    "sha256Original": "449bf4f0ef532dbc875296d9cbdf21c6b7ab07e40924c19da40d3e8db310b826",
+    "sha256Alterado": "5a82497ca5bb44aad58e68958485fd1bf10ef308d2a833959ff08974c2b24b35"
   },
   {
     "codigo": "C02",
     "tipo": "Contrato laboral",
     "persona": "Juan Sebastián Mora Ejemplo",
     "alteracion": "firma",
-    "detalle": "Firma: se reemplazó el nombre de quien firma",
+    "detalle": "Firma: el firmante pasa a ser \"Persona No Autorizada Ficticia\"",
     "original": "originales/C02-contrato-juan-sebastian.pdf",
     "alterado": "alterados/C02-contrato-juan-sebastian-alterado-firma.pdf",
-    "sha256Original": "7bc3c463c050952078f04e4b61903ef25d41c2c2fac8e0c979aaa800c539d7ca",
-    "sha256Alterado": "a13521aabd8fc5bb390976b36b43bcc03b2f5203262dbad885790ee183e811da"
+    "sha256Original": "2dbd1db83103d8ae0027419ce3e2f00aab0b6236a409e40a527dc4c13f149acd",
+    "sha256Alterado": "9c9a1204c2e12ea6c49c4414c6e8dd075519e283194bcf1775a5863bf4b80bb3"
   },
   {
     "codigo": "C03",
     "tipo": "Contrato laboral",
     "persona": "Valentina Ortiz Simulada",
     "alteracion": "metadatos",
-    "detalle": "Metadatos: autor y fecha de modificación (contenido visible idéntico)",
+    "detalle": "Metadatos: autor y fecha de modificación del PDF (contenido visible idéntico)",
     "original": "originales/C03-contrato-valentina-ortiz.pdf",
     "alterado": "alterados/C03-contrato-valentina-ortiz-alterado-metadatos.pdf",
-    "sha256Original": "33d3817d99f824ef837d9b2f2781f31a7cc4cc23fb619ff2aca102f94a732b70",
-    "sha256Alterado": "94aaf2145080adae006e94103269abcd7e018829676f933b128904fdde42c0b2"
+    "sha256Original": "b62c0cfa18b4afeb3f649bfacaf4b916e12ec2bde2862f5782eb7b72c6d15fd5",
+    "sha256Alterado": "fdcab536563177f3cf851c7100bcbf5f01242d31220466da918d4696db730431"
   },
   {
     "codigo": "C04",
     "tipo": "Contrato laboral",
     "persona": "Carlos Andrés Peña Demo",
     "alteracion": "caracter",
-    "detalle": "Un solo carácter: el punto final de la primera cláusula pasa a ser coma",
+    "detalle": "Un solo carácter: un punto final de la cláusula 1.1 pasa a ser coma",
     "original": "originales/C04-contrato-carlos-andres.pdf",
     "alterado": "alterados/C04-contrato-carlos-andres-alterado-caracter.pdf",
-    "sha256Original": "9dce77efd6751d312fb070a4e63ac43b34151d1eee9907bb3d1aba7dbd623cbe",
-    "sha256Alterado": "d0566619f050eeb54d85e795b79fa472f0ab9f05808b9734daccf0b18f86b489"
+    "sha256Original": "976819caf314dbf524badc6aa00c455665667662abbfffbac72ea19b6ec361e9",
+    "sha256Alterado": "2eae8c26f4931e7651391af1f2ccce6e2237eedd6329fac3bdbd2ba536b50a57"
   },
   {
     "codigo": "C05",
     "tipo": "Contrato laboral",
     "persona": "Daniela Rojas Inventada",
     "alteracion": "anexo",
-    "detalle": "Anexo: se agregó una página al final",
+    "detalle": "Anexo: se agregó una página de otrosí al final",
     "original": "originales/C05-contrato-daniela-rojas.pdf",
     "alterado": "alterados/C05-contrato-daniela-rojas-alterado-anexo.pdf",
-    "sha256Original": "05fc51a0c65c293ef8ae2a59b48b25270886972044fde191d5cd854f6f59a708",
-    "sha256Alterado": "088241d477083d529bfaf7eaf99eb31f4d5028b6d61cd79578efb0b66846f362"
+    "sha256Original": "3c544c28ccdc6de3f3566fe8617aa704b1fa375ade1fca77726071db731360cf",
+    "sha256Alterado": "daf4678ab2c46260a0545107da732c65eeeb127394b944d711d3c03d12305020"
   },
   {
     "codigo": "C06",
     "tipo": "Contrato laboral",
     "persona": "Miguel Ángel Torres Prueba",
     "alteracion": "texto",
-    "detalle": "Texto: salario de $2.300.000 a $2.600.000",
+    "detalle": "Texto: salario mensual de $2.300.000 a $2.600.000",
     "original": "originales/C06-contrato-miguel-angel.pdf",
     "alterado": "alterados/C06-contrato-miguel-angel-alterado-texto.pdf",
-    "sha256Original": "6c8f2b7a41d8011254277701299f1578fc1a87f06d071a63254723e64fd7bc5b",
-    "sha256Alterado": "3c38c7cfc8e3b1b86126b31e7a01fd9788cce5ff0c9989f03b9e5d965ded059b"
+    "sha256Original": "17c318ee9fa693b63ca67689ec78f70b67ba5c8b9dc2b08a7f759f98c2a2dac9",
+    "sha256Alterado": "c2f594439d1d870eee2111ad1e06052b237407c391285ff1992294716d98e8a3"
   },
   {
     "codigo": "C07",
     "tipo": "Contrato laboral",
     "persona": "Sara Lucía Gómez Ficticia",
     "alteracion": "firma",
-    "detalle": "Firma: se reemplazó el nombre de quien firma",
+    "detalle": "Firma: el firmante pasa a ser \"Persona No Autorizada Ficticia\"",
     "original": "originales/C07-contrato-sara-lucia.pdf",
     "alterado": "alterados/C07-contrato-sara-lucia-alterado-firma.pdf",
-    "sha256Original": "76a81845e810bfe9d0a62927f4555d232b7cba8e9b6ceac13f518eaf2ffcbf7e",
-    "sha256Alterado": "4e98a215a7b19a7fd8340dc59c684338ca5c8d04d82a27de3bb3795d867f59ce"
+    "sha256Original": "e02eb9f2de3c90894862ffedde95a1884012b6a9e1b905d1857578c3bb3535de",
+    "sha256Alterado": "1559617cadb53c2dda789165ab8cd2c106a52d1c45c577582a5f18a1987d2546"
   },
   {
     "codigo": "C08",
     "tipo": "Contrato laboral",
     "persona": "Felipe Castro Ejemplo",
     "alteracion": "metadatos",
-    "detalle": "Metadatos: autor y fecha de modificación (contenido visible idéntico)",
+    "detalle": "Metadatos: autor y fecha de modificación del PDF (contenido visible idéntico)",
     "original": "originales/C08-contrato-felipe-castro.pdf",
     "alterado": "alterados/C08-contrato-felipe-castro-alterado-metadatos.pdf",
-    "sha256Original": "fd17430a88f8662d66ecb328c606e8fd94b1c1c616704eb3ae7d59e3ed655e72",
-    "sha256Alterado": "17240d856348b47e8d1be16078fb7a0c8e74adf5911e281b5b3bb6c955d33603"
+    "sha256Original": "7ecf7f21d4050381d9d644a5739f1b79c510bb8eeb1e76702612036d8374ef65",
+    "sha256Alterado": "9b262d3a4789715715b7aec41d601ac5a957f813319afcdd1914603510ebbe89"
   },
   {
     "codigo": "C09",
     "tipo": "Contrato laboral",
     "persona": "Mariana Herrera Simulada",
     "alteracion": "caracter",
-    "detalle": "Un solo carácter: el punto final de la primera cláusula pasa a ser coma",
+    "detalle": "Un solo carácter: un punto final de la cláusula 1.1 pasa a ser coma",
     "original": "originales/C09-contrato-mariana-herrera.pdf",
     "alterado": "alterados/C09-contrato-mariana-herrera-alterado-caracter.pdf",
-    "sha256Original": "a6636ba4d69cd43d6ec0467a7dcf4cff9848fb08c9c3dbfa33c7fcc32b587378",
-    "sha256Alterado": "35d2ba393d26b3a83df26748c77a2baa80f47fd1120dd0e2cab5f1419da12dd6"
+    "sha256Original": "eb4c11a0260b54b986c0c535739d58c5d1eb82193cbd5c88ef64cfd84cad1073",
+    "sha256Alterado": "4469a098a26dfcd15c08959f7df2524e92f53bc96dbb4db57c84f0547ca8cc11"
   },
   {
     "codigo": "C10",
     "tipo": "Contrato laboral",
     "persona": "Santiago López Demo",
     "alteracion": "anexo",
-    "detalle": "Anexo: se agregó una página al final",
+    "detalle": "Anexo: se agregó una página de otrosí al final",
     "original": "originales/C10-contrato-santiago-lopez.pdf",
     "alterado": "alterados/C10-contrato-santiago-lopez-alterado-anexo.pdf",
-    "sha256Original": "59603c317585fc2914958c15ecac8264842e16e18091cef5f3049e3bbf8568e1",
-    "sha256Alterado": "576c2501d3464e7ac1267f46851faa2fee464070e0bd5bda0e6bab3f97c630e5"
+    "sha256Original": "602b78024c8676c5b31463fd5b0db85659c01e8a608fb9668251b5377a7796ce",
+    "sha256Alterado": "d8d7c7ffdce2c454f7b8168f92a7a6924b432541761bf63efe4c9cbc892bf132"
   },
   {
     "codigo": "C11",
     "tipo": "Contrato laboral",
     "persona": "Isabella Vargas Inventada",
     "alteracion": "texto",
-    "detalle": "Texto: salario de $4.500.000 a $4.800.000",
+    "detalle": "Texto: salario mensual de $4.500.000 a $4.800.000",
     "original": "originales/C11-contrato-isabella-vargas.pdf",
     "alterado": "alterados/C11-contrato-isabella-vargas-alterado-texto.pdf",
-    "sha256Original": "76ce2d0e10eb598b551d4c85acaa458e8bb1b67e3913844a6f69b0facfe6f8ea",
-    "sha256Alterado": "1980bb373ab98544e7cfd074789243bf6f1ac673668dacba3c8f60d9de1819a2"
+    "sha256Original": "a4fd2541bb255d62ecf1342ec7da6152aae63385a6765c50cc79a3f846cfe55e",
+    "sha256Alterado": "80b3639a7955aa7223d9e362ed91e9a7687e65a42793ca50a5c94025857cf22b"
   },
   {
     "codigo": "C12",
     "tipo": "Contrato laboral",
     "persona": "Tomás Ramírez Prueba",
     "alteracion": "firma",
-    "detalle": "Firma: se reemplazó el nombre de quien firma",
+    "detalle": "Firma: el firmante pasa a ser \"Persona No Autorizada Ficticia\"",
     "original": "originales/C12-contrato-tomas-ramirez.pdf",
     "alterado": "alterados/C12-contrato-tomas-ramirez-alterado-firma.pdf",
-    "sha256Original": "9f535c6722868fe62bdae8b3182d992b71df3fe6c82489cf1432661d4356c133",
-    "sha256Alterado": "b621c53bd44076ca78262525230150ff7ef728773a7a907f809e922855d22b8f"
+    "sha256Original": "e8bad382f8c68f42c0dc5383e256debea17656febcef86ae59f2551db7ea0fb9",
+    "sha256Alterado": "45173a38dcdf486d9b3bda00716ca3276cf5fcf1857b1d4f6c5d23382d7493af"
   },
   {
     "codigo": "N01",
     "tipo": "Acuerdo de confidencialidad",
     "persona": "Natalia Moreno Ficticia",
     "alteracion": "metadatos",
-    "detalle": "Metadatos: autor y fecha de modificación (contenido visible idéntico)",
+    "detalle": "Metadatos: autor y fecha de modificación del PDF (contenido visible idéntico)",
     "original": "originales/N01-confidencialidad-natalia-moreno.pdf",
     "alterado": "alterados/N01-confidencialidad-natalia-moreno-alterado-metadatos.pdf",
-    "sha256Original": "3e879da50544dcb1eca563fe248d653e1d32c828e739a2dc74539b0341d58271",
-    "sha256Alterado": "ff5e6a61e3aed5870a954b9b68ee23ec5a47b142f0f5046b373bc8329ba16142"
+    "sha256Original": "40f8bc96e9625b33a3b5f0840754ea7e3ec6681224669f70d55546acc422c247",
+    "sha256Alterado": "7930967368e0c9b97a0e585809c02c0c0b38ebcebd86a494b77babd5ef6788bf"
   },
   {
     "codigo": "N02",
     "tipo": "Acuerdo de confidencialidad",
     "persona": "Esteban Quintero Ejemplo",
     "alteracion": "caracter",
-    "detalle": "Un solo carácter: el punto final de la primera cláusula pasa a ser coma",
+    "detalle": "Un solo carácter: un punto final de la cláusula 1.1 pasa a ser coma",
     "original": "originales/N02-confidencialidad-esteban-quintero.pdf",
     "alterado": "alterados/N02-confidencialidad-esteban-quintero-alterado-caracter.pdf",
-    "sha256Original": "28f4c924458be8466fa4f20e59305b9c267eb7f9c9d6c89d629e66e69c1e3e00",
-    "sha256Alterado": "7bd1110639784c6897c12cba912f0d73a071754ce323c3bbd9f0505c5458df61"
+    "sha256Original": "bcfed22c9da41b4b14995905abddb03f7a9d743862dddbcd947cc1a366573a31",
+    "sha256Alterado": "cf73aea3c5817e408693cf64cf1e04cad227c24f603ab68029d7747b34282f77"
   },
   {
     "codigo": "N03",
     "tipo": "Acuerdo de confidencialidad",
     "persona": "Paula Andrea Ríos Simulada",
     "alteracion": "anexo",
-    "detalle": "Anexo: se agregó una página al final",
+    "detalle": "Anexo: se agregó una página de otrosí al final",
     "original": "originales/N03-confidencialidad-paula-andrea.pdf",
     "alterado": "alterados/N03-confidencialidad-paula-andrea-alterado-anexo.pdf",
-    "sha256Original": "cf6452071db94938dd28bae727b21a4ddc50c5924a514edc8a8536be49d64226",
-    "sha256Alterado": "0f24314d2aad28dfa0538008443553ac68316ccb4b8d84a535a34c693e71fbfb"
+    "sha256Original": "2764bafe12ca8102f3201ca7d2e4c450407cee1588633b10bf70d4dc4928e855",
+    "sha256Alterado": "0d964623ed11743b02da22dd1a38d7cd2fbf9bc1b5bbdea27345e2e7b871a23f"
   },
   {
     "codigo": "N04",
@@ -172,51 +172,51 @@
     "detalle": "Texto: vigencia de un (1) año a diez (10) años",
     "original": "originales/N04-confidencialidad-diego-alejandro.pdf",
     "alterado": "alterados/N04-confidencialidad-diego-alejandro-alterado-texto.pdf",
-    "sha256Original": "19fd9587d2f6f061033bb072437ebf270b47ca80571474885dc66829562c6eff",
-    "sha256Alterado": "58fc852986a6830576f3b55b7c33594f40c5e295512a5771f8700de30be4719e"
+    "sha256Original": "6ecf3d595bd29aa40f43d9cb91e506cb1b60360002391eb370a898fcd7d1b0a2",
+    "sha256Alterado": "3b2083b8b3c8f0056a72e02ee7f6457182ae4c8a16f348de2ff0f8e98e150f82"
   },
   {
     "codigo": "N05",
     "tipo": "Acuerdo de confidencialidad",
     "persona": "Camila Fernández Inventada",
     "alteracion": "firma",
-    "detalle": "Firma: se reemplazó el nombre de quien firma",
+    "detalle": "Firma: el firmante pasa a ser \"Persona No Autorizada Ficticia\"",
     "original": "originales/N05-confidencialidad-camila-fernandez.pdf",
     "alterado": "alterados/N05-confidencialidad-camila-fernandez-alterado-firma.pdf",
-    "sha256Original": "b6e321358f91ab1b481c1d9850dd5ec94d67af5d5c9455e1d39683bc9bf24ca1",
-    "sha256Alterado": "d665e42cfa692a477328d03cfa31fbb0d43a52e713d1b6923fd078cd310e42aa"
+    "sha256Original": "106d90e4bf834468eaf08af28420d8ffea640615bc46af4652215a7d6cfe61bc",
+    "sha256Alterado": "976aae024a2240945c0b0f52784689b24c65e50dd1e92e81901390daa7f9728a"
   },
   {
     "codigo": "N06",
     "tipo": "Acuerdo de confidencialidad",
     "persona": "Andrés Salazar Prueba",
     "alteracion": "metadatos",
-    "detalle": "Metadatos: autor y fecha de modificación (contenido visible idéntico)",
+    "detalle": "Metadatos: autor y fecha de modificación del PDF (contenido visible idéntico)",
     "original": "originales/N06-confidencialidad-andres-salazar.pdf",
     "alterado": "alterados/N06-confidencialidad-andres-salazar-alterado-metadatos.pdf",
-    "sha256Original": "428ac1c8fd8539d13c599478b4d7a19286de56d5a572d3bd585e11a27b5492f2",
-    "sha256Alterado": "696435216ee5f82ca420dd9a6bfd76638572df5f8ee5f21dd4bdce9a07bbf808"
+    "sha256Original": "d2e817201969e4f3ec172b49e2425b341972eae33fcc2ed5adfbda784b8fc2a8",
+    "sha256Alterado": "614f309d9a2bd68c8ecee41a0b543cc12160835da8365e1e71d9caf5928255b7"
   },
   {
     "codigo": "N07",
     "tipo": "Acuerdo de confidencialidad",
     "persona": "Juliana Pardo Ficticia",
     "alteracion": "caracter",
-    "detalle": "Un solo carácter: el punto final de la primera cláusula pasa a ser coma",
+    "detalle": "Un solo carácter: un punto final de la cláusula 1.1 pasa a ser coma",
     "original": "originales/N07-confidencialidad-juliana-pardo.pdf",
     "alterado": "alterados/N07-confidencialidad-juliana-pardo-alterado-caracter.pdf",
-    "sha256Original": "b39b04f1df3c8f10f34180ee085ccb6c1410325d43b8fd6d04550440657c846a",
-    "sha256Alterado": "4c93375886cdc1f263a9f6f6f07cf2dcd99c7582fc025ea6433ce78b43c3bc16"
+    "sha256Original": "a476a74f551f0caa485c7fc9da8d9771da4ec307cfbc317c342b834d62b7dfcf",
+    "sha256Alterado": "b73a2768893fcf0e72edf0de96d17710d78304083cdc5a4b25e6ccb32608e611"
   },
   {
     "codigo": "N08",
     "tipo": "Acuerdo de confidencialidad",
     "persona": "Ricardo Mejía Ejemplo",
     "alteracion": "anexo",
-    "detalle": "Anexo: se agregó una página al final",
+    "detalle": "Anexo: se agregó una página de otrosí al final",
     "original": "originales/N08-confidencialidad-ricardo-mejia.pdf",
     "alterado": "alterados/N08-confidencialidad-ricardo-mejia-alterado-anexo.pdf",
-    "sha256Original": "3bb79739de0d06f87db48f7eb9ec4de4bd989034cd478f1a0e0b1fd5eed68583",
-    "sha256Alterado": "6bf17444c411c16fcf3f10f963034e211e5eace24e4ee1b9f78f9279d4136e00"
+    "sha256Original": "a54462a3b227204d53d4e11f610fc79fc32dc6c646586acc677eb5051a0ea140",
+    "sha256Alterado": "012775c6858ce21be3d622866ada2a0298cfa9457141e9aaaa1b14eb30af39d0"
   }
 ]

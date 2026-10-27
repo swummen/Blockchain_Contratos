@@ -4,10 +4,7 @@
   "type": "module",
   "description": "Prueba de integridad por mutación documental (OE4, RNF-14)",
   "scripts": {
-    "generar": "node generar-documentos.mjs",
+    "generar": "python generar-documentos.py",
     "prueba": "node ejecutar-prueba.mjs"
-  },
-  "dependencies": {
-    "pdf-lib": "1.17.1"
   }
 }

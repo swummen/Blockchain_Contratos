@@ -6,10 +6,10 @@
 | Falsos positivos | 0 de 20 originales marcados como alterados (meta 0) |
 | Trazabilidad en el ledger | 20 de 20 documentos con registro y sus 2 verificaciones |
 | Casos PASS | 20 de 20 |
-| Fecha | 25/10/2026, 6:05:18 p. m. |
+| Fecha | 27/10/2026, 3:29:37 p. m. |
 | Entorno | **Docker local** (`http://localhost:5173/api`) |
-| Latencia media | registro 2044 ms · verificación 2039 ms |
-| Datos crudos | `tests/integrity/resultados/corrida-2026-10-25-18-05.csv` |
+| Latencia media | registro 2040 ms · verificación 2036 ms |
+| Datos crudos | `tests/integrity/resultados/corrida-2026-10-27-15-29.csv` |
 
 ## Método
 
@@ -34,23 +34,23 @@ API sean los calculados al generar los archivos y que el ledger registre las 3 a
 
 | Código | Tipo | Alteración aplicada | Original | Alterado | TxID del registro | Resultado |
 |---|---|---|---|---|---|---|
-| C01 | Contrato laboral | Texto: salario de $3.200.000 a $3.500.000 | Verificado | Alterado | `9a510d53545c6b8b…` | PASS |
-| C02 | Contrato laboral | Firma: se reemplazó el nombre de quien firma | Verificado | Alterado | `1ec7535c83533737…` | PASS |
-| C03 | Contrato laboral | Metadatos: autor y fecha de modificación (contenido visible idéntico) | Verificado | Alterado | `e22e31b7a625ac5d…` | PASS |
-| C04 | Contrato laboral | Un solo carácter: el punto final de la primera cláusula pasa a ser coma | Verificado | Alterado | `e52a7bedf8b8af37…` | PASS |
-| C05 | Contrato laboral | Anexo: se agregó una página al final | Verificado | Alterado | `dbdeefbdbbe79c42…` | PASS |
-| C06 | Contrato laboral | Texto: salario de $2.300.000 a $2.600.000 | Verificado | Alterado | `126756fdd7de146b…` | PASS |
-| C07 | Contrato laboral | Firma: se reemplazó el nombre de quien firma | Verificado | Alterado | `e500eeeae689369a…` | PASS |
-| C08 | Contrato laboral | Metadatos: autor y fecha de modificación (contenido visible idéntico) | Verificado | Alterado | `487e15612b01fdb3…` | PASS |
-| C09 | Contrato laboral | Un solo carácter: el punto final de la primera cláusula pasa a ser coma | Verificado | Alterado | `14cde1e67d7ac8ef…` | PASS |
-| C10 | Contrato laboral | Anexo: se agregó una página al final | Verificado | Alterado | `f1820d1d2a20c457…` | PASS |
-| C11 | Contrato laboral | Texto: salario de $4.500.000 a $4.800.000 | Verificado | Alterado | `0187693072b1b470…` | PASS |
-| C12 | Contrato laboral | Firma: se reemplazó el nombre de quien firma | Verificado | Alterado | `589cf9ba4d670c66…` | PASS |
-| N01 | Acuerdo de confidencialidad | Metadatos: autor y fecha de modificación (contenido visible idéntico) | Verificado | Alterado | `f30b294e23447f58…` | PASS |
-| N02 | Acuerdo de confidencialidad | Un solo carácter: el punto final de la primera cláusula pasa a ser coma | Verificado | Alterado | `1e098c040b1f8cde…` | PASS |
-| N03 | Acuerdo de confidencialidad | Anexo: se agregó una página al final | Verificado | Alterado | `c7d0c9ed5748a107…` | PASS |
-| N04 | Acuerdo de confidencialidad | Texto: vigencia de un (1) año a diez (10) años | Verificado | Alterado | `43c16f8f239b2300…` | PASS |
-| N05 | Acuerdo de confidencialidad | Firma: se reemplazó el nombre de quien firma | Verificado | Alterado | `46cbaa1bc84bc83d…` | PASS |
-| N06 | Acuerdo de confidencialidad | Metadatos: autor y fecha de modificación (contenido visible idéntico) | Verificado | Alterado | `3e73d5f61a8b6a84…` | PASS |
-| N07 | Acuerdo de confidencialidad | Un solo carácter: el punto final de la primera cláusula pasa a ser coma | Verificado | Alterado | `0f60fca65c6a96be…` | PASS |
-| N08 | Acuerdo de confidencialidad | Anexo: se agregó una página al final | Verificado | Alterado | `50df9c1372ae72d3…` | PASS |
+| C01 | Contrato laboral | Texto: salario mensual de $3.200.000 a $3.500.000 | Verificado | Alterado | `a57eb5c0554c7962…` | PASS |
+| C02 | Contrato laboral | Firma: el firmante pasa a ser "Persona No Autorizada Ficticia" | Verificado | Alterado | `e05ba774acda05e8…` | PASS |
+| C03 | Contrato laboral | Metadatos: autor y fecha de modificación del PDF (contenido visible idéntico) | Verificado | Alterado | `b1f45bcfb66fd399…` | PASS |
+| C04 | Contrato laboral | Un solo carácter: un punto final de la cláusula 1.1 pasa a ser coma | Verificado | Alterado | `390bc5e4199e77fa…` | PASS |
+| C05 | Contrato laboral | Anexo: se agregó una página de otrosí al final | Verificado | Alterado | `29bf7f024e3c88aa…` | PASS |
+| C06 | Contrato laboral | Texto: salario mensual de $2.300.000 a $2.600.000 | Verificado | Alterado | `6e3a3066e2fea724…` | PASS |
+| C07 | Contrato laboral | Firma: el firmante pasa a ser "Persona No Autorizada Ficticia" | Verificado | Alterado | `80876ebdd3c84da6…` | PASS |
+| C08 | Contrato laboral | Metadatos: autor y fecha de modificación del PDF (contenido visible idéntico) | Verificado | Alterado | `21051e57b4904f33…` | PASS |
+| C09 | Contrato laboral | Un solo carácter: un punto final de la cláusula 1.1 pasa a ser coma | Verificado | Alterado | `75818073e8b86393…` | PASS |
+| C10 | Contrato laboral | Anexo: se agregó una página de otrosí al final | Verificado | Alterado | `1c465e53d09fec24…` | PASS |
+| C11 | Contrato laboral | Texto: salario mensual de $4.500.000 a $4.800.000 | Verificado | Alterado | `f4c0f07e2bcb501c…` | PASS |
+| C12 | Contrato laboral | Firma: el firmante pasa a ser "Persona No Autorizada Ficticia" | Verificado | Alterado | `1d096e26cbdb504c…` | PASS |
+| N01 | Acuerdo de confidencialidad | Metadatos: autor y fecha de modificación del PDF (contenido visible idéntico) | Verificado | Alterado | `def5324364f4d492…` | PASS |
+| N02 | Acuerdo de confidencialidad | Un solo carácter: un punto final de la cláusula 1.1 pasa a ser coma | Verificado | Alterado | `636c8cd87937a750…` | PASS |
+| N03 | Acuerdo de confidencialidad | Anexo: se agregó una página de otrosí al final | Verificado | Alterado | `f4d89eb124b83ad9…` | PASS |
+| N04 | Acuerdo de confidencialidad | Texto: vigencia de un (1) año a diez (10) años | Verificado | Alterado | `a5a56906149cc5d8…` | PASS |
+| N05 | Acuerdo de confidencialidad | Firma: el firmante pasa a ser "Persona No Autorizada Ficticia" | Verificado | Alterado | `807107caaf59200b…` | PASS |
+| N06 | Acuerdo de confidencialidad | Metadatos: autor y fecha de modificación del PDF (contenido visible idéntico) | Verificado | Alterado | `1c80f451974177d1…` | PASS |
+| N07 | Acuerdo de confidencialidad | Un solo carácter: un punto final de la cláusula 1.1 pasa a ser coma | Verificado | Alterado | `bb18368531ae07ee…` | PASS |
+| N08 | Acuerdo de confidencialidad | Anexo: se agregó una página de otrosí al final | Verificado | Alterado | `b49298cbce8b17b1…` | PASS |

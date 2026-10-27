@@ -85,8 +85,10 @@ export function UserMenu() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
-                await logout()
+                // Primero se sale de las rutas protegidas: con la sesión ya
+                // cerrada, ProtectedRoute redirigiría al login sin mostrar el aviso.
                 navigate("/sesion-cerrada")
+                await logout()
               }}
             >
               Cerrar sesión

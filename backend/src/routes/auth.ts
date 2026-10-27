@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { requireSession } from "../middlewares/auth";
+import { requireAuth, requireSession } from "../middlewares/auth";
 import {
   acceptPolicy,
   changePassword,
-  getPublicUserById,
+  getSessionUserById,
   login,
   logout,
   verifyOtp,
@@ -47,40 +47,44 @@ authRouter.post("/auth/verify-otp", async (req, res) => {
     res.status(result.status).json({ message: result.message });
     return;
   }
-  res.status(200).json({
-    token: result.token,
-    user: result.user,
-    policyAccepted: result.policyAccepted,
-    policyVersion: result.policyVersion,
-  });
+  res.status(200).json({ token: result.token, user: result.user });
 });
 
-// Usuario de la sesión activa (cualquier rol).
+// Usuario de la sesión activa (cualquier rol). No exige la política: la pantalla
+// de la política la usa para saber si ya fue aceptada.
 authRouter.get("/auth/me", requireSession(), async (req, res) => {
-  const user = await getPublicUserById(req.user!.sub);
+  const user = await getSessionUserById(req.user!.sub);
   if (!user) {
     res.status(401).json({ message: "Sesión inválida o vencida." });
     return;
   }
-  res.status(200).json({ user, policyAccepted: req.user!.policyAccepted });
+  res.status(200).json({ user });
 });
 
-// RF-055 / HU-023: aceptación de la política de tratamiento de datos.
-authRouter.post("/auth/policy/accept", requireSession(), async (req, res) => {
-  const result = await acceptPolicy(req.user!.sub, req.user!.jti, req.body?.version);
-  if (!result.ok) {
-    res.status(result.status).json({ message: result.message });
-    return;
-  }
-  res.status(200).json({ policyAccepted: true, version: result.version, acceptedAt: result.acceptedAt.toISOString() });
-});
-
+// Sin la política aceptada también se puede salir ("Rechazar y salir").
 authRouter.post("/auth/logout", requireSession(), async (req, res) => {
   await logout(req.user!.jti);
   res.status(204).send();
 });
 
-authRouter.post("/auth/change-password", requireSession(), async (req, res) => {
+// RF-055: aceptación de la política de tratamiento de datos.
+authRouter.post("/auth/accept-policy", requireSession(), async (req, res) => {
+  const { version } = req.body ?? {};
+  if (typeof version !== "string" || !version.trim()) {
+    res.status(400).json({ message: "version es obligatoria." });
+    return;
+  }
+
+  // Usuario y sesión salen del JWT, nunca del body.
+  const result = await acceptPolicy(req.user!.sub, req.user!.jti, version);
+  if (!result.ok) {
+    res.status(result.status).json({ message: result.message });
+    return;
+  }
+  res.status(200).json({ user: result.user });
+});
+
+authRouter.post("/auth/change-password", requireAuth(), async (req, res) => {
   const { currentPassword, newPassword } = req.body ?? {};
 
   if (

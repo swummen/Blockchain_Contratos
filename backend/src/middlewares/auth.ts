@@ -8,7 +8,7 @@ import { Role, VALID_ROLES } from "../repositories/userRepository";
 declare global {
   namespace Express {
     interface Request {
-      user?: { sub: string; role: Role; jti: string; policyAccepted: boolean };
+      user?: { sub: string; role: Role; jti: string };
     }
   }
 }
@@ -20,19 +20,19 @@ function extractBearerToken(req: Request): string | undefined {
 }
 
 // Sin argumentos exige solo una sesión válida; con roles, además que el rol del
-// JWT esté en la lista (RNF-03). También exige haber aceptado la política de
-// tratamiento de datos (RF-055).
+// JWT esté en la lista (RNF-03). En ambos casos exige la política de datos
+// aceptada (RF-055 CA-03).
 export function requireAuth(...allowedRoles: Role[]) {
   return authenticate(allowedRoles, true);
 }
 
-// Solo para /auth: deja entrar con la política pendiente, para poder aceptarla,
-// consultar el usuario o cerrar sesión.
+// Sesión válida aunque falte aceptar la política: solo para las rutas que la
+// pantalla de la política necesita (quién soy, aceptar y cerrar sesión).
 export function requireSession() {
   return authenticate([], false);
 }
 
-function authenticate(allowedRoles: Role[], enforcePolicy: boolean) {
+function authenticate(allowedRoles: Role[], requirePolicy: boolean) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const token = extractBearerToken(req);
     if (!token) {
@@ -77,9 +77,11 @@ function authenticate(allowedRoles: Role[], enforcePolicy: boolean) {
       return;
     }
 
-    if (enforcePolicy && session.policyAccepted !== true) {
+    // Solo false bloquea: las sesiones creadas antes de RF-055 no traen el campo
+    // y vencen solas (jwtExpiresMinutes).
+    if (requirePolicy && session.policyAccepted === false) {
       res.status(403).json({
-        code: "POLICY_REQUIRED",
+        code: "POLICY_NOT_ACCEPTED",
         message: "Debes aceptar la política de tratamiento de datos para continuar.",
       });
       return;
@@ -96,7 +98,7 @@ function authenticate(allowedRoles: Role[], enforcePolicy: boolean) {
       console.error("No se pudo actualizar la actividad de la sesión:", err);
     });
 
-    req.user = { sub, role: role as Role, jti, policyAccepted: session.policyAccepted === true };
+    req.user = { sub, role: role as Role, jti };
     next();
   };
 }

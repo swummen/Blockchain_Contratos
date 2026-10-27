@@ -91,6 +91,8 @@ describe("POST /auth/verify-otp", () => {
       email: EMAIL,
       role: "Empleado",
       status: "Activo",
+      // RF-055: el usuario sembrado todavía no aceptó la política.
+      policyAccepted: false,
     });
 
     const decoded = jwt.decode(res.body.token) as Record<string, unknown>;
@@ -100,7 +102,12 @@ describe("POST /auth/verify-otp", () => {
     expect(typeof decoded.exp).toBe("number");
 
     expect(createSession).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: decoded.jti, userId: "U001", role: "Empleado" }),
+      expect.objectContaining({
+        _id: decoded.jti,
+        userId: "U001",
+        role: "Empleado",
+        policyAccepted: false,
+      }),
     );
     expect(deleteOtp).toHaveBeenCalledWith("U001");
   });

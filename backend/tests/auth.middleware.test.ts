@@ -166,7 +166,6 @@ describe("requireAuth(), unidad", () => {
       sub: "U001",
       role: "Empleado",
       jti: "jti-1",
-      policyAccepted: true,
     });
   });
 
@@ -246,8 +245,8 @@ describe("GET /auth/me, ruta protegida real", () => {
         email: "m.lopez@empresa.com",
         role: "Empleado",
         status: "Activo",
+        policyAccepted: false,
       },
-      policyAccepted: true,
     });
   });
 

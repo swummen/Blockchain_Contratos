@@ -4,16 +4,16 @@ import type { Role } from "@/types/domain"
 
 /**
  * RF-05: acceso solo si hay sesión válida y el rol coincide con la ruta.
- * RF-055: antes, la política de tratamiento de datos debe estar aceptada.
+ * RF-055 CA-03: sin la política de datos aceptada, vuelve a la política.
  */
 export function ProtectedRoute({ allowedRole }: { allowedRole: Role }) {
-  const { stage, user, policyAccepted } = useSession()
+  const { stage, user } = useSession()
 
   if (stage !== "authenticated" || !user || user.role !== allowedRole) {
     return <Navigate to="/login" replace />
   }
 
-  if (!policyAccepted) {
+  if (user.policyAccepted === false) {
     return <Navigate to="/politica-datos" replace />
   }
 

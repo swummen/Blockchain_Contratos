@@ -10,7 +10,6 @@ interface SessionState {
   // Solo en memoria (no localStorage): recargar la página cierra la sesión.
   token: string | null
   pendingEmail: string | null
-  policyAccepted: boolean
 }
 
 interface ActionResult {
@@ -21,9 +20,9 @@ interface ActionResult {
 interface SessionContextValue extends SessionState {
   login: (email: string, password: string) => Promise<ActionResult>
   verifyOtp: (code: string) => Promise<ActionResult>
-  acceptPolicy: (version: string) => Promise<ActionResult>
   logout: () => Promise<void>
   changePassword: (current: string, next: string) => Promise<ActionResult>
+  acceptPolicy: (version: string) => Promise<ActionResult>
 }
 
 const SessionContext = React.createContext<SessionContextValue | undefined>(
@@ -35,7 +34,6 @@ const initialState: SessionState = {
   user: null,
   token: null,
   pendingEmail: null,
-  policyAccepted: false,
 }
 
 function errorMessage(err: unknown, fallback: string): string {
@@ -61,7 +59,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         user: null,
         token: null,
         pendingEmail: trimmedEmail,
-        policyAccepted: false,
       })
       return { ok: true }
     },
@@ -75,7 +72,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         return { ok: false, error: "Vuelve a iniciar sesión." }
       }
 
-      let result: api.VerifyOtpResult
+      let result: { token: string; user: User }
       try {
         result = await api.verifyOtp(email, code)
       } catch (err) {
@@ -92,28 +89,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         user: result.user,
         token: result.token,
         pendingEmail: null,
-        policyAccepted: result.policyAccepted,
       })
       return { ok: true }
     },
     [state.pendingEmail]
-  )
-
-  const acceptPolicy = React.useCallback(
-    async (version: string): Promise<ActionResult> => {
-      const token = state.token
-      if (!token) {
-        return { ok: false, error: "Vuelve a iniciar sesión." }
-      }
-      try {
-        await api.acceptPolicy(token, version)
-      } catch (err) {
-        return { ok: false, error: errorMessage(err, "No se pudo registrar la aceptación.") }
-      }
-      setState((prev) => ({ ...prev, policyAccepted: true }))
-      return { ok: true }
-    },
-    [state.token]
   )
 
   const logout = React.useCallback(async () => {
@@ -153,9 +132,28 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [state.token]
   )
 
+  // RF-055: tras aceptar, el backend devuelve el usuario con policyAccepted.
+  const acceptPolicy = React.useCallback(
+    async (version: string): Promise<ActionResult> => {
+      const token = state.token
+      if (!token) {
+        return { ok: false, error: "Vuelve a iniciar sesión." }
+      }
+      let user: User
+      try {
+        ;({ user } = await api.acceptPolicy(token, version))
+      } catch (err) {
+        return { ok: false, error: errorMessage(err, "No se pudo registrar la aceptación.") }
+      }
+      setState((prev) => ({ ...prev, user }))
+      return { ok: true }
+    },
+    [state.token]
+  )
+
   const value = React.useMemo<SessionContextValue>(
-    () => ({ ...state, login, verifyOtp, acceptPolicy, logout, changePassword }),
-    [state, login, verifyOtp, acceptPolicy, logout, changePassword]
+    () => ({ ...state, login, verifyOtp, logout, changePassword, acceptPolicy }),
+    [state, login, verifyOtp, logout, changePassword, acceptPolicy]
   )
 
   return (

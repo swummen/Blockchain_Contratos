@@ -42,7 +42,7 @@ export default function TrazabilidadPage() {
       <div>
         <h1 className="font-heading text-xl font-semibold">Historial de trazabilidad</h1>
         <p className="text-sm text-muted-foreground">
-          Registro de todas las acciones por documento · RF-22 / RF-40 / RF-51
+          Registro de todas las acciones por documento
         </p>
       </div>
 

@@ -19,11 +19,13 @@ interface NavItem {
 
 const NAV_ITEMS: Record<Role, NavItem[]> = {
   Empleado: [
+    { to: "/empleado/inicio", label: "Inicio", icon: LayoutDashboard },
     { to: "/empleado/cargar", label: "Cargar documento", icon: Upload },
     { to: "/empleado/documentos", label: "Mis documentos", icon: FileText },
     { to: "/empleado/trazabilidad", label: "Mi trazabilidad", icon: History },
   ],
   Verificador: [
+    { to: "/verificador/inicio", label: "Inicio", icon: LayoutDashboard },
     { to: "/verificador/verificar", label: "Verificar integridad", icon: ShieldCheck },
     { to: "/verificador/documentos", label: "Documentos", icon: FileText },
     { to: "/verificador/trazabilidad", label: "Trazabilidad global", icon: History },

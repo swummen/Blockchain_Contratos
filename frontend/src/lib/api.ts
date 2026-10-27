@@ -72,24 +72,20 @@ export async function login(email: string, password: string): Promise<void> {
   await postAuthJson("/auth/login", { email, password })
 }
 
-export interface VerifyOtpResult {
-  token: string
-  user: User
-  // RF-055: sin aceptar la política vigente el backend rechaza las rutas de negocio.
-  policyAccepted: boolean
-  policyVersion: string
-}
-
-export async function verifyOtp(email: string, code: string): Promise<VerifyOtpResult> {
+export async function verifyOtp(
+  email: string,
+  code: string
+): Promise<{ token: string; user: User }> {
   return postAuthJson("/auth/verify-otp", { email, code })
-}
-
-export async function acceptPolicy(token: string, version: string): Promise<void> {
-  await postAuthJson("/auth/policy/accept", { version }, token)
 }
 
 export async function logout(token: string): Promise<void> {
   await postAuthJson("/auth/logout", undefined, token)
+}
+
+// RF-055: registra la aceptación de la política de datos de esta versión.
+export async function acceptPolicy(token: string, version: string): Promise<{ user: User }> {
+  return postAuthJson("/auth/accept-policy", { version }, token)
 }
 
 export async function changePassword(

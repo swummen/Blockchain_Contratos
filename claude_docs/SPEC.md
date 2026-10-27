@@ -191,9 +191,10 @@ sin correr) y la búsqueda/paginación de RF‑37…40 (topes defensivos de 100 
 **Nota de cambio (2026‑10‑27, cierre del OE3):** quedan implementados **RF‑054 completo**
 (registro de cada intento fallido de inicio de sesión: correo, fecha, hora y motivo, nunca
 la contraseña; colección `login_attempts` con borrado a los 90 días, HU‑022 CA‑03) y
-**RF‑055** (política de tratamiento de datos versión 1.0: se presenta tras el primer ingreso,
-el backend responde 403 `POLICY_REQUIRED` en las rutas de negocio hasta aceptarla y guarda
-usuario, fecha y versión, HU‑023). Con esto **los 55 RF del backlog fuente están
+**RF‑055** (política de tratamiento de datos versión 1.0: se presenta tras el código OTP en
+`/politica-datos`, el backend responde 403 `POLICY_NOT_ACCEPTED` en las demás rutas hasta
+aceptarla con `POST /auth/accept-policy` y guarda usuario, fecha y hora y versión en
+`users.policyAcceptances`, HU‑023). Con esto **los 55 RF del backlog fuente están
 implementados**. Además, `GET /documents/:id` niega (403) a un Empleado los documentos
 ajenos (RNF‑08). KPI‑3.1 medido oficialmente: P95 = 2059 ms (2026‑10‑27, Docker local,
 `docs/evidencias/latencia-verificacion-2026-10-27-13-12.md`). Este documento sigue listando

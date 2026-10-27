@@ -2,24 +2,42 @@ import * as React from "react"
 import { useSession } from "@/context/SessionContext"
 import { KpiCard } from "@/components/shared/KpiCard"
 import {
+  DashboardHeader,
+  DashboardTopRow,
+  GreetingCard,
+  KpiGrid,
+  RecentSection,
+  type QuickLink,
+} from "@/components/shared/dashboard"
+import {
   getAllEvents,
   getDocumentsSummary,
   listDocuments,
   type DocumentEvent,
   type DocumentsSummary,
 } from "@/lib/api"
-import { formatDateTime } from "@/lib/format"
-import { FileText, CheckCircle2, Clock, AlertTriangle } from "lucide-react"
+import { eventToRecentItem } from "@/lib/dashboard"
+import {
+  AlertTriangle,
+  Bell,
+  CheckCircle2,
+  Clock,
+  FileText,
+  History,
+  Users,
+} from "lucide-react"
 
-const ACTION_LABEL: Record<string, string> = {
-  registro: "Carga de documento",
-  verificacion: "Verificación de integridad",
-}
+const RECENT_LIMIT = 3
 
-const RECENT_LIMIT = 6
+const QUICK_LINKS: QuickLink[] = [
+  { to: "/administrador/usuarios", label: "Gestionar usuarios", icon: Users, tone: "text-sky-600 ring-sky-200" },
+  { to: "/administrador/documentos", label: "Ver documentos", icon: FileText, tone: "text-amber-500 ring-amber-200" },
+  { to: "/administrador/trazabilidad", label: "Revisar trazabilidad", icon: History, tone: "text-emerald-600 ring-emerald-200" },
+  { to: "/administrador/documentos", label: "Documentos alterados", icon: AlertTriangle, tone: "text-rose-600 ring-rose-200" },
+]
 
 export default function DashboardPage() {
-  const { token } = useSession()
+  const { token, user } = useSession()
 
   const [summary, setSummary] = React.useState<DocumentsSummary | null>(null)
   const [summaryError, setSummaryError] = React.useState<string | null>(null)
@@ -67,61 +85,45 @@ export default function DashboardPage() {
     }
   }, [token])
 
+  const recentItems =
+    recent?.map((event) =>
+      eventToRecentItem(
+        event,
+        documentNames[event.documentId] ?? event.documentId,
+        "/administrador/trazabilidad"
+      )
+    ) ?? null
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-xl font-semibold">Resumen del sistema</h1>
-        <p className="text-sm text-muted-foreground">Vista general del estado documental</p>
-      </div>
+      <DashboardHeader title="Dashboard" subtitle="Vista general del estado documental" />
+
+      <DashboardTopRow>
+        <GreetingCard
+          firstName={user?.name.split(" ")[0] ?? ""}
+          question="¿Qué vamos a revisar hoy?"
+          links={QUICK_LINKS}
+        />
+        <RecentSection
+          title="Actividad reciente"
+          icon={Bell}
+          seeAllTo="/administrador/trazabilidad"
+          items={recentItems}
+          error={recentError}
+          emptyText="Todavía no hay acciones registradas."
+        />
+      </DashboardTopRow>
 
       {summaryError ? (
         <p className="text-sm text-destructive">{summaryError}</p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard label="Total documentos" value={summary?.total ?? "..."} icon={FileText} />
-          <KpiCard
-            label="Verificados"
-            value={summary?.verificado ?? "..."}
-            icon={CheckCircle2}
-            tone="success"
-          />
-          <KpiCard label="Pendientes" value={summary?.pendiente ?? "..."} icon={Clock} tone="warning" />
-          <KpiCard
-            label="Alterados"
-            value={summary?.alterado ?? "..."}
-            icon={AlertTriangle}
-            tone="destructive"
-          />
-        </div>
+        <KpiGrid>
+          <KpiCard label="Total de documentos" value={summary?.total ?? "..."} icon={FileText} />
+          <KpiCard label="Documentos verificados" value={summary?.verificado ?? "..."} icon={CheckCircle2} tone="success" />
+          <KpiCard label="Pendientes de verificar" value={summary?.pendiente ?? "..."} icon={Clock} tone="warning" />
+          <KpiCard label="Documentos alterados" value={summary?.alterado ?? "..."} icon={AlertTriangle} tone="destructive" />
+        </KpiGrid>
       )}
-
-      <div className="space-y-3">
-        <h2 className="text-sm font-medium">Actividad reciente</h2>
-        {recentError ? (
-          <p className="text-sm text-destructive">{recentError}</p>
-        ) : recent === null ? (
-          <p className="text-sm text-muted-foreground">Cargando actividad…</p>
-        ) : recent.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Todavía no hay acciones registradas.</p>
-        ) : (
-          <ul className="divide-y divide-border rounded-xl border border-border">
-            {recent.map((event) => (
-              <li key={event.txId} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {documentNames[event.documentId] ?? event.documentId} ·{" "}
-                    {ACTION_LABEL[event.action]}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{event.userName}</p>
-                </div>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatDateTime(event.timestamp)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </div>
   )
 }

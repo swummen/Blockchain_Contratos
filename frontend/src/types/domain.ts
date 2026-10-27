@@ -8,6 +8,8 @@ export interface User {
   email: string
   role: Role
   status: UserStatus
+  // RF-055: solo viene en el usuario de la propia sesión (OTP, /auth/me).
+  policyAccepted?: boolean
 }
 
 export type DocumentStatus = "Pendiente" | "Verificado" | "Alterado"

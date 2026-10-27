@@ -32,10 +32,16 @@ jest.mock("../src/repositories/userRepository", () => {
   };
 });
 
+jest.mock("../src/repositories/loginAttemptRepository", () => ({
+  ensureIndexes: jest.fn(),
+  recordFailedLoginAttempt: jest.fn(),
+}));
+
 jest.mock("../src/services/emailService", () => ({
   sendOtpEmail: jest.fn(),
 }));
 
+import { recordFailedLoginAttempt } from "../src/repositories/loginAttemptRepository";
 import { upsertOtp } from "../src/repositories/otpRepository";
 import {
   findUserByEmail,
@@ -69,6 +75,50 @@ beforeAll(async () => {
 beforeEach(() => {
   jest.clearAllMocks();
   (registerFailedLogin as jest.Mock).mockResolvedValue(1);
+});
+
+describe("POST /auth/login: registro de intentos fallidos (HU-022 CA-03, RNF-06)", () => {
+  it.each([
+    ["usuario inexistente", null, "wrong", "usuario_inexistente"],
+    ["contraseña incorrecta", "activo", "clave-erronea", "contrasena_incorrecta"],
+    ["usuario inactivo", "inactivo", PASSWORD, "usuario_inactivo"],
+    ["cuenta bloqueada", "bloqueado", PASSWORD, "cuenta_bloqueada"],
+  ])("%s: registra correo, fecha y motivo, nunca la contraseña", async (_caso, kind, password, reason) => {
+    const user =
+      kind === null
+        ? null
+        : {
+            ...SEED_USER,
+            passwordHash,
+            status: kind === "inactivo" ? "Inactivo" : "Activo",
+            lockedUntil: kind === "bloqueado" ? new Date(Date.now() + 60_000) : undefined,
+          };
+    (findUserByEmail as jest.Mock).mockResolvedValue(user);
+
+    await request(createApp()).post("/auth/login").send({ email: " M.Lopez@Empresa.com ", password });
+
+    expect(recordFailedLoginAttempt).toHaveBeenCalledTimes(1);
+    expect(recordFailedLoginAttempt).toHaveBeenCalledWith("m.lopez@empresa.com", reason);
+    expect(JSON.stringify((recordFailedLoginAttempt as jest.Mock).mock.calls)).not.toContain(password);
+  });
+
+  it("inicio de sesión correcto: no registra un intento fallido", async () => {
+    (findUserByEmail as jest.Mock).mockResolvedValue({ ...SEED_USER, passwordHash });
+
+    await request(createApp()).post("/auth/login").send(VALID_BODY);
+
+    expect(recordFailedLoginAttempt).not.toHaveBeenCalled();
+  });
+
+  it("si falla el registro del intento, el inicio de sesión responde igual", async () => {
+    (findUserByEmail as jest.Mock).mockResolvedValue(null);
+    (recordFailedLoginAttempt as jest.Mock).mockRejectedValue(new Error("mongo caído"));
+
+    const res = await request(createApp()).post("/auth/login").send({ email: VALID_BODY.email, password: "x" });
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ message: "Credenciales inválidas." });
+  });
 });
 
 describe("POST /auth/login", () => {

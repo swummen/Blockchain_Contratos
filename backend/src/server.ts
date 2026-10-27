@@ -3,6 +3,7 @@ import { authConfig } from "./config/auth";
 import { env } from "./config/env";
 import { connectFabric } from "./fabric/gateway";
 import { connectMongo } from "./repositories/mongoClient";
+import { ensureIndexes as ensureLoginAttemptIndexes } from "./repositories/loginAttemptRepository";
 import { ensureIndexes as ensureOtpIndexes } from "./repositories/otpRepository";
 import { ensureIndexes as ensureSessionIndexes } from "./repositories/sessionRepository";
 import { ensureIndexes as ensureUserIndexes } from "./repositories/userRepository";
@@ -99,6 +100,7 @@ async function main() {
     await ensureSessionIndexes();
     // Correo único: sin él, dos altas simultáneas del mismo correo pasarían.
     await ensureUserIndexes();
+    await ensureLoginAttemptIndexes();
   } catch (err) {
     // No se aborta: /health reporta "mongo: down" en vez de tumbar el proceso.
     console.error("No se pudo conectar a MongoDB al arrancar:", err);

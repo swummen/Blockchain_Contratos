@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { authConfig } from "../config/auth";
 import { env } from "../config/env";
 import { CURRENT_POLICY_VERSION } from "../config/policy";
+import { FailedLoginReason, recordFailedLoginAttempt } from "../repositories/loginAttemptRepository";
 import {
   deleteOtp,
   findOtpByUserId,
@@ -20,6 +21,7 @@ import {
   findUserById,
   hasAcceptedCurrentPolicy,
   lockUser,
+  normalizeEmail,
   SessionUser,
   recordPolicyAcceptance,
   registerFailedLogin,
@@ -59,6 +61,13 @@ function generateOtpCode(): string {
   return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
 
+// HU-022 CA-03: un fallo al registrar no debe cambiar la respuesta del inicio de sesión.
+function logFailedAttempt(email: string, reason: FailedLoginReason): void {
+  recordFailedLoginAttempt(normalizeEmail(email), reason).catch((err) => {
+    console.error("No se pudo registrar el intento fallido de inicio de sesión:", err);
+  });
+}
+
 // RF-054: durante el bloqueo se avisa explícitamente, a diferencia del 401 genérico.
 function lockedMessage(lockedUntil: Date): string {
   const minutesLeft = Math.max(1, Math.ceil((lockedUntil.getTime() - Date.now()) / 60_000));
@@ -72,6 +81,7 @@ export async function login(
   const user = await findUserByEmail(email);
 
   if (user?.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+    logFailedAttempt(email, "cuenta_bloqueada");
     return { ok: false, status: 423, message: lockedMessage(user.lockedUntil) };
   }
 
@@ -80,6 +90,10 @@ export async function login(
   // Mismo mensaje para usuario inexistente, contraseña incorrecta o cuenta
   // inactiva: no se revela cuál dato falló (RF-002 CA-02).
   if (!user || !passwordOk || user.status === "Inactivo") {
+    logFailedAttempt(
+      email,
+      !user ? "usuario_inexistente" : !passwordOk ? "contrasena_incorrecta" : "usuario_inactivo",
+    );
     // Solo se cuentan intentos de cuentas que existen.
     if (user) {
       const attempts = await registerFailedLogin(user._id);

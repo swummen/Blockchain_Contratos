@@ -74,10 +74,10 @@ documentsRouter.get(
 
 documentsRouter.get(
   "/documents/:id",
-  requireAuth(), // RF-25/26: todos consultan; por rol solo cambia el enmascarado del hash.
+  requireAuth(), // RF-25/26: todos consultan; el Empleado solo lo suyo y sin la huella completa.
   async (req, res) => {
     // :id no es comodín, así que siempre es un string (el tipo de Express 5 es más amplio).
-    const result = await getDocument(req.params.id as string, req.user!.role);
+    const result = await getDocument(req.params.id as string, req.user!.role, req.user!.sub);
     if (!result.ok) {
       res.status(result.status).json({ message: result.message });
       return;

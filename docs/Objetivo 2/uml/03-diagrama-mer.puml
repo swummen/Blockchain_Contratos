@@ -1,0 +1,59 @@
+@startuml 03-diagrama-mer
+skinparam linetype ortho
+
+entity "Usuario" as Usuario {
+  * id : ObjectId <<PK>>
+  --
+  nombre : string
+  correo : string <<unique>>
+  passwordHash : string
+  rol : enum {Empleado, Verificador, Administrador}
+  estado : enum {Activo, Inactivo}
+  intentosFallidos : int
+  bloqueadoHasta : datetime
+  politicaAceptada : boolean
+  fechaAceptacionPolitica : datetime
+  tokenSegundoFactor : string (hash)
+  tokenExpiraEn : datetime
+  tokenIntentos : int
+}
+
+entity "Documento" as Documento {
+  * id : ObjectId <<PK>>
+  --
+  nombre : string
+  usuarioResponsableId : ObjectId <<FK>>
+  fechaRegistro : datetime
+  huellaCriptografica : string (SHA-256)
+  estado : enum {Pendiente, Verificado, Alterado}
+}
+
+entity "EventoTrazabilidad" as Evento {
+  * id : ObjectId <<PK>>
+  --
+  documentoId : ObjectId <<FK, opcional>>
+  usuarioId : ObjectId <<FK>>
+  accion : enum {Registro, Verificacion, Consulta, GestionUsuario}
+  txId : string
+  fechaHora : datetime
+  resultado : string
+}
+
+Usuario ||--o{ Documento : "registra >"
+Usuario ||--o{ Evento : "ejecuta >"
+Documento ||--o{ Evento : "genera >"
+
+note bottom of Evento
+  RNF-004 / RNF-005: unicamente la
+  huellaCriptografica y los eventos
+  de trazabilidad (con su txId) se
+  anclan de forma inmutable en la
+  blockchain (Hyperledger Fabric).
+  El archivo PDF no se almacena.
+  MongoDB guarda solo metadatos de
+  Usuario/Documento y un indice de
+  eventos (RNF-013).
+  documentoId es opcional: los eventos
+  GestionUsuario no tienen documento.
+end note
+@enduml

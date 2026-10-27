@@ -70,6 +70,7 @@ const activeSession = {
   role: "Administrador" as const,
   expiresAt: new Date(Date.now() + 60_000),
   lastSeenAt: new Date(),
+  policyAccepted: true,
 };
 
 function token(role = "Administrador") {

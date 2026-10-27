@@ -1,4 +1,4 @@
-## Resumen
+﻿## Resumen
 | Informe de resultados y defectos · TrazaDoc | Unnamed: 1 | Unnamed: 2 | Unnamed: 3 | Unnamed: 4 |
 | --- | --- | --- | --- | --- |
 | Fuente de los resultados: Ciclo 1, entorno local (11 al 25 de octubre de 2026). Ciclo 2 en Azure pendiente. | NaN | NaN | NaN | NaN |
@@ -6,51 +6,46 @@
 | 1. Ejecución | Valor | NaN | NaN | NaN |
 | Casos planeados | 62 | NaN | NaN | NaN |
 | Casos ejecutados | 50 | NaN | NaN | NaN |
-| Aprobados (PASS) | 45 | NaN | NaN | NaN |
-| Fallidos (FAIL) | 5 | NaN | NaN | NaN |
+| Aprobados (PASS) | 50 | NaN | NaN | NaN |
+| Fallidos (FAIL) | 0 | NaN | NaN | NaN |
 | Sin ejecutar | 12 | NaN | NaN | NaN |
 | % de ejecución | 0.806452 | NaN | NaN | NaN |
-| % de aprobación (PASS / ejecutados) | 0.9 | NaN | NaN | NaN |
+| % de aprobación (PASS / ejecutados) | 1 | NaN | NaN | NaN |
 | NaN | NaN | NaN | NaN | NaN |
 | 2. Indicadores del OE4 | Resultado | Meta | Estado | NaN |
-| Casos funcionales aprobados | 0.784314 | 0.9 | No cumple | Meta: al menos 46 de 51 casos |
+| Casos funcionales aprobados | 0.882353 | 0.9 | No cumple | Meta: al menos 46 de 51 casos |
 | Detección de alteraciones (20 documentos) | 1 | 1 | Cumple | tests/integrity, 20/20 detectadas (25/10/2026) |
 | Falsos positivos (originales marcados como alterados) | 0 | 0 | Cumple | tests/integrity (25/10/2026) |
-| Latencia de verificación, percentil 95 (ms) | 2040 | 3000 | Cumple | tests/perf, ensayo del 15/10/2026 |
+| Latencia de verificación, percentil 95 (ms) | 2059 | 3000 | Cumple | tests/perf, medición oficial del 27/10/2026 |
 | NaN | NaN | NaN | NaN | NaN |
-| 3. Defectos | Total | Abiertos | Cerrados | NaN |
+| 3. Defectos | Total | Abiertos | Corregidos | NaN |
 | Crítica | 0 | 0 | 0 | NaN |
-| Alta | 1 | 1 | 0 | NaN |
-| Media | 3 | 3 | 0 | NaN |
+| Alta | 1 | 0 | 1 | NaN |
+| Media | 3 | 1 | 2 | NaN |
 | Baja | 2 | 2 | 0 | NaN |
-| Total | 6 | 6 | 0 | NaN |
+| Total | 6 | 3 | 3 | NaN |
 | NaN | NaN | NaN | NaN | NaN |
 | 4. Resumen para el documento principal | NaN | NaN | NaN | NaN |
-| Se ejecutaron 50 de 62 casos de prueba (81%): 45 aprobados y 5 fallidos, para una tasa de aprobación de 90%. | NaN | NaN | NaN | NaN |
-| Casos funcionales: 78% aprobados frente a una meta de 90 % (No cumple). Integridad: 100% de alteraciones detectadas con 0 falsos positivos (Cumple). Latencia P95: 2040 ms frente a 3000 ms (Cumple). | NaN | NaN | NaN | NaN |
-| Se registraron 6 defectos (críticos: 0, altos: 1, medios: 3, bajos: 2); 6 siguen abiertos. Ninguno impide registrar ni verificar documentos. | NaN | NaN | NaN | NaN |
-| Los fallos se deben a dos requisitos aún sin implementar (aceptación de la política de datos y registro de intentos fallidos) y a un control de acceso de la API que deja ver datos de documentos ajenos. Las correcciones se priorizan por severidad y se vuelven a probar con regresión. | NaN | NaN | NaN | NaN |
+| Se ejecutaron 50 de 62 casos de prueba (81%): 50 aprobados y 0 fallidos, para una tasa de aprobación de 100%. | NaN | NaN | NaN | NaN |
+| Casos funcionales: 88% aprobados frente a una meta de 90 % (No cumple). Integridad: 100% de alteraciones detectadas con 0 falsos positivos (Cumple). Latencia P95: 2059 ms frente a 3000 ms (Cumple). | NaN | NaN | NaN | NaN |
+| Se registraron 6 defectos (críticos: 0, altos: 1, medios: 3, bajos: 2); 3 corregidos y 3 abiertos. Ninguno impide registrar ni verificar documentos. | NaN | NaN | NaN | NaN |
+| No quedan casos fallidos: los tres defectos funcionales encontrados (aceptación de la política de datos, registro de intentos fallidos y acceso de un Empleado a documentos ajenos) se corrigieron y se volvieron a probar con regresión. Los casos sin ejecutar se completan en el Ciclo 2, en Azure. | NaN | NaN | NaN | NaN |
 
 ## Resultados
 | Resultados por módulo | Unnamed: 1 | Unnamed: 2 | Unnamed: 3 | Unnamed: 4 | Unnamed: 5 |
 | --- | --- | --- | --- | --- | --- |
 | NaN | NaN | NaN | NaN | NaN | NaN |
 | Módulo | Casos | PASS | FAIL | Sin ejecutar | % PASS de ejecutados |
-| EP-01 Autenticación y control de acceso | 15 | 10 | 4 | 1 | 0.714286 |
+| EP-01 Autenticación y control de acceso | 15 | 14 | 0 | 1 | 1 |
 | EP-02 Registro y gestión documental (Empleado) | 10 | 9 | 0 | 1 | 1 |
-| EP-03 Verificación de integridad documental (Verificador) | 14 | 12 | 1 | 1 | 0.923077 |
+| EP-03 Verificación de integridad documental (Verificador) | 14 | 13 | 0 | 1 | 1 |
 | EP-04 Administración del sistema | 10 | 7 | 0 | 3 | 1 |
 | EP-05 Infraestructura y despliegue | 2 | 2 | 0 | 0 | 1 |
 | Transversal | 11 | 5 | 0 | 6 | 1 |
-| Total | 62 | 45 | 5 | 12 | 0.9 |
+| Total | 62 | 50 | 0 | 12 | 1 |
 | NaN | NaN | NaN | NaN | NaN | NaN |
 | Casos fallidos | NaN | NaN | NaN | NaN | NaN |
 | Caso | Descripción | NaN | NaN | NaN | Defecto |
-| CP-11 | Registro de intentos fallidos | NaN | NaN | NaN | DEF-03 |
-| CP-13 | Política de datos en el primer ingreso | NaN | NaN | NaN | DEF-04 |
-| CP-14 | Aceptación de la política | NaN | NaN | NaN | DEF-04 |
-| CP-15 | Acceso sin aceptar la política | NaN | NaN | NaN | DEF-04 |
-| CP-29 | Empleado sin acceso a la huella ajena | NaN | NaN | NaN | DEF-06 |
 
 ## Defectos
 | Defectos y acciones correctivas | Unnamed: 1 | Unnamed: 2 | Unnamed: 3 | Unnamed: 4 | Unnamed: 5 | Unnamed: 6 | Unnamed: 7 |
@@ -59,10 +54,10 @@
 | ID | Defecto | Caso | Severidad | Prioridad | Estado | Acción correctiva | Responsable |
 | DEF-01 | La lista de contratos del Verificador no se actualiza después de verificar | CP-35 | Baja | P3 Media | Nuevo | Recargar la lista de documentos después de cada verificación. | Laura Sofia Diaz Suarez |
 | DEF-02 | "Reenviar código" no envía un código nuevo | CP-03 | Media | P2 Alta | Nuevo | Hacer que el botón vuelva a pedir el código al servidor. | Laura Sofia Diaz Suarez |
-| DEF-03 | No se registran los intentos fallidos de inicio de sesión | CP-11 | Media | P2 Alta | Nuevo | Guardar cada intento fallido (correo, fecha, hora y motivo, sin la contraseña). | Sofia Ortiz Daza |
-| DEF-04 | No existe la aceptación de la política de tratamiento de datos | CP-13 a CP-15 | Alta | P1 Urgente | Nuevo | Mostrar la política en el primer ingreso y guardar su aceptación con versión y fecha. | Sofia y Laura |
+| DEF-03 | No se registran los intentos fallidos de inicio de sesión | CP-11 | Media | P2 Alta | Corregido | Guardar cada intento fallido (correo, fecha, hora y motivo, sin la contraseña). | Sofia Ortiz Daza |
+| DEF-04 | No existe la aceptación de la política de tratamiento de datos | CP-13 a CP-15 | Alta | P1 Urgente | Corregido | Mostrar la política en el primer ingreso y guardar su aceptación con versión y fecha. | Sofia y Laura |
 | DEF-05 | Los estados se muestran en minúscula | CP-22 | Baja | P4 Baja | Nuevo | Mostrar los estados con mayúscula inicial. | Laura Sofia Diaz Suarez |
-| DEF-06 | Un Empleado puede consultar los datos de un documento ajeno | CP-29 | Media | P2 Alta | Nuevo | Negar el acceso (403) a documentos de otros empleados. | Sofia Ortiz Daza |
+| DEF-06 | Un Empleado puede consultar los datos de un documento ajeno | CP-29 | Media | P2 Alta | Corregido | Negar el acceso (403) a documentos de otros empleados. | Sofia Ortiz Daza |
 
 ## Datos
 | Datos de ejecución (fuente de las fórmulas) | Unnamed: 1 | Unnamed: 2 | Unnamed: 3 | Unnamed: 4 | Unnamed: 5 | Unnamed: 6 |
@@ -80,11 +75,11 @@
 | CP-08 | Funcional | EP-01 Autenticación y control de acceso | Cambio de contraseña con la actual errada | PASS | No ejecutado | PASS |
 | CP-09 | Funcional | EP-01 Autenticación y control de acceso | Bloqueo tras 5 intentos fallidos | PASS | No ejecutado | PASS |
 | CP-10 | Funcional | EP-01 Autenticación y control de acceso | Desbloqueo pasados 15 minutos | PASS | No ejecutado | PASS |
-| CP-11 | Funcional | EP-01 Autenticación y control de acceso | Registro de intentos fallidos | FAIL | No ejecutado | FAIL |
+| CP-11 | Funcional | EP-01 Autenticación y control de acceso | Registro de intentos fallidos | PASS | No ejecutado | PASS |
 | CP-12 | Funcional | EP-01 Autenticación y control de acceso | Cierre por inactividad | PASS | No ejecutado | PASS |
-| CP-13 | Funcional | EP-01 Autenticación y control de acceso | Política de datos en el primer ingreso | FAIL | No ejecutado | FAIL |
-| CP-14 | Funcional | EP-01 Autenticación y control de acceso | Aceptación de la política | FAIL | No ejecutado | FAIL |
-| CP-15 | Funcional | EP-01 Autenticación y control de acceso | Acceso sin aceptar la política | FAIL | No ejecutado | FAIL |
+| CP-13 | Funcional | EP-01 Autenticación y control de acceso | Política de datos en el primer ingreso | PASS | No ejecutado | PASS |
+| CP-14 | Funcional | EP-01 Autenticación y control de acceso | Aceptación de la política | PASS | No ejecutado | PASS |
+| CP-15 | Funcional | EP-01 Autenticación y control de acceso | Acceso sin aceptar la política | PASS | No ejecutado | PASS |
 | CP-16 | Funcional | EP-02 Registro y gestión documental (Empleado) | Carga de un PDF válido de 10 MB | No ejecutado | No ejecutado | No ejecutado |
 | CP-17 | Funcional | EP-02 Registro y gestión documental (Empleado) | Rechazo de DOCX o PDF de 25 MB | PASS | No ejecutado | PASS |
 | CP-18 | Funcional | EP-02 Registro y gestión documental (Empleado) | Metadatos y huella automáticos | PASS | No ejecutado | PASS |
@@ -98,7 +93,7 @@
 | CP-26 | Funcional | EP-03 Verificación de integridad documental (Verificador) | Selección de un documento registrado | PASS | No ejecutado | PASS |
 | CP-27 | Funcional | EP-03 Verificación de integridad documental (Verificador) | Identificador inexistente | PASS | No ejecutado | PASS |
 | CP-28 | Funcional | EP-03 Verificación de integridad documental (Verificador) | Huella completa para el Verificador | PASS | No ejecutado | PASS |
-| CP-29 | Funcional | EP-03 Verificación de integridad documental (Verificador) | Empleado sin acceso a la huella ajena | FAIL | No ejecutado | FAIL |
+| CP-29 | Funcional | EP-03 Verificación de integridad documental (Verificador) | Empleado sin acceso a la huella ajena | PASS | No ejecutado | PASS |
 | CP-30 | Funcional | EP-03 Verificación de integridad documental (Verificador) | Carga del archivo a comparar | PASS | No ejecutado | PASS |
 | CP-31 | Funcional | EP-03 Verificación de integridad documental (Verificador) | Archivo a comparar de 30 MB | No ejecutado | No ejecutado | No ejecutado |
 | CP-32 | Funcional | EP-03 Verificación de integridad documental (Verificador) | Huellas idénticas | PASS | No ejecutado | PASS |

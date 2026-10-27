@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: TrazaDoc API
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     API REST del backend de TrazaDoc, MVP de verificación de integridad y trazabilidad
     documental en contratos laborales con Hyperledger Fabric.
@@ -16,6 +16,10 @@ info:
        correo del usuario (por Brevo). Vence en 5 minutos.
     2. `POST /auth/verify-otp` con el código → devuelve el `token` (JWT).
     3. En el resto de rutas: header `Authorization: Bearer <token>`.
+    4. Si la respuesta del paso 2 trae `policyAccepted: false`, el usuario debe aceptar la
+       política de tratamiento de datos con `POST /auth/policy/accept` (RF-055). Hasta
+       entonces, las rutas de documentos, trazabilidad y usuarios responden 403 con el
+       código `POLICY_REQUIRED`; las de `/auth` siguen disponibles.
 
     La sesión vence a los 60 minutos o tras 15 minutos sin actividad; `POST /auth/logout`
     la invalida al instante. 5 intentos fallidos de login bloquean la cuenta 15 minutos.
@@ -29,12 +33,14 @@ info:
 servers:
   - url: http://localhost:8080
     description: Docker local (bash docker/up.sh)
+  - url: https://trazadoc-tesis.eastus2.cloudapp.azure.com/api
+    description: Entorno de validación en Azure (detrás del proxy HTTPS)
 
 tags:
   - name: Diagnóstico
     description: Estado del backend, MongoDB y la red Fabric.
   - name: Autenticación
-    description: Login con segundo factor por correo, sesión y contraseña (RF-001 a RF-007, RF-052 a RF-054).
+    description: Login con segundo factor por correo, sesión, contraseña y política de datos (RF-001 a RF-007, RF-052 a RF-055).
   - name: Documentos
     description: Registro, consulta y verificación de documentos (RF-008 a RF-038, RF-041/042, RF-048/049).
   - name: Trazabilidad
@@ -170,6 +176,8 @@ paths:
                 properties:
                   token: { type: string, description: JWT para el header Authorization. }
                   user: { $ref: "#/components/schemas/User" }
+                  policyAccepted: { type: boolean, description: "false: falta aceptar la versión vigente de la política (RF-055)." }
+                  policyVersion: { type: string, example: "1.0", description: Versión vigente de la política. }
         "400":
           description: Datos faltantes, código vencido, incorrecto o intentos agotados.
           content:
@@ -195,6 +203,44 @@ paths:
                 type: object
                 properties:
                   user: { $ref: "#/components/schemas/User" }
+                  policyAccepted: { type: boolean }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /auth/policy/accept:
+    post:
+      operationId: acceptPolicy
+      tags: [Autenticación]
+      summary: Aceptar la política de tratamiento de datos (RF-055, HU-023)
+      description: |
+        Guarda en el usuario la versión aceptada y la fecha y hora, y habilita la sesión
+        actual. Solo se acepta la versión vigente (Ley 1581 de 2012).
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version]
+              properties:
+                version: { type: string, example: "1.0" }
+      responses:
+        "200":
+          description: Aceptación registrada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policyAccepted: { type: boolean, example: true }
+                  version: { type: string, example: "1.0" }
+                  acceptedAt: { type: string, format: date-time }
+        "400":
+          description: La versión enviada no es la vigente.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: La versión de la política no es la vigente. Recarga la página. }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
   /auth/logout:
@@ -345,8 +391,9 @@ paths:
       summary: Consultar un documento registrado (RF-025, RF-026)
       description: |
         La huella y el estado se leen del ledger (`GetDocument`); nombre, responsable y
-        fecha de MongoDB. Cualquier rol puede consultar; solo el Verificador recibe la
-        huella completa (RF-027).
+        fecha de MongoDB. Cualquier rol puede consultar, pero un Empleado solo sus propios
+        documentos (403 en los ajenos, RNF-08); solo el Verificador recibe la huella
+        completa (RF-027).
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: "#/components/parameters/DocumentId"
@@ -357,6 +404,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/DocumentView" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/DocumentNotFound" }
         "502": { $ref: "#/components/responses/LedgerError" }
 
@@ -654,11 +702,13 @@ components:
             sinToken: { value: { message: No autenticado. } }
             sesionVencida: { value: { message: Sesión inválida o vencida. } }
     Forbidden:
-      description: El rol de la sesión no tiene permiso para esta acción (RBAC).
+      description: El rol de la sesión no tiene permiso para esta acción (RBAC), o falta aceptar la política de tratamiento de datos (RF-055).
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Message" }
-          example: { message: No tienes permiso para esta acción. }
+          examples:
+            sinPermiso: { value: { message: No tienes permiso para esta acción. } }
+            politicaPendiente: { value: { code: POLICY_REQUIRED, message: Debes aceptar la política de tratamiento de datos para continuar. } }
     DocumentNotFound:
       description: El documento no está registrado en el ledger.
       content:

@@ -209,13 +209,18 @@ async function queryLedgerDocument(documentId: string): Promise<LedgerDocumentRe
   return { ok: true, doc: JSON.parse(raw) as LedgerDocument };
 }
 
-export async function getDocument(documentId: string, role: Role): Promise<GetDocumentResult> {
+export async function getDocument(documentId: string, role: Role, userId: string): Promise<GetDocumentResult> {
   const ledgerResult = await queryLedgerDocument(documentId);
   if (!ledgerResult.ok) return ledgerResult;
 
   // Hash y estado salen del ledger, que es la autoridad. Si Mongo no tiene los
   // metadatos, se responde igual: el documento sí existe.
   const metadata = await findDocumentById(documentId);
+  // Un Empleado solo consulta lo suyo (RNF-08). Sin metadatos no hay dueño
+  // conocido, así que también se niega.
+  if (role === "Empleado" && metadata?.responsibleUser !== userId) {
+    return { ok: false, status: 403, message: "No tienes permiso para esta acción." };
+  }
   const hash = ROLES_WITH_FULL_HASH.includes(role)
     ? ledgerResult.doc.Sha256Hex
     : maskHash(ledgerResult.doc.Sha256Hex);

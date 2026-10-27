@@ -26,7 +26,14 @@ login() { # $1 = correo → imprime el JWT
   curl -s -X POST -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"Contratos123!\"}" $B/auth/login >/dev/null
   sleep 1
   local code; code=$(docker logs backend 2>&1 | grep "código OTP para $1:" | tail -1 | sed 's/.*: //')
-  curl -s -X POST -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"code\":\"$code\"}" $B/auth/verify-otp | jq -r .token
+  local r t; r=$(curl -s -X POST -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"code\":\"$code\"}" $B/auth/verify-otp)
+  t=$(echo "$r" | jq -r .token)
+  # Cuentas de prueba del ensayo local: se acepta la política vigente (RF-055).
+  if [ "$(echo "$r" | jq -r .policyAccepted)" = "false" ]; then
+    curl -s -o /dev/null -X POST -H "Authorization: Bearer $t" -H 'Content-Type: application/json' \
+      -d "{\"version\":\"$(echo "$r" | jq -r .policyVersion)\"}" $B/auth/policy/accept
+  fi
+  echo "$t"
 }
 
 step() { echo; echo "### $*"; }

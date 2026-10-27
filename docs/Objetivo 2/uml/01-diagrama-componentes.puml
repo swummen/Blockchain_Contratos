@@ -1,0 +1,75 @@
+@startuml 01-diagrama-componentes
+skinparam componentStyle rectangle
+
+package "CAPA DE PRESENTACION - Frontend (React SPA)" {
+  [Modulo de Autenticacion] as UI_Auth
+  [Modulo Empleado] as UI_Empleado
+  [Modulo Verificador] as UI_Verificador
+  [Modulo Administrador] as UI_Admin
+}
+
+package "CAPA DE APLICACION - Backend (Node.js + Express)" {
+  [Auth Controller] as C_Auth
+  [Document Controller] as C_Doc
+  [Verification Controller] as C_Verif
+  [Admin Controller] as C_Admin
+  [Hash Service (SHA-256)] as S_Hash
+  [Fabric Gateway Service] as S_Fabric
+  [User / Document Repository] as S_Repo
+  [Auth Middleware\n(JWT + RBAC)] as S_AuthMW
+  [Mail Service (2FA)] as S_Mail
+}
+
+database "CAPA DE PERSISTENCIA - MongoDB\n(usuarios, metadatos,\nindice de trazabilidad)" as DB
+
+package "CAPA BLOCKCHAIN - Red Hyperledger Fabric" {
+  [Fabric SDK] as SDK
+  [Chaincode (Go)\nRegistrarHuella / ConsultarHuella\nActualizarEstado / RegistrarEvento\nConsultarTrazabilidad] as CC
+  database "Ledger (blockchain)" as Ledger
+}
+
+cloud "Servidor SMTP\n(correo corporativo)" as SMTP
+UI_Auth --> C_Auth : REST/HTTPS
+UI_Empleado --> C_Doc : REST/HTTPS
+UI_Verificador --> C_Verif : REST/HTTPS
+UI_Admin --> C_Admin : REST/HTTPS
+
+C_Auth --> S_Repo
+C_Doc --> S_Hash
+C_Doc --> S_Fabric
+C_Doc --> S_Repo
+C_Verif --> S_Hash
+C_Verif --> S_Fabric
+C_Verif --> S_Repo
+C_Admin --> S_Repo
+C_Admin --> S_Fabric
+C_Auth --> S_Mail : envia token 2FA
+S_Mail --> SMTP
+C_Doc --> S_AuthMW : valida JWT y rol
+C_Verif --> S_AuthMW : valida JWT y rol
+C_Admin --> S_AuthMW : valida JWT y rol
+
+S_Repo --> DB
+S_Fabric --> SDK
+SDK --> CC
+CC --> Ledger
+
+note right of S_Fabric
+  RNF-020: el frontend nunca
+  se comunica directamente
+  con la red blockchain,
+  siempre a traves del backend.
+end note
+
+note right of Ledger
+  RNF-004: solo se almacenan
+  huellas criptograficas y
+  eventos, nunca el PDF.
+end note
+
+note right of DB
+  La fuente de verdad de integridad y
+  trazabilidad es el ledger. MongoDB
+  guarda metadatos e indice de consulta.
+end note
+@enduml

@@ -1,0 +1,62 @@
+@startuml 02-diagrama-despliegue
+skinparam node {
+  BackgroundColor White
+}
+
+actor Usuario
+
+node "VM Azure (Linux)" as VM {
+
+  node "Docker Engine (docker-compose)" as Docker {
+
+    node "Contenedor: frontend\n(Nginx + build de React)" as N_Front {
+      component [SPA React] as App_Front
+    }
+
+    node "Contenedor: backend\n(Node.js + Express)" as N_Back {
+      component [API REST] as App_Back
+      component [Fabric SDK] as App_SDK
+    }
+
+    node "Contenedor: mongodb" as N_Mongo {
+      folder "Volumen: mongo-data" as V_Mongo
+      database "MongoDB" as DB_Mongo
+    }
+
+    package "Red Hyperledger Fabric (contenedores Docker)" {
+      node "Contenedor: ca.org1" as N_CA
+      node "Contenedor: orderer.example.com" as N_Orderer
+      node "Contenedor: peer0.org1" as N_Peer {
+        folder "Volumen: ledger del peer" as V_Peer
+        component [Chaincode (Go)] as CC
+        database "CouchDB\n(state database)" as CouchDB
+      }
+      note as N_Canal
+        Canal: <nombre de tu canal>
+        Chaincode: <nombre del chaincode>
+      end note
+    }
+  }
+}
+
+cloud "Servidor SMTP\n(correo)" as SMTP
+
+Usuario --> App_Front : HTTPS :443
+App_Front --> App_Back : REST/JSON (HTTPS) :3000
+App_Back --> DB_Mongo : Driver MongoDB :27017
+App_Back --> App_SDK
+App_Back --> SMTP : SMTP/TLS (envio token 2FA)
+App_SDK --> N_Peer : gRPC :7051 (invoke / query)
+App_SDK --> N_Orderer : gRPC :7050 (envio de transacciones)
+N_Peer --> CouchDB : :5984
+N_CA --> N_Peer : emision de certificados (MSP) :7054
+N_CA --> N_Orderer : emision de certificados (MSP) :7054
+
+note bottom
+  RNF-021: todos los componentes se ejecutan
+  como contenedores Docker orquestados con
+  Docker Compose, sobre una VM Azure durante
+  1 mes (topologia de una sola organizacion,
+  segun el alcance del MVP).
+end note
+@enduml

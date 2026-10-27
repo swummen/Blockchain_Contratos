@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 p-3 md:p-6">
+    <div className="min-h-screen bg-page p-3 md:p-6">
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl flex-col overflow-hidden rounded-3xl shadow-xl shadow-teal-900/15 md:min-h-[calc(100vh-3rem)] md:flex-row">
         {/* Solo en celular: franja con la marca, en lugar del panel izquierdo. */}
         <div

@@ -2,6 +2,7 @@ import * as React from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { OtpInput } from "@/components/shared/OtpInput"
 import { useSession } from "@/context/SessionContext"
+import { ROLE_HOME } from "@/lib/roles"
 import { Mail, RotateCcw, ShieldCheck } from "lucide-react"
 
 const PANEL_BACKGROUND =
@@ -14,12 +15,6 @@ function maskEmail(email: string): string {
   return `${visible}${"*".repeat(Math.max(user.length - 3, 3))}@${domain}`
 }
 
-const ROLE_HOME: Record<string, string> = {
-  Empleado: "/empleado",
-  Verificador: "/verificador",
-  Administrador: "/administrador",
-}
-
 export default function OtpPage() {
   const navigate = useNavigate()
   const { stage, user, pendingEmail, verifyOtp } = useSession()
@@ -30,7 +25,10 @@ export default function OtpPage() {
 
   React.useEffect(() => {
     if (stage === "authenticated" && user) {
-      navigate(ROLE_HOME[user.role], { replace: true })
+      // RF-055: sin la política vigente aceptada no se entra al panel.
+      navigate(user.policyAccepted === false ? "/politica-datos" : ROLE_HOME[user.role], {
+        replace: true,
+      })
     } else if (stage === "anonymous") {
       navigate("/", { replace: true })
     }
@@ -52,7 +50,7 @@ export default function OtpPage() {
   const complete = code.length === 6
 
   return (
-    <div className="min-h-screen bg-slate-100 p-3 md:p-6">
+    <div className="min-h-screen bg-page p-3 md:p-6">
       {/* Misma tarjeta flotante y ancho que inicio y login. */}
       <div
         className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl items-center justify-center rounded-3xl p-3 shadow-xl sm:p-6 shadow-teal-900/15 md:min-h-[calc(100vh-3rem)]"

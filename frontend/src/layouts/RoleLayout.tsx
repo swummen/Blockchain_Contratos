@@ -34,7 +34,7 @@ export default function RoleLayout() {
   return (
     // Fondo gris con dos tarjetas flotantes (menú y contenido); el color del
     // rol va solo dentro del menú. En celular el menú pasa arriba y se pliega.
-    <div className="min-h-screen bg-slate-100 p-3 md:p-6">
+    <div className="min-h-screen bg-page p-3 md:p-6">
       <div
         className={cn(
           "mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1800px] flex-col gap-3 md:min-h-[calc(100vh-3rem)] md:flex-row md:gap-4",
@@ -54,9 +54,10 @@ export default function RoleLayout() {
             onClick={() => setMenuOpen((open) => !open)}
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuOpen}
-            className="flex size-9 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-sidebar-accent"
+            className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3.5 text-sm font-medium transition-colors hover:bg-white/20"
           >
-            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            {menuOpen ? <X className="size-4.5" /> : <Menu className="size-4.5" />}
+            Menú
           </button>
         </header>
 
@@ -78,6 +79,9 @@ export default function RoleLayout() {
             <RoleSidebar role={user.role} />
           </div>
           <div className="border-t border-sidebar-border p-3">
+            <p className="mb-2 px-2 text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase md:hidden">
+              Mi cuenta
+            </p>
             <UserMenu />
           </div>
         </aside>

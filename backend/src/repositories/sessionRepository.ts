@@ -13,6 +13,9 @@ export interface SessionDoc {
   expiresAt: Date;
   // Última actividad, para cerrar por inactividad (RNF-07).
   lastSeenAt: Date;
+  // RF-055: copia de "aceptó la política vigente" al crear la sesión, para que el
+  // middleware no consulte el usuario en cada petición. Solo false bloquea.
+  policyAccepted?: boolean;
 }
 
 function sessionsCollection(): Collection<SessionDoc> {
@@ -34,6 +37,10 @@ export async function findSessionByJti(jti: string): Promise<SessionDoc | null> 
 
 export async function touchSession(jti: string): Promise<void> {
   await sessionsCollection().updateOne({ _id: jti }, { $set: { lastSeenAt: new Date() } });
+}
+
+export async function markSessionPolicyAccepted(jti: string): Promise<void> {
+  await sessionsCollection().updateOne({ _id: jti }, { $set: { policyAccepted: true } });
 }
 
 export async function deleteSession(jti: string): Promise<void> {

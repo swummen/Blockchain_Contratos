@@ -31,7 +31,7 @@ export function HashDisplay({
       </code>
       {!canViewFull && (
         <p className="text-xs text-muted-foreground">
-          La huella completa solo la ve el Verificador (RF-27).
+          La huella completa solo la ve el Verificador.
         </p>
       )}
     </div>

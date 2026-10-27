@@ -3,21 +3,28 @@ import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { authConfig } from "../config/auth";
 import { env } from "../config/env";
+import { CURRENT_POLICY_VERSION } from "../config/policy";
 import {
   deleteOtp,
   findOtpByUserId,
   incrementOtpAttempts,
   upsertOtp,
 } from "../repositories/otpRepository";
-import { createSession, deleteSession } from "../repositories/sessionRepository";
+import {
+  createSession,
+  deleteSession,
+  markSessionPolicyAccepted,
+} from "../repositories/sessionRepository";
 import {
   findUserByEmail,
   findUserById,
+  hasAcceptedCurrentPolicy,
   lockUser,
-  PublicUser,
+  SessionUser,
+  recordPolicyAcceptance,
   registerFailedLogin,
   resetFailedLogin,
-  toPublicUser,
+  toSessionUser,
   updatePasswordHash,
 } from "../repositories/userRepository";
 import { sendOtpEmail } from "./emailService";
@@ -27,11 +34,15 @@ export type LoginResult =
   | { ok: false; status: number; message: string };
 
 export type VerifyOtpResult =
-  | { ok: true; token: string; user: PublicUser }
+  | { ok: true; token: string; user: SessionUser }
   | { ok: false; status: number; message: string };
 
 export type ChangePasswordResult =
   | { ok: true }
+  | { ok: false; status: number; message: string };
+
+export type AcceptPolicyResult =
+  | { ok: true; user: SessionUser }
   | { ok: false; status: number; message: string };
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -154,7 +165,14 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
   const now = new Date();
   const expiresAt = new Date(now.getTime() + authConfig.jwtExpiresMinutes * 60_000);
 
-  await createSession({ _id: jti, userId: user._id, role: user.role, expiresAt, lastSeenAt: now });
+  await createSession({
+    _id: jti,
+    userId: user._id,
+    role: user.role,
+    expiresAt,
+    lastSeenAt: now,
+    policyAccepted: hasAcceptedCurrentPolicy(user),
+  });
 
   const token = jwt.sign({ role: user.role }, authConfig.jwtSecret, {
     subject: user._id,
@@ -162,7 +180,7 @@ export async function verifyOtp(email: string, code: string): Promise<VerifyOtpR
     expiresIn: authConfig.jwtExpiresMinutes * 60,
   });
 
-  return { ok: true, token, user: toPublicUser(user) };
+  return { ok: true, token, user: toSessionUser(user) };
 }
 
 // Borra la sesión en Mongo: el mismo JWT deja de servir aunque no haya vencido.
@@ -170,9 +188,41 @@ export async function logout(jti: string): Promise<void> {
   await deleteSession(jti);
 }
 
-export async function getPublicUserById(userId: string): Promise<PublicUser | null> {
+export async function getSessionUserById(userId: string): Promise<SessionUser | null> {
   const user = await findUserById(userId);
-  return user ? toPublicUser(user) : null;
+  return user ? toSessionUser(user) : null;
+}
+
+// RF-055: registra usuario, fecha y hora y versión, y habilita la sesión actual.
+// La versión la manda el frontend: si no es la vigente, el usuario aceptó un
+// texto viejo y debe ver el nuevo.
+export async function acceptPolicy(
+  userId: string,
+  jti: string,
+  version: string,
+): Promise<AcceptPolicyResult> {
+  if (version !== CURRENT_POLICY_VERSION) {
+    return {
+      ok: false,
+      status: 409,
+      message: "La política de datos cambió. Recarga la página para ver la versión vigente.",
+    };
+  }
+
+  const user = await findUserById(userId);
+  if (!user) {
+    return { ok: false, status: 401, message: "Sesión inválida o vencida." };
+  }
+
+  // Aceptar dos veces la misma versión no duplica el registro.
+  if (!hasAcceptedCurrentPolicy(user)) {
+    const acceptance = { version, acceptedAt: new Date() };
+    await recordPolicyAcceptance(userId, acceptance);
+    user.policyAcceptances = [...(user.policyAcceptances ?? []), acceptance];
+  }
+  await markSessionPolicyAccepted(jti);
+
+  return { ok: true, user: toSessionUser(user) };
 }
 
 // RF-52/53: userId debe venir del JWT validado, nunca del body de la petición.

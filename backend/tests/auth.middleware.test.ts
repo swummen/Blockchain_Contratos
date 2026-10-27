@@ -244,6 +244,7 @@ describe("GET /auth/me, ruta protegida real", () => {
         email: "m.lopez@empresa.com",
         role: "Empleado",
         status: "Activo",
+        policyAccepted: false,
       },
     });
   });

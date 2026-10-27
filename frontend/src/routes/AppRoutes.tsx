@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom"
-import AuthLayout from "@/layouts/AuthLayout"
 import RoleLayout from "@/layouts/RoleLayout"
 import { ProtectedRoute } from "./ProtectedRoute"
 
 import HomePage from "@/pages/HomePage"
 import LoginPage from "@/pages/LoginPage"
 import OtpPage from "@/pages/OtpPage"
+import PolicyPage from "@/pages/PolicyPage"
 import LoggedOutPage from "@/pages/LoggedOutPage"
 
 import CargarDocumentoPage from "@/pages/empleado/CargarDocumentoPage"
@@ -25,14 +25,13 @@ import SystemStatusPage from "@/pages/SystemStatusPage"
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Inicio, login y OTP traen su propio diseño; "sesión cerrada" usa AuthLayout. */}
+      {/* Pantallas públicas y de acceso: cada una trae su propio diseño. */}
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/verificacion" element={<OtpPage />} />
-
-      <Route element={<AuthLayout />}>
-        <Route path="/sesion-cerrada" element={<LoggedOutPage />} />
-      </Route>
+      {/* RF-055: tras el OTP, si falta aceptar la política vigente. */}
+      <Route path="/politica-datos" element={<PolicyPage />} />
+      <Route path="/sesion-cerrada" element={<LoggedOutPage />} />
 
       {/* Diagnóstico de infraestructura: sin layout ni sesión. */}
       <Route path="/system-status" element={<SystemStatusPage />} />

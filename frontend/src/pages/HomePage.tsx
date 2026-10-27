@@ -29,7 +29,7 @@ const FEATURES = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-100 p-3 md:p-6">
+    <div className="min-h-screen bg-page p-3 md:p-6">
       {/* Tarjeta flotante que ocupa casi todo el alto de la pantalla. */}
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-7xl flex-col overflow-hidden rounded-3xl shadow-2xl shadow-teal-900/30 md:min-h-[calc(100vh-3rem)]">
         <header className="flex items-center justify-between gap-3 bg-white px-4 py-4 sm:px-6 md:px-10">

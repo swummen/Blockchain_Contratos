@@ -83,6 +83,11 @@ export async function logout(token: string): Promise<void> {
   await postAuthJson("/auth/logout", undefined, token)
 }
 
+// RF-055: registra la aceptación de la política de datos de esta versión.
+export async function acceptPolicy(token: string, version: string): Promise<{ user: User }> {
+  return postAuthJson("/auth/accept-policy", { version }, token)
+}
+
 export async function changePassword(
   token: string,
   currentPassword: string,

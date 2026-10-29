@@ -61,9 +61,11 @@ export default function RoleLayout() {
           </button>
         </header>
 
+        {/* En computador el menú queda fijo con el alto de la pantalla: el perfil
+            y cerrar sesión siempre a la vista aunque el contenido sea largo. */}
         <aside
           className={cn(
-            "flex-col rounded-3xl bg-sidebar text-sidebar-foreground shadow-xl shadow-slate-900/10 md:flex md:w-64 md:shrink-0",
+            "flex-col rounded-3xl bg-sidebar text-sidebar-foreground shadow-xl shadow-slate-900/10 md:sticky md:top-6 md:flex md:h-[calc(100vh-3rem)] md:w-64 md:shrink-0 md:self-start",
             menuOpen ? "flex animate-in duration-200 fade-in slide-in-from-top-2" : "hidden"
           )}
         >
@@ -75,7 +77,7 @@ export default function RoleLayout() {
             </div>
           </div>
           {/* Elegir una opción cierra el menú en celular. */}
-          <div className="flex flex-1 flex-col" onClick={() => setMenuOpen(false)}>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" onClick={() => setMenuOpen(false)}>
             <RoleSidebar role={user.role} />
           </div>
           <div className="border-t border-sidebar-border p-3">

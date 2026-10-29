@@ -11,6 +11,8 @@ export interface PolicySection {
   title: string
   paragraphs?: string[]
   items?: string[]
+  /** Párrafos que van después de la lista. */
+  notes?: string[]
 }
 
 export const POLICY_SECTIONS: PolicySection[] = [
@@ -28,7 +30,7 @@ export const POLICY_SECTIONS: PolicySection[] = [
       "Datos de la cuenta: rol asignado y contraseña, que se guarda cifrada y nunca en texto plano.",
       "Datos de uso: fecha y hora de los inicios de sesión, intentos fallidos y acciones realizadas sobre los documentos (carga y verificación).",
     ],
-    paragraphs: [
+    notes: [
       "TrazaDoc no guarda el contenido de los documentos: solo su huella criptográfica SHA-256 y metadatos mínimos (nombre del archivo, tamaño, fecha y responsable).",
     ],
   },

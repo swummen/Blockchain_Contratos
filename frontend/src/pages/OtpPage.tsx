@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { OtpInput } from "@/components/shared/OtpInput"
 import { useSession } from "@/context/SessionContext"
 import { ROLE_HOME } from "@/lib/roles"
-import { Mail, RotateCcw, ShieldCheck } from "lucide-react"
+import { Mail, ShieldCheck } from "lucide-react"
 
 const PANEL_BACKGROUND =
   "radial-gradient(ellipse at center, #0f8aad 0%, #0a7f95 45%, #087b78 100%)"
@@ -109,15 +109,6 @@ export default function OtpPage() {
               {!isSubmitting && (
                 <span aria-hidden className="transition-transform duration-200 group-enabled:group-hover:translate-x-1.5">→</span>
               )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setCode("")}
-              className="mx-auto mt-4 flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-900"
-            >
-              <RotateCcw className="size-3.5" />
-              Reenviar código
             </button>
           </div>
         </div>

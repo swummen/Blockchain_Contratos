@@ -349,7 +349,7 @@ que `up.sh` descarga en la versión fijada. Queda en
 `docker/fabric-samples/test-network/configtx/configtx.yaml`. El proyecto lo usa sin
 modificar (red de prueba oficial de Fabric con 2 organizaciones); el canal se crea con el
 nombre `contratoschannel` y base de estado LevelDB. Detalle en
-[`docs/Matriz_Infraestructura.xlsx`](docs/Matriz_Infraestructura.xlsx) (hoja "Red
+[`docs/Objetivo 2/Matriz_Infraestructura.xlsx`](docs/Objetivo%202/Matriz_Infraestructura.xlsx) (hoja "Red
 Fabric").
 
 Más detalle técnico de Docker y Fabric (decisiones, errores de Windows ya corregidos):

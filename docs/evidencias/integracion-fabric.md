@@ -48,7 +48,7 @@ principal señalado en la propuesta.
   evento nuevo, y cada bloque guarda el hash del bloque anterior.
 - **Red permisionada con 2 organizaciones:** cada transacción tiene las firmas de ambas
   organizaciones, como exige la política de endoso MAJORITY (ver OBS‑01 de
-  `docs/Matriz_Infraestructura.xlsx`).
+  `docs/Objetivo 2/Matriz_Infraestructura.xlsx`).
 - **Control de visibilidad (RF‑027):** el Verificador ve la huella completa; el
   Administrador, enmascarada.
 

@@ -31,7 +31,7 @@ Cualquiera de estas opciones funciona porque son archivos de texto plano estánd
    o usar el servidor público de PlantUML (configuración por defecto de la extensión).
 2. **Servidor web sin instalar nada:** pegar el contenido de un `.puml` en
    https://www.plantuml.com/plantuml/uml/
-3. **Línea de comandos:** `plantuml docs/uml/*.puml` genera un `.png` por cada diagrama
+3. **Línea de comandos:** `plantuml "docs/Objetivo 2/uml/"*.puml` genera un `.png` por cada diagrama
    (requiere `plantuml.jar` + Java).
 
 ## Notas de diseño

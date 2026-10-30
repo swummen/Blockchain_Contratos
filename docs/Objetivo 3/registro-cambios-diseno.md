@@ -2,7 +2,7 @@
 
 Cambios entre lo diseñado en la Fase 2 (OE2) y lo implementado en los Sprints 0‑4 (OE3).
 Cada cambio indica su motivo, los requisitos o diagramas afectados y dónde está la evidencia.
-Los diagramas de `docs/uml/` ya reflejan el estado implementado.
+Los diagramas de `docs/Objetivo 3/uml/` ya reflejan el estado implementado.
 
 - **Actualizado:** 2026‑10‑27.
 - **Convención de motivo:** lo marcado *(por confirmar)* no tiene motivo documentado en el repositorio y debe completarlo el equipo antes de la entrega.
@@ -11,7 +11,7 @@ Los diagramas de `docs/uml/` ya reflejan el estado implementado.
 
 | # | Tema | Diseño inicial | Implementado | Motivo | Afecta | Evidencia |
 |---|---|---|---|---|---|---|
-| C‑01 | Base de estado del peer | CouchDB | LevelDB | Sin consultas enriquecidas; la trazabilidad usa claves compuestas. | UML 01, 02, 03; RNF‑020 | `docs/Matriz_Infraestructura.xlsx` |
+| C‑01 | Base de estado del peer | CouchDB | LevelDB | Sin consultas enriquecidas; la trazabilidad usa claves compuestas. | UML 01, 02, 03; RNF‑020 | `docs/Objetivo 2/Matriz_Infraestructura.xlsx` |
 | C‑02 | Topología de la red | 1 organización, 1 peer, 1 CA | 2 organizaciones, 2 peers, 1 orderer (Raft), 3 CA | Se usó la red de prueba oficial de Fabric (`test-network`) *(motivo de fondo por confirmar)*. | UML 02; RNF‑020, RNF‑021 | `docs/evidencias/integracion-fabric.md` (endoso Org1MSP + Org2MSP) |
 | C‑03 | Política de endoso | No definida | MAJORITY: firman ambas organizaciones | Consecuencia de C‑02. | UML 01, 02; RNF‑005 | Matriz de infraestructura, OBS‑01 |
 | C‑04 | Conexión backend ↔ Fabric | SDK hacia peer y orderer | Fabric Gateway: una conexión al peer, que reenvía al orderer | Menos configuración que el SDK anterior. | UML 01, 02 | Registro de sprints, Sprint 0 |

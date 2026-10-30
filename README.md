@@ -136,10 +136,10 @@ inactividad.
 | Instalación y uso | [`INSTALACION.md`](INSTALACION.md) |
 | Despliegue en Azure | [`DESPLIEGUE-AZURE.md`](DESPLIEGUE-AZURE.md) |
 | API (OpenAPI / Swagger, importable en Postman) | [`docs/api/`](docs/api/README.md) |
-| Diagramas UML y cambios respecto al diseño | [`docs/uml/`](docs/uml/README.md) |
-| Matriz de infraestructura | [`docs/Matriz_Infraestructura.xlsx`](docs/Matriz_Infraestructura.xlsx) |
-| Matriz de trazabilidad HU ↔ RF ↔ código | [`docs/Matriz_Trazabilidad_HU_RF_Codigo.xlsx`](docs/Matriz_Trazabilidad_HU_RF_Codigo.xlsx) |
-| Registro de sprints | [`docs/registro-sprints.md`](docs/registro-sprints.md) |
+| Diagramas UML y cambios respecto al diseño | [`docs/Objetivo 3/uml/`](docs/Objetivo%203/uml/README.md) |
+| Matriz de infraestructura | [`docs/Objetivo 2/Matriz_Infraestructura.xlsx`](docs/Objetivo%202/Matriz_Infraestructura.xlsx) |
+| Matriz de trazabilidad HU ↔ RF ↔ código | [`docs/Objetivo 3/Matriz_Trazabilidad_HU_RF_Codigo.xlsx`](docs/Objetivo%203/Matriz_Trazabilidad_HU_RF_Codigo.xlsx) |
+| Registro de sprints | [`docs/Objetivo 3/registro-sprints.md`](docs/Objetivo%203/registro-sprints.md) |
 | Evidencia de integración con Fabric | [`docs/evidencias/integracion-fabric.md`](docs/evidencias/integracion-fabric.md) |
 | Requisitos, decisiones y alcance | [`claude_docs/SPEC.md`](claude_docs/SPEC.md) |
 | Lo que falta del MVP | [`claude_docs/tasks/plan-trabajo-pendiente.md`](claude_docs/tasks/plan-trabajo-pendiente.md) |

@@ -3,7 +3,7 @@ import { FileCheck2, FileText, Fingerprint, History, Link2, ShieldCheck } from "
 import heroUrl from "@/assets/home-blockchain.jpg"
 import { BrandLogo } from "@/components/shared/BrandLogo"
 
-// Página pública de inicio (docs/Diseño 2.0.pdf, pág. 1). Se omiten a
+// Página pública de inicio (docs/Objetivo 2/Diseño 2.0.pdf, pág. 1). Se omiten a
 // propósito el botón "Comenzar ahora" y la tarjeta "Integridad verificada".
 // Degradado tomado en píxeles del PDF del diseño.
 const HERO_BACKGROUND =

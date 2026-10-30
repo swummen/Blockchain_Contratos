@@ -13,7 +13,7 @@ Fuentes:
   RNF‑030, citados en cada paso de las secuencias.
 - `docs/md/Matriz_Actores_Stakeholders.md`: los 3 roles operativos.
 - El código: `backend/src/`, `chaincode/contract/`, `frontend/src/`, `docker/`.
-- `docs/Matriz_Infraestructura.xlsx`: mismos datos de infraestructura que el diagrama
+- `docs/Objetivo 2/Matriz_Infraestructura.xlsx`: mismos datos de infraestructura que el diagrama
   de despliegue.
 
 ## Contenido
@@ -35,7 +35,7 @@ Fuentes:
 2. **Sin instalar nada:** pegar el contenido en https://www.plantuml.com/plantuml/uml/
 3. **Línea de comandos (genera PNG):** con Java instalado y `plantuml.jar` descargado de
    https://github.com/plantuml/plantuml/releases:
-   `java -jar plantuml.jar -charset UTF-8 -Playout=smetana -tpng docs/uml/*.puml`
+   `java -jar plantuml.jar -charset UTF-8 -Playout=smetana -tpng "docs/Objetivo 3/uml/"*.puml`
    (`-Playout=smetana` evita tener que instalar Graphviz).
 
 ## Cambios respecto al diseño inicial (registro para OE2)

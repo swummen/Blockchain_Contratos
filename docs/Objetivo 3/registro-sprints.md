@@ -183,7 +183,7 @@ Compose · **5** aceptación del director o la codirectora.
 
 ✅ cumplido · ⏳ pendiente. Con los criterios 2 a 5 cumplidos, el 100 % de las HU
 comprometidas queda aprobado en cada sprint, por encima de la meta del 80 %. El criterio 1
-queda como mejora de proceso (ver la auditoría QA en `docs/Pruebas_QA_QC_TrazaDoc.xlsx`).
+queda como mejora de proceso (ver la auditoría QA en `docs/Objetivo 4/Pruebas_QA_QC_TrazaDoc.xlsx`).
 
 ## Pendiente para cerrar el KPI
 

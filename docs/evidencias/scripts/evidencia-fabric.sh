@@ -31,7 +31,7 @@ login() { # $1 = correo → imprime el JWT
   # Cuentas de prueba del ensayo local: se acepta la política vigente (RF-055).
   if [ "$(echo "$r" | jq -r .policyAccepted)" = "false" ]; then
     curl -s -o /dev/null -X POST -H "Authorization: Bearer $t" -H 'Content-Type: application/json' \
-      -d "{\"version\":\"$(echo "$r" | jq -r .policyVersion)\"}" $B/auth/policy/accept
+      -d "{\"version\":\"$(echo "$r" | jq -r .policyVersion)\"}" $B/auth/accept-policy
   fi
   echo "$t"
 }

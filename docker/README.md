@@ -57,6 +57,10 @@ suelta de `compose down` no). Las filas de abajo son para levantar/bajar piezas 
 | `docker compose --env-file docker/.env -f docker/compose.app.yml up -d mongo backend frontend` | Levanta Mongo (imagen fijada `7.0.41`, con auth activada), el `backend` (Express+TS, T4/T5: `/health` + `/fabric/ping` reales, espera a que Mongo esté `healthy`) y el `frontend` (T6: build de Vite servido por `nginx:alpine`, `VITE_API_URL` horneado en el bundle en tiempo de build, un cambio ahí requiere `docker compose build frontend`, no alcanza con reiniciar el contenedor), todos unidos a la red `fabric_test` que crea `network-up.sh`. `backend` monta `fabric-samples/test-network/organizations` en `/crypto` (solo lectura) para leer la identidad de Fabric: requiere que `network-up.sh` haya corrido antes, si no `/fabric/ping` responde `503`. Se puede omitir cualquier servicio de la lista para levantar solo los otros. |
 | `docker compose -f docker/compose.app.yml down` | Baja **todos** los servicios que comparten este compose file (`mongo`, `backend`, `frontend`). El volumen de Mongo (`contratos_mongo_data`) sobrevive; agregar `-v` para borrarlo también. |
 
+## Publicación con HTTPS (servidor)
+
+En un computador local `caddy` no se usa. Si `PUBLIC_DOMAIN` tiene valor en `docker/.env`, `up.sh` también levanta el servicio `caddy` de `compose.app.yml`: recibe las conexiones por los puertos 80 y 443, obtiene el certificado de Let's Encrypt y las reenvía al frontend. En ese caso `up.sh` se niega a arrancar si `JWT_SECRET` o `MONGO_ROOT_PASSWORD` siguen con los valores de ejemplo. El procedimiento completo está en [`DESPLIEGUE-AZURE.md`](../DESPLIEGUE-AZURE.md).
+
 ## Notas
 
 - **Reinicio automático (desde 2026-10-20):** `network-up.sh` pone `restart: unless-stopped`

@@ -51,7 +51,8 @@ panel de totales y gestión de usuarios, ver las secciones "`identity`", "`docum
   `depends_on: mongo: condition: service_healthy`, red `fabric_test`, y un volumen
   **de solo lectura** con el material criptográfico de Fabric montado en `/crypto`).
 
-Comandos (correr dentro de `backend/`): `npm run dev`, `npm run build`, `npm test`,
+Comandos (correr dentro de `backend/`, con Node.js 22.9 o superior, como pide
+`package.json`): `npm run dev`, `npm run build`, `npm test` (163 pruebas en 15 archivos),
 `npm run lint`, `npm run seed` (`identity`, usuarios de prueba). Detalle completo en
 `claude_docs/SPEC.md` §5.
 
@@ -109,6 +110,7 @@ error (los mensajes ya están pensados para mostrarse tal cual en la UI).
 | `POST /auth/verify-otp` | no | `{email, code}` | `{token, user}` (`user` sin `passwordHash`, mismas claves que `frontend/src/types/domain.ts`; el rol viene de la cuenta, ya no se selecciona en el login) | `400` código inválido/vencido/incorrecto/intentos agotados |
 | `GET /auth/me` | sí | N/A | `{user}` | `401` sin sesión válida |
 | `POST /auth/logout` | sí | N/A | `204` | `401` sin sesión válida |
+| `POST /auth/accept-policy` | sí | `{version}` | `{user}` con `policyAccepted: true` (RF‑055) | `400` sin `version` · `409` la versión no es la vigente · `401` sin sesión válida |
 | `POST /auth/change-password` | sí | `{currentPassword, newPassword}` | `{message}` | `400` actual incorrecta/nueva inválida · `401` sin sesión válida |
 
 "Auth: sí" = header `Authorization: Bearer <token>`, validado por
@@ -136,6 +138,14 @@ usado todavía, ningún endpoint de Sprint 1 lo necesita).
   cuenta por `LOGIN_LOCKOUT_MINUTES` (default 15), `POST /auth/login` responde `423`
   mientras dure el bloqueo, sin comparar la contraseña. El contador vive en el propio
   usuario (`failedLoginAttempts`/`lockedUntil`) y se reinicia con un login exitoso.
+- RF‑054: cada intento fallido queda además en la colección `login_attempts` (correo,
+  motivo y fecha, nunca la contraseña), con un índice TTL que lo borra a los 90 días.
+- RF‑055: mientras el usuario no acepte la política de tratamiento de datos vigente
+  (`CURRENT_POLICY_VERSION` en `src/config/policy.ts`, que debe coincidir con
+  `frontend/src/lib/dataPolicy.ts`), `requireAuth()` responde `403` con
+  `code: "POLICY_NOT_ACCEPTED"` en todas las rutas de negocio. `GET /auth/me`,
+  `POST /auth/logout` y `POST /auth/accept-policy` usan `requireSession()`, que no exige
+  la política, para que el usuario pueda aceptarla o salir.
 
 ### Envío real del OTP (Brevo) y modo sin SMTP
 
@@ -315,6 +325,8 @@ gestión de usuarios (RF‑18…22, RF‑37…51, HU‑008/009/015…020). Decis
 - No hay reactivación de usuarios ni invitación por correo (D7b/D8, ningún RF las pide).
 - CORS: `/documents` permite `GET, POST, OPTIONS`; `/events` y `/users` tienen su propio
   bloque acotado a `FRONTEND_ORIGIN` (ver comentario en `server.ts`).
+- Todas las respuestas llevan `Cache-Control: no-store`: sin eso el navegador reutilizaba
+  listados guardados y mostraba estados viejos después de una verificación (DEF‑01).
 
 ## Referencias
 
@@ -333,8 +345,8 @@ plan, decisiones (D1‑D13) y tareas del sprint de `documents`+`ledger` (carga d
 - `claude_docs/tasks/plan-sprint4-administration.md` / `todo-sprint4-administration.md`: 
   plan, decisiones (D1‑D8) y tareas del sprint de `administration` (consultas, panel,
   usuarios), completo.
-- `claude_docs/tasks/plan-trabajo-pendiente.md`: lo que falta del MVP, en orden de
-  prioridad.
+- `claude_docs/tasks/plan-trabajo-pendiente.md`: plan del cierre (RF‑054, RF‑055 y las
+  pruebas del cuarto objetivo), ya completado.
 - `chaincode/README.md`: qué hace el contrato Go, modelo de datos, cómo
   compilarlo/testearlo/desplegarlo.
 - `docker/README.md`: cómo levantar la red Fabric y Mongo, puertos, prerrequisitos.

@@ -53,8 +53,8 @@ Fuentes:
 | Huella completa | Verificador y Administrador | Solo el Verificador (RF‑27, 2026‑10‑15). |
 | Reenvío del código OTP | Endpoint de reenvío, 3 intentos | Sin reenvío: 5 intentos; agotados, se vuelve a iniciar sesión. |
 | Proveedor de correo | Servidor SMTP corporativo | Brevo (SMTP relay), por indicación del tutor. |
-| Despliegue | VM de Azure | Docker local; Azure pendiente con el mismo esquema. |
-| Aceptación de política de datos (RF‑055) | Diseñada | Pendiente de implementar (se mantiene en los diagramas, marcada como pendiente). |
+| Despliegue | VM de Azure | Docker local para desarrollo y VM de Azure con HTTPS (Caddy) para la validación, con el mismo esquema de contenedores. |
+| Aceptación de política de datos (RF‑055) | Diseñada | Implementada: se muestra en el primer ingreso y el backend bloquea las rutas de negocio hasta que se acepta. |
 
 ## Notas
 

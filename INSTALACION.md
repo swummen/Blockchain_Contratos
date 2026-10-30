@@ -71,7 +71,7 @@ verificación (por Brevo).
 | **Git** (incluye **Git Bash**) | Descarga el proyecto y ejecuta los scripts `.sh` | La más reciente | Sí |
 | **Go** | Empaqueta el contrato inteligente (chaincode) al instalarlo en la red | 1.22 o superior | Sí |
 | **jq** | Lo usan los scripts de Hyperledger Fabric | 1.6 o superior | Sí |
-| **Node.js** | Solo para desarrollar, correr pruebas y medir la latencia | 20 LTS o superior | No (opcional) |
+| **Node.js** | Solo para desarrollar, correr pruebas y medir la latencia | 22 LTS o superior | No (opcional) |
 | **Visual Studio Code** | Editor para ver y modificar el código | N/A | No (opcional) |
 
 ### Opción A: instalar todo con un solo comando (recomendada)
@@ -357,11 +357,11 @@ Más detalle técnico de Docker y Fabric (decisiones, errores de Windows ya corr
 
 ## 12. Para desarrollar (opcional)
 
-Solo si vas a modificar el código. Requiere **Node.js 20+**.
+Solo si vas a modificar el código. Requiere **Node.js 22 o superior**.
 
 | Qué | Comandos (desde la carpeta indicada) |
 |---|---|
-| Backend: instalar y probar | `cd backend` → `npm install` → `npm test` (141 pruebas) → `npm run lint` → `npm run build` |
+| Backend: instalar y probar | `cd backend` → `npm install` → `npm test` (163 pruebas) → `npm run lint` → `npm run build` |
 | Backend fuera de Docker | `cp backend/.env.example backend/.env`, cambiar `MONGO_URI` a `localhost` (ver comentarios del archivo) → `npm run dev` |
 | Frontend: instalar y probar | `cd frontend` → `npm install` → `npm run build` → `npm run lint` |
 | Frontend en modo desarrollo | `npm run dev` (abre en <http://localhost:5173>; detén antes el contenedor `frontend` con `docker stop frontend`) |

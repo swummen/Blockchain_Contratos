@@ -1,7 +1,7 @@
 # API de integración: TrazaDoc
 
 Documentación de la API REST del backend (entregable "API de integración funcional" de
-OE3). La especificación está en [`openapi.yaml`](openapi.yaml) (OpenAPI 3.0.3): 18
+OE3). La especificación está en [`openapi.yaml`](openapi.yaml) (OpenAPI 3.0.3, versión 1.1.0): 19
 endpoints con sus parámetros, respuestas, roles permitidos, mensajes de error reales y el
 requisito (RF/RNF) que cumple cada uno. Validada con Redocly CLI y contrastada contra el
 backend en ejecución.
@@ -9,7 +9,7 @@ backend en ejecución.
 | Grupo | Endpoints |
 |---|---|
 | Diagnóstico | `GET /health`, `GET /fabric/ping` |
-| Autenticación | `POST /auth/login`, `POST /auth/verify-otp`, `GET /auth/me`, `POST /auth/logout`, `POST /auth/change-password` |
+| Autenticación | `POST /auth/login`, `POST /auth/verify-otp`, `GET /auth/me`, `POST /auth/accept-policy`, `POST /auth/logout`, `POST /auth/change-password` |
 | Documentos | `POST /documents`, `GET /documents`, `GET /documents/summary`, `GET /documents/{id}`, `POST /documents/{id}/verifications` |
 | Trazabilidad | `GET /documents/{id}/events`, `GET /events` |
 | Usuarios | `GET /users`, `POST /users`, `PUT /users/{id}`, `POST /users/{id}/deactivate` |
@@ -23,14 +23,15 @@ backend en ejecución.
 
 ## Probarla en Postman
 
-1. Levantar el stack: `bash docker/up.sh` y `cd backend && npm run seed`.
+1. Levantar el stack: `bash docker/up.sh` (ya crea los usuarios de prueba).
 2. Postman → **Import** → elegir `docs/api/openapi.yaml` → *Postman Collection*. Se crea
-   la colección "TrazaDoc API" con las 18 peticiones agrupadas por etiqueta y la variable
+   la colección "TrazaDoc API" con las 19 peticiones agrupadas por etiqueta y la variable
    `baseUrl = http://localhost:8080`.
 3. Iniciar sesión:
    - `POST /auth/login` con `{"email": "contratosblockchain+empleado@gmail.com", "password": "Contratos123!"}`.
    - Leer el código en `contratosblockchain@gmail.com`.
    - `POST /auth/verify-otp` con `{"email": "...", "code": "<código>"}` → copiar el `token`.
+   - Si la respuesta trae `policyAccepted: false`, aceptar la política con `POST /auth/accept-policy`, el `token` como *Bearer Token* y `{"version": "1.0"}`; hasta entonces las rutas de negocio responden `403`.
 4. En la colección → pestaña **Authorization** → *Bearer Token* → pegar el token. Todas
    las peticiones lo heredan.
 5. Para subir un PDF (`POST /documents`, `POST /documents/{id}/verifications`): pestaña
@@ -38,7 +39,7 @@ backend en ejecución.
 
 Cada rol necesita su propio token (repetir el paso 3 con `+verificador@` o `+admin@`).
 
-## Capturas sugeridas como evidencia (OBJETIVO 3)
+## Recorrido sugerido para probar la API
 
 | # | Petición | Rol | Qué debe verse |
 |---|---|---|---|

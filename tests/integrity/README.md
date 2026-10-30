@@ -12,6 +12,8 @@ documentos modificados, sin marcar como alterado ningún original.
 El informe de la última corrida queda en
 [`docs/evidencias/integridad-mutacion.md`](../../docs/evidencias/integridad-mutacion.md).
 
+**Corrida oficial:** 29/10/2026 contra el servidor de validación en Azure: 20 de 20 alteraciones detectadas, 0 falsos positivos y 20 de 20 con su trazabilidad en el ledger.
+
 ## Qué comprueba por cada documento
 
 1. El Empleado registra el original: su hash queda en el ledger.

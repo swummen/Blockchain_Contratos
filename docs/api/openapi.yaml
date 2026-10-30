@@ -17,7 +17,7 @@ info:
     2. `POST /auth/verify-otp` con el código → devuelve el `token` (JWT).
     3. En el resto de rutas: header `Authorization: Bearer <token>`.
     4. Si la respuesta del paso 2 trae `policyAccepted: false`, el usuario debe aceptar la
-       política de tratamiento de datos con `POST /auth/policy/accept` (RF-055). Hasta
+       política de tratamiento de datos con `POST /auth/accept-policy` (RF-055). Hasta
        entonces, las rutas de documentos, trazabilidad y usuarios responden 403 con el
        código `POLICY_REQUIRED`; las de `/auth` siguen disponibles.
 
@@ -206,7 +206,7 @@ paths:
                   policyAccepted: { type: boolean }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
-  /auth/policy/accept:
+  /auth/accept-policy:
     post:
       operationId: acceptPolicy
       tags: [Autenticación]
@@ -226,21 +226,25 @@ paths:
                 version: { type: string, example: "1.0" }
       responses:
         "200":
-          description: Aceptación registrada.
+          description: Aceptación registrada; el usuario devuelto ya trae `policyAccepted` en true.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  policyAccepted: { type: boolean, example: true }
-                  version: { type: string, example: "1.0" }
-                  acceptedAt: { type: string, format: date-time }
+                  user: { $ref: "#/components/schemas/User" }
         "400":
+          description: Falta la versión en el cuerpo.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+              example: { message: version es obligatoria. }
+        "409":
           description: La versión enviada no es la vigente.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Message" }
-              example: { message: La versión de la política no es la vigente. Recarga la página. }
+              example: { message: La política de datos cambió. Recarga la página para ver la versión vigente. }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
   /auth/logout:

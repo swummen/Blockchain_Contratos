@@ -12,7 +12,7 @@ los datos que usan las pruebas.
 | [Matriz_Normativa.xlsx](Objetivo%201/Matriz_Normativa.xlsx) | Normas, artículos y requerimientos que los cubren |
 | [benchmarking_mvp_gcp.xlsx](Objetivo%201/benchmarking_mvp_gcp.xlsx) | Comparación con Google Cloud Platform |
 | [Requerimientos funcionales y no funcionales.docx](Objetivo%201/Requerimientos%20funcionales%20y%20no%20funcionales.docx) | SRS: 55 RF y 30 RNF |
-| [Requisitos_Historias_Usuario_ (backlog incluido).xlsx](Objetivo%201/Requisitos_Historias_Usuario_%20(backlog%20incluido).xlsx) | Backlog: 24 historias de usuario y escenarios Gherkin |
+| [Requisitos_Historias_Usuario_ (backlog incluido).xlsx](<Objetivo 1/Requisitos_Historias_Usuario_ (backlog incluido).xlsx>) | Backlog: 24 historias de usuario y escenarios Gherkin |
 
 ## Objetivo 2: diseño
 

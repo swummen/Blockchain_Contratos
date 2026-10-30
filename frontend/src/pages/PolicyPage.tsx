@@ -107,6 +107,7 @@ export default function PolicyPage() {
                       ))}
                     </ul>
                   )}
+                  {section.notes?.map((p) => <p key={p}>{p}</p>)}
                 </section>
               ))}
             </div>

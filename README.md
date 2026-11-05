@@ -79,7 +79,6 @@ La primera vez tarda entre 10 y 20 minutos; las siguientes, unos 2. Cuando apare
 
 | Rol | Nombre | Correo |
 |---|---|---|
-| Empleado | María López | `contratosblockchain+empleado@gmail.com` |
 | Empleado | Carlos Ruiz | `contratosblockchain+empleado2@gmail.com` |
 | Verificador | Pedro Gómez | `contratosblockchain+verificador@gmail.com` |
 | Administrador | Laura Diaz | `contratosblockchain+admin@gmail.com` |
